@@ -318,10 +318,12 @@ function App() {
 
   return (
     <div className="container">
-      {/* Debug Panel */}
-      <div className="debug-panel">
-        Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered: {debugInfo.filteredCount}
-      </div>
+      {/* Debug Panel - Hidden for better UX */}
+      {false && (
+        <div className="debug-panel">
+          Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered: {debugInfo.filteredCount}
+        </div>
+      )}
 
       <header className="app-header">
         <h1>🎬 BoxdBuddies</h1>
@@ -374,7 +376,7 @@ function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, 
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="your_username"
+              placeholder="Your Letterboxd Username"
               disabled={isLoading}
             />
           </div>

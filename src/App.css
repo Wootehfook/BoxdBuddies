@@ -42,6 +42,31 @@ body {
   border-bottom: 1px solid #2c3440;
 }
 
+/* App Header */
+.app-header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: #14181c;
+  border-bottom: 1px solid #2c3440;
+}
+
+.app-header h1 {
+  color: #ff8000;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.app-header p {
+  color: #9ab;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
 .title {
   color: #ff8000;
   font-size: 2.5rem;
@@ -227,6 +252,46 @@ body {
 .btn-secondary:hover:not(:disabled) {
   background: #456;
   color: #fff;
+}
+
+/* Message Styles */
+.message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+}
+
+.message.error {
+  background: #dc3545;
+  color: #fff;
+  border: 1px solid #c82333;
+}
+
+.message.success {
+  background: #28a745;
+  color: #fff;
+  border: 1px solid #1e7e34;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1rem;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.btn-close:hover {
+  opacity: 1;
 }
 
 /* Error Messages */
