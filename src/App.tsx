@@ -129,12 +129,11 @@ function App() {
     
     try {
       await backendCallWithTimeout(async () => {
-        const profile = await invoke<LetterboxdUser>('save_user_profile', {
+        await invoke('save_user_preferences', {
           username: username.trim(),
-          tmdbApiKey: tmdbApiKey.trim()
+          tmdb_api_key: tmdbApiKey.trim()
         });
         
-        setUserProfile(profile);
         setSuccess('Profile saved successfully!');
         
         // Auto-fetch friends after successful setup
