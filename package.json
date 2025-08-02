@@ -7,7 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "format": "prettier --write src/**/*.{ts,tsx,css,json}",
+    "format:check": "prettier --check src/**/*.{ts,tsx,css,json}",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist target node_modules/.vite",
+    "dev:full": "concurrently \"npm run dev\" \"npm run tauri:dev\""
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
