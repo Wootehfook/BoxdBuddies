@@ -136,6 +136,7 @@ struct UserPreferences {
     window_y: Option<i32>,
     window_width: Option<u32>,
     window_height: Option<u32>,
+    always_on_top: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -166,6 +167,7 @@ impl Default for UserPreferences {
             window_y: None,
             window_width: None,
             window_height: None,
+            always_on_top: None,
         }
     }
 }
@@ -200,17 +202,26 @@ fn get_database_path() -> Result<PathBuf, String> {
     Ok(boxd_dir.join("friends.db"))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveUserPreferencesRequest {
+    username: String,
+    tmdb_api_key: String,
+    always_on_top: Option<bool>,
+}
+
 #[command]
-async fn save_user_preferences(username: String, tmdb_api_key: String) -> Result<(), String> {
-    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: Called with username='{}', tmdb_api_key='{}'", username.trim(), tmdb_api_key.trim()));
+async fn save_user_preferences(request: SaveUserPreferencesRequest) -> Result<(), String> {
+    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: Called with username='{}', tmdb_api_key='{}'", request.username.trim(), request.tmdb_api_key.trim()));
     
     let preferences = UserPreferences {
-        username: if username.trim().is_empty() { None } else { Some(username) },
-        tmdb_api_key: if tmdb_api_key.trim().is_empty() { None } else { Some(tmdb_api_key) },
+        username: if request.username.trim().is_empty() { None } else { Some(request.username) },
+        tmdb_api_key: if request.tmdb_api_key.trim().is_empty() { None } else { Some(request.tmdb_api_key) },
         window_x: None,
         window_y: None,
         window_width: None,
         window_height: None,
+        always_on_top: request.always_on_top,
     };
     
     log_debug("🔧 SAVE_USER_PREFERENCES: Attempting to get preferences path...");
@@ -291,6 +302,26 @@ async fn set_always_on_top(app_handle: tauri::AppHandle, always_on_top: bool) ->
         window.set_always_on_top(always_on_top)
             .map_err(|e| format!("Failed to set always on top: {}", e))?;
         println!("🪟 Always on top set successfully: {}", always_on_top);
+        Ok(())
+    } else {
+        Err("Main window not found".to_string())
+    }
+}
+
+#[tauri::command]
+async fn set_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
+    println!("🪟 Setting window focus");
+    
+    if let Some(window) = app_handle.get_window("main") {
+        // Request focus and bring to front
+        window.set_focus()
+            .map_err(|e| format!("Failed to set focus: {}", e))?;
+        
+        // Request user attention to bring window to front
+        window.request_user_attention(Some(tauri::UserAttentionType::Critical))
+            .map_err(|e| format!("Failed to request attention: {}", e))?;
+        
+        println!("🪟 Window focus set successfully");
         Ok(())
     } else {
         Err("Main window not found".to_string())
@@ -494,6 +525,40 @@ async fn get_friends_from_database(main_username: Option<String>) -> Result<Vec<
     }
     
     println!("📋 Loaded {} friends from database (excluding main user)", friends.len());
+    Ok(friends)
+}
+
+#[command]
+async fn get_friends_with_watchlist_counts() -> Result<Vec<serde_json::Value>, String> {
+    let conn = init_database().map_err(|e| format!("Database error: {}", e))?;
+    
+    let mut stmt = conn.prepare(
+        "SELECT f.username, f.display_name, f.avatar_url, f.last_updated,
+                COUNT(fw.id) as watchlist_count
+         FROM friends f
+         LEFT JOIN friend_watchlists fw ON f.username = fw.friend_username
+         GROUP BY f.username, f.display_name, f.avatar_url, f.last_updated
+         ORDER BY f.username"
+    ).map_err(|e| format!("Failed to prepare statement: {}", e))?;
+    
+    let friends_iter = stmt.query_map([], |row| {
+        let watchlist_count: i64 = row.get(4).unwrap_or(0);
+        Ok(serde_json::json!({
+            "username": row.get::<_, String>(0)?,
+            "displayName": row.get::<_, Option<String>>(1)?,
+            "avatarUrl": row.get::<_, Option<String>>(2)?,
+            "lastSynced": row.get::<_, Option<String>>(3)?,
+            "watchlistCount": watchlist_count as u32
+        }))
+    }).map_err(|e| format!("Failed to query friends: {}", e))?;
+    
+    let mut friends = Vec::new();
+    for friend_result in friends_iter {
+        let friend = friend_result.map_err(|e| format!("Failed to process friend: {}", e))?;
+        friends.push(friend);
+    }
+    
+    println!("📋 Loaded {} friends with watchlist counts", friends.len());
     Ok(friends)
 }
 
@@ -1541,6 +1606,26 @@ async fn compare_watchlists(
     }
     
     println!("=== STARTING MOVIE COMPARISON ===");
+    println!("🔍 DEBUG: About to call find_common_movies with main user having {} movies", main_watchlist.len());
+    
+    // Show first few movies from main user for debugging
+    if !main_watchlist.is_empty() {
+        println!("🔍 DEBUG: First 5 movies from main user ({}):", main_username);
+        for (i, movie) in main_watchlist.iter().take(5).enumerate() {
+            println!("  {}. '{}'", i+1, movie.title);
+        }
+    }
+    
+    // Show first few movies from each friend for debugging
+    for (friend_idx, (friend_name, friend_watchlist)) in friend_watchlists_with_names.iter().enumerate() {
+        if !friend_watchlist.is_empty() {
+            println!("🔍 DEBUG: First 5 movies from friend {} ({}):", friend_idx + 1, friend_name);
+            for (i, movie) in friend_watchlist.iter().take(5).enumerate() {
+                println!("  {}. '{}'", i+1, movie.title);
+            }
+        }
+    }
+    
     let common_movies = find_common_movies(&main_watchlist, &friend_watchlists_with_names);
     println!("=== MOVIE COMPARISON COMPLETED ===");
     println!("Found {} common movies across all watchlists", common_movies.len());
@@ -2224,6 +2309,95 @@ async fn is_watchlist_cache_fresh_with_count_check_cmd(friend_username: String, 
     is_watchlist_cache_fresh_with_count_check(friend_username, max_age_hours).await
 }
 
+// AI Generated: GitHub Copilot - 2025-08-01
+#[command]
+async fn debug_database_contents() -> Result<String, String> {
+    let conn = init_database().map_err(|e| format!("Database error: {}", e))?;
+    
+    let mut debug_info = String::new();
+    
+    // Check friends table
+    match conn.prepare("SELECT COUNT(*) FROM friends") {
+        Ok(mut stmt) => {
+            if let Ok(count) = stmt.query_row([], |row| row.get::<_, i32>(0)) {
+                debug_info.push_str(&format!("Friends table: {} records\n", count));
+            }
+        }
+        Err(e) => debug_info.push_str(&format!("Error querying friends: {}\n", e)),
+    }
+    
+    // Check friend_watchlists table
+    match conn.prepare("SELECT COUNT(*) FROM friend_watchlists") {
+        Ok(mut stmt) => {
+            if let Ok(count) = stmt.query_row([], |row| row.get::<_, i32>(0)) {
+                debug_info.push_str(&format!("Friend watchlists table: {} records\n", count));
+            }
+        }
+        Err(e) => debug_info.push_str(&format!("Error querying friend_watchlists: {}\n", e)),
+    }
+    
+    // Check sample friend watchlist data
+    match conn.prepare("SELECT friend_username, COUNT(*) FROM friend_watchlists GROUP BY friend_username LIMIT 10") {
+        Ok(mut stmt) => {
+            debug_info.push_str("Watchlist counts per friend:\n");
+            if let Ok(rows) = stmt.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i32>(1)?))
+            }) {
+                for row_result in rows {
+                    if let Ok((username, count)) = row_result {
+                        debug_info.push_str(&format!("  {}: {} movies\n", username, count));
+                    }
+                }
+            }
+        }
+        Err(e) => debug_info.push_str(&format!("Error querying watchlist counts: {}\n", e)),
+    }
+    
+    // Debug function to get sample movies from a specific friend's watchlist
+    match conn.prepare("SELECT movie_title FROM friend_watchlists WHERE friend_username = ? LIMIT 10") {
+        Ok(mut stmt) => {
+            debug_info.push_str("Sample movies from Wootehfook's watchlist:\n");
+            if let Ok(rows) = stmt.query_map(["Wootehfook"], |row| {
+                Ok(row.get::<_, String>(0)?)
+            }) {
+                for row_result in rows {
+                    if let Ok(title) = row_result {
+                        debug_info.push_str(&format!("  '{}'\n", title));
+                    }
+                }
+            }
+        }
+        Err(e) => debug_info.push_str(&format!("Error querying Wootehfook's movies: {}\n", e)),
+    }
+    
+    // Check sample movie data for debugging
+    match conn.prepare("SELECT friend_username, movie_title, movie_year FROM friend_watchlists LIMIT 5") {
+        Ok(mut stmt) => {
+            debug_info.push_str("Sample movie data:\n");
+            let rows_result = stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)? // Get as string to see what's actually stored
+                ))
+            });
+            
+            if let Ok(rows) = rows_result {
+                for row_result in rows {
+                    if let Ok((username, title, year_str)) = row_result {
+                        debug_info.push_str(&format!("  {}: '{}' ({})\n", username, title, year_str.unwrap_or_else(|| "NULL".to_string())));
+                    }
+                }
+            } else {
+                debug_info.push_str("  Failed to query sample movie data\n");
+            }
+        }
+        Err(e) => debug_info.push_str(&format!("Error querying sample movies: {}\n", e)),
+    }
+    
+    Ok(debug_info)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -2235,6 +2409,7 @@ fn main() {
             load_user_preferences,
             get_sync_info,
             get_friends_from_database,
+            get_friends_with_watchlist_counts,
             save_friends_to_database,
             get_cached_watchlist,
             save_watchlist_to_cache,
@@ -2242,9 +2417,11 @@ fn main() {
             is_watchlist_cache_fresh,
             get_letterboxd_watchlist_count_cmd,
             is_watchlist_cache_fresh_with_count_check_cmd,
+            debug_database_contents,
             save_window_position,
             get_saved_window_position,
-            set_always_on_top
+            set_always_on_top,
+            set_window_focus
         ])
         .setup(|app| {
             // Get the main window - first we need to get the handle

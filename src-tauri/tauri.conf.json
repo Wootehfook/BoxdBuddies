@@ -26,12 +26,12 @@
         "maximize": false,
         "minimize": false,
         "print": false,
-        "requestUserAttention": false,
-        "setAlwaysOnTop": false,
+        "requestUserAttention": true,
+        "setAlwaysOnTop": true,
         "setClosable": false,
         "setCursorGrab": false,
         "setDecorations": false,
-        "setFocus": false,
+        "setFocus": true,
         "setFullscreen": false,
         "setIcon": false,
         "setMaxSize": false,
@@ -41,7 +41,7 @@
         "setSize": true,
         "setSkipTaskbar": false,
         "setTitle": false,
-        "show": false,
+        "show": true,
         "startDragging": false,
         "unmaximize": false,
         "unminimize": false
@@ -73,7 +73,7 @@
         "resizable": true,
         "title": "BoxdBuddies",
         "width": 785,
-        "height": 1040,
+        "height": 1115,
         "minWidth": 785,
         "minHeight": 825
       }
