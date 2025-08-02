@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoxdBuddies Spinning Text Easter Egg Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #ffd700;
+        }
+
+        .explanation {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .demo-section h3 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        /* Spin animation for easter egg */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spin-text {
+            animation: spin 2s linear infinite;
+            display: inline-block;
+        }
+
+        .spin-text-slow {
+            animation: spin 4s linear infinite;
+            display: inline-block;
+        }
+
+        .easter-egg-demo {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+
+        .normal-text {
+            margin: 20px 0;
+            font-size: 1.3em;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffd700;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎬 BoxdBuddies Easter Egg Demo</h1>
+        
+        <div class="explanation">
+            <p>Our app now includes a fun spinning text easter egg! When a user has <code>(spin)</code> anywhere in their username, all text becomes animated with a spinning effect.</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>🌟 Normal Text (No Spin)</h3>
+            <div class="normal-text">
+                <p>This is how text appears for regular users like "john_doe" or "movie_lover_2024"</p>
+                <p>Loading your friends list...</p>
+                <small>This may take a moment while we scan your Letterboxd connections</small>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🌪️ Easter Egg Activated! (Username contains "(spin)")</h3>
+            <div class="easter-egg-demo">
+                <p>This is how text appears for users like "<strong>spintastic(spin)</strong>" or "<strong>movie(spin)lover</strong>":</p>
+                <p><span class="spin-text">Loading your friends list...</span></p>
+                <small><span class="spin-text-slow">This may take a moment while we scan your Letterboxd connections</span></small>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 How to Trigger the Easter Egg:</h3>
+            <ol>
+                <li>Enter a username that contains <code>(spin)</code> anywhere in it</li>
+                <li>Examples that would trigger it:
+                    <ul>
+                        <li><code>awesome(spin)user</code></li>
+                        <li><code>(spin)movie_fan</code></li>
+                        <li><code>cinema(spin)lover(spin)</code></li>
+                        <li><code>just(spin)</code></li>
+                    </ul>
+                </li>
+                <li>All text in the app will now have a fun spinning animation!</li>
+                <li>The loading messages use a slower spin for a more subtle effect</li>
+            </ol>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Implementation</h3>
+            <p>The easter egg is implemented using:</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li><strong>SpinText Component:</strong> Wraps text with conditional animation</li>
+                <li><strong>Username Detection:</strong> Checks for "(spin)" substring (case-insensitive)</li>
+                <li><strong>CSS Animations:</strong> Two speeds - normal (2s) and slow (4s)</li>
+                <li><strong>Graceful Fallback:</strong> Regular text if no spin trigger found</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 40px; opacity: 0.8;">
+            <em>This easter egg adds a touch of whimsy to the BoxdBuddies experience! 🎪</em>
+        </p>
+    </div>
+</body>
+</html>
