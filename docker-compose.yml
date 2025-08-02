@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Development service
+  boxdbuddies-dev:
+    build:
+      context: .
+      target: development
+    ports:
+      - "1420:1420"  # Vite dev server
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/src-tauri/target  # Cache Rust builds
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
+  # Production build service (for CI/CD)
+  boxdbuddies-build:
+    build:
+      context: .
+      target: backend-builder
+    volumes:
+      - ./dist:/app/dist
+      - ./src-tauri/target:/app/src-tauri/target
+
+  # Web serve service (if you want to serve the frontend as a web app)
+  boxdbuddies-web:
+    build:
+      context: .
+      target: production
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+
+  # Database service (example - add if needed)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_DB: boxdbuddies
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
