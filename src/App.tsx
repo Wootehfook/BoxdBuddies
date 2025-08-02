@@ -228,7 +228,7 @@ function App() {
 
         for (let i = 0; i < results.length; i += batchSize) {
           const batch = results.slice(i, i + batchSize);
-          const enhancedBatch = await movieEnhancementService.enhanceMovieBatch(batch);
+          const enhancedBatch = await movieEnhancementService.enhanceMovies(batch);
           enhancedResults.push(...enhancedBatch);
           
           setEnhancementProgress({
