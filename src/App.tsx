@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { movieEnhancementService } from './services/movieEnhancementService';
 import './App.css';
@@ -32,6 +32,7 @@ interface Friend {
   username: string;
   displayName?: string;
   avatarUrl?: string;
+  watchlistCount?: number;
 }
 
 interface EnhancementProgress {
@@ -40,7 +41,7 @@ interface EnhancementProgress {
   status: string;
 }
 
-type PageType = 'setup' | 'friend-selection' | 'progress' | 'results';
+type PageType = 'setup' | 'friend-selection' | 'results';
 
 function App() {
   const [page, setPage] = useState<PageType>('setup');
@@ -48,10 +49,17 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
+  // Window state
+  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
+  
   // Setup state
   const [username, setUsername] = useState('');
   const [tmdbApiKey, setTmdbApiKey] = useState('');
   const [userProfile, setUserProfile] = useState<LetterboxdUser | null>(null);
+  const [setupProgress, setSetupProgress] = useState({
+    profileSaved: false,
+    friendsLoaded: false
+  });
   
   // Friend selection state
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -71,21 +79,152 @@ function App() {
   const [debugInfo, setDebugInfo] = useState({
     page: page,
     movieCount: 0,
-    filteredCount: 0
+    filteredCount: 0,
+    databaseDebug: '' // AI Generated: GitHub Copilot - 2025-08-01
   });
 
-  // Update debug info when state changes
+  // Update debug info when state changes and ensure window focus
   useEffect(() => {
     setDebugInfo({
       page: page,
       movieCount: comparisonResults.length,
-      filteredCount: filteredMovies.length
+      filteredCount: filteredMovies.length,
+      databaseDebug: debugInfo.databaseDebug // Preserve existing debug data
     });
+    
+    // Ensure window focus when navigating between pages
+    ensureWindowFocus();
   }, [page, comparisonResults.length, filteredMovies.length]);
+
+  // Ensure window focus on app startup
+  useEffect(() => {
+    ensureWindowFocus();
+  }, []);
+
+  // Auto-dismiss toast notifications after 3 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        clearMessages();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
+
+  // Check for existing user preferences on app startup
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      try {
+        console.log('🔧 FRONTEND: Checking for existing user preferences...');
+        const userPrefs = await invoke('load_user_preferences') as any;
+        
+        if (userPrefs.username && userPrefs.tmdb_api_key) {
+          console.log('🔧 FRONTEND: Found existing user preferences, loading user data');
+          setUsername(userPrefs.username);
+          setTmdbApiKey(userPrefs.tmdb_api_key);
+          
+          // Restore pin setting if available
+          if (userPrefs.always_on_top !== undefined) {
+            setIsAlwaysOnTop(userPrefs.always_on_top);
+            // Apply the setting to the window
+            try {
+              await invoke('set_always_on_top', { alwaysOnTop: userPrefs.always_on_top });
+            } catch (error) {
+              console.error('🔧 FRONTEND: Error setting always on top from preferences:', error);
+            }
+          }
+          
+          // Load friends list automatically with watchlist counts
+          const friendsResult = await invoke('get_friends_with_watchlist_counts') as Friend[];
+          // Filter out the current user from the friends list
+          const filteredFriends = friendsResult.filter(friend => friend.username !== userPrefs.username);
+          setFriends(filteredFriends);
+          
+          // Skip setup page and go directly to friend selection
+          setPage('friend-selection');
+          console.log('🔧 FRONTEND: Skipped setup, going to friend selection');
+        } else {
+          console.log('🔧 FRONTEND: No existing user preferences found, staying on setup page');
+        }
+      } catch (err) {
+        console.error('🔧 FRONTEND: Error checking existing user:', err);
+        // Stay on setup page if there's an error
+      }
+    };
+
+    checkExistingUser();
+  }, []);
 
   const clearMessages = () => {
     setError(null);
     setSuccess(null);
+  };
+
+  // AI Generated: GitHub Copilot - 2025-08-01
+  // Temporary debugging function to inspect database contents
+  const debugDatabase = async () => {
+    try {
+      console.log('🔧 DEBUG: debugDatabase function called');
+      setIsLoading(true);
+      setError(null); // Clear any existing errors
+      console.log('🔧 DEBUG: About to call invoke(debug_database_contents)...');
+      
+      const debugData = await invoke('debug_database_contents') as string;
+      console.log('🔧 DEBUG: Database contents received:', debugData);
+      console.log('🔧 DEBUG: Debug info type:', typeof debugData);
+      console.log('🔧 DEBUG: Debug info length:', debugData.length);
+      
+      // Store in persistent debug state
+      setDebugInfo(prev => ({
+        ...prev,
+        databaseDebug: debugData
+      }));
+      
+      console.log('🔧 DEBUG: Set debug data in debug panel');
+      
+    } catch (err) {
+      console.error('🔧 DEBUG: Error getting database info:', err);
+      setError('Error getting database info: ' + err);
+    } finally {
+      setIsLoading(false);
+      console.log('🔧 DEBUG: debugDatabase function completed');
+    }
+  };
+
+  const ensureWindowFocus = async () => {
+    try {
+      await invoke('set_window_focus');
+    } catch (err) {
+      console.warn('Failed to set window focus:', err);
+    }
+  };
+
+  const toggleAlwaysOnTop = async () => {
+    try {
+      const newState = !isAlwaysOnTop;
+      await invoke('set_always_on_top', { alwaysOnTop: newState });
+      setIsAlwaysOnTop(newState);
+      setSuccess(newState ? 'Window pinned on top' : 'Window unpinned');
+      
+      // Save the preference if we have user data
+      if (username && tmdbApiKey) {
+        try {
+          await invoke('save_user_preferences', {
+            request: {
+              username: username.trim(),
+              tmdbApiKey: tmdbApiKey.trim(),
+              alwaysOnTop: newState
+            }
+          });
+          console.log('🔧 FRONTEND: Pin preference saved');
+        } catch (saveErr) {
+          console.error('🔧 FRONTEND: Error saving pin preference:', saveErr);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle pin');
+    }
   };
 
   const validateInputs = () => {
@@ -93,10 +232,7 @@ function App() {
       setError('Please enter your Letterboxd username');
       return false;
     }
-    if (!tmdbApiKey.trim()) {
-      setError('Please enter your TMDB API key');
-      return false;
-    }
+    // TMDB API key is now optional
     return true;
   };
 
@@ -122,31 +258,63 @@ function App() {
   };
 
   const handleUserSetup = async () => {
+    console.log('🔧 FRONTEND: handleUserSetup called');
+    console.log('🔧 FRONTEND: username =', username);
+    console.log('🔧 FRONTEND: tmdbApiKey =', tmdbApiKey);
+    
     if (!validateInputs()) return;
     
     clearMessages();
     setIsLoading(true);
+    setSetupProgress({ profileSaved: false, friendsLoaded: false });
     
     try {
+      console.log('🔧 FRONTEND: About to call backendCallWithTimeout for save_user_preferences');
       await backendCallWithTimeout(async () => {
+        console.log('🔧 FRONTEND: About to invoke save_user_preferences');
         await invoke('save_user_preferences', {
-          username: username.trim(),
-          tmdb_api_key: tmdbApiKey.trim()
+          request: {
+            username: username.trim(),
+            tmdbApiKey: tmdbApiKey.trim(),
+            alwaysOnTop: isAlwaysOnTop
+          }
         });
-        
-        setSuccess('Profile saved successfully!');
-        
-        // Auto-fetch friends after successful setup
-        const friendsList = await invoke<Friend[]>('get_letterboxd_friends', {
+        console.log('🔧 FRONTEND: save_user_preferences completed successfully');
+      });
+      
+      // Profile saved successfully
+      setSetupProgress(prev => ({ ...prev, profileSaved: true }));
+      
+      // Auto-fetch friends
+      try {
+        console.log('🔧 FRONTEND: About to fetch friends');
+        await invoke<Friend[]>('scrape_letterboxd_friends', {
           username: username.trim()
         });
         
-        setFriends(friendsList);
+        // After scraping, load friends with watchlist counts
+        const friendsWithCounts = await invoke('get_friends_with_watchlist_counts') as Friend[];
+        // Filter out the current user from the friends list
+        const filteredFriends = friendsWithCounts.filter(friend => friend.username !== username.trim());
+        setFriends(filteredFriends);
+        setSetupProgress(prev => ({ ...prev, friendsLoaded: true }));
+        
+        // Proceed directly to friend selection without delay
         setPage('friend-selection');
-      });
+        
+      } catch (friendsError) {
+        console.log('🔧 FRONTEND: Friends fetch failed, but profile was saved:', friendsError);
+        // Still proceed to friends page even if auto-fetch fails
+        setPage('friend-selection');
+      }
+      
     } catch (err) {
+      console.error('🔧 FRONTEND: Error in handleUserSetup:', err);
+      console.error('🔧 FRONTEND: Error type:', typeof err);
+      console.error('🔧 FRONTEND: Error message:', err instanceof Error ? err.message : String(err));
       setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
+      console.log('🔧 FRONTEND: handleUserSetup finished, setting isLoading to false');
       setIsLoading(false);
     }
   };
@@ -162,12 +330,16 @@ function App() {
     
     try {
       await backendCallWithTimeout(async () => {
-        const friendsList = await invoke<Friend[]>('get_letterboxd_friends', {
+        await invoke<Friend[]>('scrape_letterboxd_friends', {
           username: username.trim()
         });
         
-        setFriends(friendsList);
-        setSuccess(`Found ${friendsList.length} friends!`);
+        // After scraping, load friends with watchlist counts
+        const friendsWithCounts = await invoke('get_friends_with_watchlist_counts') as Friend[];
+        // Filter out the current user from the friends list
+        const filteredFriends = friendsWithCounts.filter(friend => friend.username !== username.trim());
+        setFriends(filteredFriends);
+        setSuccess(`Found ${filteredFriends.length} friends!`);
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch friends');
@@ -188,26 +360,40 @@ function App() {
   };
 
   const handleCompareWatchlists = async () => {
+    console.log('🔧 FRONTEND: handleCompareWatchlists called, selectedFriends.length:', selectedFriends.length);
+    
     if (selectedFriends.length === 0) {
+      console.log('🔧 FRONTEND: No friends selected, showing error');
       setError('Please select at least one friend to compare with');
       return;
     }
 
+    console.log('🔧 FRONTEND: Starting comparison process...');
     clearMessages();
     setIsComparing(true);
-    setPage('progress');
     setEnhancementProgress({ completed: 0, total: 0, status: 'Starting comparison...' });
 
     try {
+      console.log('🔧 FRONTEND: About to call backendCallWithTimeout...');
       await backendCallWithTimeout(async () => {
         const friendUsernames = selectedFriends.map(f => f.username);
-        const results = await invoke<Movie[]>('compare_watchlists', {
-          friends: friendUsernames
+        console.log('🔧 FRONTEND: Calling compare_watchlists with friends:', friendUsernames);
+        
+        console.log('🔧 FRONTEND: About to invoke compare_watchlists...');
+        const compareResult = await invoke<{commonMovies: Movie[]}>('compare_watchlists', {
+          mainUsername: username || 'Wootehfook',
+          friendUsernames: friendUsernames,
+          tmdbApiKey: tmdbApiKey || null,
+          limitTo500: false
         });
+        console.log('🔧 FRONTEND: compare_watchlists returned result:', compareResult);
+        
+        const results = compareResult.commonMovies;
+        console.log('🔧 FRONTEND: extracted common movies:', results.length, 'movies');
 
         if (results.length === 0) {
+          console.log('🔧 FRONTEND: No common movies found');
           setError('No common movies found in watchlists');
-          setPage('friend-selection');
           return;
         }
 
@@ -228,7 +414,15 @@ function App() {
         for (let i = 0; i < results.length; i += batchSize) {
           const batch = results.slice(i, i + batchSize);
           const enhancedBatch = await movieEnhancementService.enhanceMovies(batch);
-          enhancedResults.push(...enhancedBatch);
+          
+          // Transform enhanced movies to match our Movie interface
+          const transformedBatch = enhancedBatch.map(movie => ({
+            ...movie,
+            friendCount: results.find(r => r.title === movie.title && r.year === movie.year)?.friendCount || 0,
+            friendList: results.find(r => r.title === movie.title && r.year === movie.year)?.friendList || []
+          }));
+          
+          enhancedResults.push(...transformedBatch);
           
           setEnhancementProgress({
             completed: enhancedResults.length,
@@ -245,9 +439,14 @@ function App() {
         setPage('results');
       }, 180000); // 3 minutes for comparison
     } catch (err) {
+      console.error('🚨 FRONTEND: Error in handleCompareWatchlists:', err);
+      console.error('🚨 FRONTEND: Error type:', typeof err);
+      console.error('🚨 FRONTEND: Error message:', err instanceof Error ? err.message : 'Unknown error');
+      console.error('🚨 FRONTEND: Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+      
       setError(err instanceof Error ? err.message : 'Failed to compare watchlists');
-      setPage('friend-selection');
     } finally {
+      console.log('🔧 FRONTEND: handleCompareWatchlists finally block, setting isComparing to false');
       setIsComparing(false);
     }
   };
@@ -279,6 +478,7 @@ function App() {
             setTmdbApiKey={setTmdbApiKey}
             onSetup={handleUserSetup}
             isLoading={isLoading}
+            setupProgress={setupProgress}
           />
         );
       case 'friend-selection':
@@ -291,14 +491,8 @@ function App() {
             onBackToSetup={handleBackToSetup}
             onRefreshFriends={handleFriendsFetch}
             isLoading={isLoading}
-          />
-        );
-      case 'progress':
-        return (
-          <ProgressPage
             isComparing={isComparing}
             enhancementProgress={enhancementProgress}
-            onBack={handleBackToFriends}
           />
         );
       case 'results':
@@ -317,35 +511,72 @@ function App() {
 
   return (
     <div className="container">
-      {/* Debug Panel - Hidden for better UX */}
-      {false && (
+      {/* Debug Panel - Enabled for debugging */}
+      {true && (
         <div className="debug-panel">
           Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered: {debugInfo.filteredCount}
+          <button onClick={debugDatabase} style={{marginLeft: '10px', fontSize: '12px'}} disabled={isLoading}>
+            Debug DB
+          </button>
+          {debugInfo.databaseDebug && (
+            <div style={{marginTop: '5px', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '100px', overflow: 'auto'}}>
+              {debugInfo.databaseDebug}
+            </div>
+          )}
         </div>
       )}
 
       <header className="app-header">
-        <h1>🎬 BoxdBuddies</h1>
-        <p>Find movies you and your friends want to watch</p>
+        <div className="header-content">
+          <div className="header-title">
+            <h1>🎬 BoxdBuddies</h1>
+            <p>Find movies you and your friends want to watch</p>
+          </div>
+          <div className="pin-container">
+            <button 
+              onClick={toggleAlwaysOnTop}
+              className={`btn-pin ${isAlwaysOnTop ? 'pinned' : ''}`}
+              title={isAlwaysOnTop ? 'Unpin window' : 'Pin window on top'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {isAlwaysOnTop ? (
+                  // Pinned (filled pushpin like 📌)
+                  <>
+                    <circle cx="12" cy="6" r="4" fill="currentColor" />
+                    <line x1="12" y1="10" x2="12" y2="21" strokeWidth="3" />
+                    <line x1="8" y1="21" x2="16" y2="21" strokeWidth="2" />
+                  </>
+                ) : (
+                  // Unpinned (outline pushpin)
+                  <>
+                    <circle cx="12" cy="6" r="4" />
+                    <line x1="12" y1="10" x2="12" y2="21" strokeWidth="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" strokeWidth="2" />
+                  </>
+                )}
+              </svg>
+            </button>
+            <span className="pin-label">Pin</span>
+          </div>
+        </div>
       </header>
 
       <main className="app-main">
-        {error && (
-          <div className="message error">
-            <p>{error}</p>
-            <button onClick={clearMessages} className="btn-close">×</button>
-          </div>
-        )}
-        
-        {success && (
-          <div className="message success">
-            <p>{success}</p>
-            <button onClick={clearMessages} className="btn-close">×</button>
-          </div>
-        )}
-
         {renderCurrentPage()}
       </main>
+      
+      {/* Subtle toast notifications */}
+      {error && (
+        <div className="toast toast-error">
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className="toast toast-success">
+          {success}
+        </div>
+      )}
     </div>
   );
 }
@@ -358,9 +589,13 @@ interface SetupPageProps {
   setTmdbApiKey: (value: string) => void;
   onSetup: () => void;
   isLoading: boolean;
+  setupProgress: {
+    profileSaved: boolean;
+    friendsLoaded: boolean;
+  };
 }
 
-function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, isLoading }: SetupPageProps) {
+function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, isLoading, setupProgress }: SetupPageProps) {
   return (
     <section className="page setup-page">
       <div className="page-content">
@@ -381,13 +616,13 @@ function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, 
           </div>
           
           <div className="form-group">
-            <label htmlFor="tmdb-key">TMDB API Key</label>
+            <label htmlFor="tmdb-key">TMDB API Key (Optional)</label>
             <input
               id="tmdb-key"
               type="password"
               value={tmdbApiKey}
               onChange={(e) => setTmdbApiKey(e.target.value)}
-              placeholder="Your TMDB API key"
+              placeholder="Your TMDB API key (optional - for enhanced movie data)"
               disabled={isLoading}
             />
             <small>
@@ -396,6 +631,28 @@ function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, 
               </a>
             </small>
           </div>
+          
+          {/* Progress indicators */}
+          {isLoading && (
+            <div className="setup-progress">
+              <div className="progress-item">
+                <span className="progress-icon">
+                  {setupProgress.profileSaved ? '✅' : '⏳'}
+                </span>
+                <span className="progress-text">
+                  {setupProgress.profileSaved ? 'Profile saved' : 'Saving profile...'}
+                </span>
+              </div>
+              <div className="progress-item">
+                <span className="progress-icon">
+                  {setupProgress.friendsLoaded ? '✅' : setupProgress.profileSaved ? '⏳' : '⏸️'}
+                </span>
+                <span className="progress-text">
+                  {setupProgress.friendsLoaded ? 'Friends loaded' : setupProgress.profileSaved ? 'Loading friends...' : 'Loading friends'}
+                </span>
+              </div>
+            </div>
+          )}
           
           <button 
             onClick={onSetup} 
@@ -419,6 +676,8 @@ interface FriendSelectionPageProps {
   onBackToSetup: () => void;
   onRefreshFriends: () => void;
   isLoading: boolean;
+  isComparing: boolean;
+  enhancementProgress: EnhancementProgress;
 }
 
 function FriendSelectionPage({ 
@@ -428,17 +687,54 @@ function FriendSelectionPage({
   onCompareWatchlists, 
   onBackToSetup, 
   onRefreshFriends,
-  isLoading 
+  isLoading,
+  isComparing,
+  enhancementProgress
 }: FriendSelectionPageProps) {
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const progressPercent = enhancementProgress.total > 0 
+    ? Math.round((enhancementProgress.completed / enhancementProgress.total) * 100) 
+    : 0;
+
+  useEffect(() => {
+    if (progressBarRef.current && isComparing) {
+      const fillElement = progressBarRef.current.querySelector('.progress-bar-fill') as HTMLElement;
+      if (fillElement) {
+        fillElement.style.width = `${progressPercent}%`;
+      }
+    }
+  }, [progressPercent, isComparing]);
+
   return (
     <section className="page friends-page">
       <div className="page-header">
-        <button onClick={onBackToSetup} className="btn btn-secondary">
-          ← Back to Setup
+        <button onClick={onBackToSetup} className="btn btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Setup
         </button>
         <h2>Select Friends</h2>
-        <button onClick={onRefreshFriends} disabled={isLoading} className="btn btn-secondary">
-          {isLoading ? 'Loading...' : '🔄 Refresh'}
+        <button onClick={onRefreshFriends} disabled={isLoading} className="btn btn-secondary btn-icon">
+          {isLoading ? (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.36 2.64"/>
+                <path d="M21 4v4h-4"/>
+              </svg>
+              Loading...
+            </>
+          ) : (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M3 21v-5h5"/>
+              </svg>
+              Refresh
+            </>
+          )}
         </button>
       </div>
       
@@ -453,7 +749,9 @@ function FriendSelectionPage({
       ) : (
         <>
           <div className="friends-grid">
-            {friends.map((friend) => (
+            {friends
+              .sort((a, b) => a.username.localeCompare(b.username))
+              .map((friend) => (
               <div
                 key={friend.username}
                 className={`friend-card ${selectedFriends.some(f => f.username === friend.username) ? 'selected' : ''}`}
@@ -469,6 +767,14 @@ function FriendSelectionPage({
                 <div className="friend-info">
                   <h3>{friend.displayName || friend.username}</h3>
                   <p>@{friend.username}</p>
+                  {friend.watchlistCount !== undefined && (
+                    <p className="watchlist-count">
+                      {friend.watchlistCount === 0 
+                        ? "Watchlist: NA" 
+                        : `Watchlist: ${friend.watchlistCount} Film${friend.watchlistCount === 1 ? '' : 's'}`
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -476,63 +782,37 @@ function FriendSelectionPage({
           
           <div className="compare-actions">
             <p>{selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected</p>
-            <button
-              onClick={onCompareWatchlists}
-              disabled={selectedFriends.length === 0}
-              className="btn btn-primary"
-            >
-              Compare Watchlists
-            </button>
+            {isComparing ? (
+              <div className="progress-button-container">
+                <div className="progress-info">
+                  <h3>{enhancementProgress.status}</h3>
+                  <p>
+                    {enhancementProgress.completed} of {enhancementProgress.total} movies processed
+                  </p>
+                </div>
+                <div 
+                  ref={progressBarRef}
+                  className="progress-bar"
+                >
+                  <div className="progress-bar-fill" />
+                </div>
+                <div className="progress-text">
+                  {progressPercent}% complete
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={onCompareWatchlists}
+                disabled={selectedFriends.length === 0}
+                className="btn btn-primary"
+              >
+                Compare Watchlists
+              </button>
+            )}
           </div>
         </>
       )}
       </div> {/* Close page-content */}
-    </section>
-  );
-}
-
-// Progress Page Component
-interface ProgressPageProps {
-  isComparing: boolean;
-  enhancementProgress: { completed: number; total: number; status: string };
-  onBack: () => void;
-}
-
-function ProgressPage({ isComparing, enhancementProgress, onBack }: ProgressPageProps) {
-  const progressPercent = enhancementProgress.total > 0 
-    ? Math.round((enhancementProgress.completed / enhancementProgress.total) * 100) 
-    : 0;
-
-  return (
-    <section className="page progress-page">
-      <div className="page-header">
-        <button onClick={onBack} className="btn btn-secondary" disabled={isComparing}>
-          ← Back to Friends
-        </button>
-        <h2>Comparing Watchlists</h2>
-      </div>
-      
-      <div className="page-content">
-        <div className="progress-container">
-          <div className="progress-info">
-            <h3>{enhancementProgress.status}</h3>
-            <p>
-              {enhancementProgress.completed} of {enhancementProgress.total} movies processed
-            </p>
-          </div>
-          
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          
-          <div className="progress-percent">
-            {progressPercent}% complete
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
@@ -573,11 +853,17 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
   return (
     <section className="page results-page">
       <div className="page-header">
-        <button onClick={onBack} className="btn btn-secondary">
-          ← Back to Friends
+        <button onClick={onBack} className="btn btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Friends
         </button>
         <h2>Movie Matches</h2>
-        <button onClick={onNewComparison} className="btn btn-secondary">
+        <button onClick={onNewComparison} className="btn btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
           New Comparison
         </button>
       </div>
@@ -628,10 +914,10 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
                 className="movie-card"
               >
                 <div 
-                  className="movie-poster-section"
-                  style={{
-                    backgroundImage: movie.posterPath ? `url(${movie.posterPath})` : 'none'
-                  }}
+                  className={`movie-poster-section ${movie.posterPath ? 'has-poster' : 'no-poster'}`}
+                  {...(movie.posterPath && {
+                    style: { backgroundImage: `url(${movie.posterPath})` }
+                  })}
                 />
                 
                 <div className="movie-info">
