@@ -2,12 +2,33 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, Manager};
 use scraper::{Html, Selector};
 use rusqlite::{Connection, Result as SqliteResult};
 use chrono::Utc;
+
+// Debug logging to workspace file
+fn log_debug(message: &str) {
+    let workspace_path = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let log_file_path = workspace_path.join("debug.log");
+    
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+    let log_entry = format!("[{}] {}\n", timestamp, message);
+    
+    // Print to console as well
+    println!("{}", message);
+    
+    // Write to log file
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_file_path) {
+        let _ = file.write_all(log_entry.as_bytes());
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct LetterboxdUser {
@@ -181,6 +202,8 @@ fn get_database_path() -> Result<PathBuf, String> {
 
 #[command]
 async fn save_user_preferences(username: String, tmdb_api_key: String) -> Result<(), String> {
+    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: Called with username='{}', tmdb_api_key='{}'", username.trim(), tmdb_api_key.trim()));
+    
     let preferences = UserPreferences {
         username: if username.trim().is_empty() { None } else { Some(username) },
         tmdb_api_key: if tmdb_api_key.trim().is_empty() { None } else { Some(tmdb_api_key) },
@@ -190,14 +213,18 @@ async fn save_user_preferences(username: String, tmdb_api_key: String) -> Result
         window_height: None,
     };
     
+    log_debug("🔧 SAVE_USER_PREFERENCES: Attempting to get preferences path...");
     let preferences_path = get_preferences_path()?;
+    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: Preferences path: {:?}", preferences_path));
+    
     let json_data = serde_json::to_string_pretty(&preferences)
         .map_err(|e| format!("Failed to serialize preferences: {}", e))?;
+    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: Serialized preferences: {}", json_data));
     
     fs::write(&preferences_path, json_data)
         .map_err(|e| format!("Failed to write preferences file: {}", e))?;
     
-    println!("Saved user preferences to: {:?}", preferences_path);
+    log_debug(&format!("🔧 SAVE_USER_PREFERENCES: SUCCESS - Saved user preferences to: {:?}", preferences_path));
     Ok(())
 }
 
