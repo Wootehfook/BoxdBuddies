@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to run workflow on'
+        description: "Branch to run workflow on"
         required: false
-        default: 'main'
+        default: "main"
 
 permissions:
   contents: read
@@ -24,6 +24,8 @@ jobs:
   frontend-checks:
     name: Frontend Quality Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +53,8 @@ jobs:
   backend-checks:
     name: Backend Quality Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +83,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -104,6 +110,8 @@ jobs:
   codacy-analysis:
     name: Code Quality Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -144,6 +152,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      actions: write
 
     steps:
       - uses: actions/checkout@v4
@@ -181,6 +192,8 @@ jobs:
   license-compliance:
     name: License Compliance Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

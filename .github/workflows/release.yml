@@ -19,6 +19,9 @@ jobs:
   # Build for Windows
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +49,9 @@ jobs:
   # Build for macOS
   build-macos:
     runs-on: macos-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -73,6 +79,9 @@ jobs:
   # Build for Linux
   build-linux:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -118,6 +127,9 @@ jobs:
   create-release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
 
