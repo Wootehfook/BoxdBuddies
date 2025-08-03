@@ -1,0 +1,62 @@
+{
+  "name": "Integration Gateway (Develop Branch)",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/develop"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 1,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "required_status_checks": [
+          {
+            "context": "Frontend Quality Checks",
+            "integration_id": null
+          },
+          {
+            "context": "Backend Quality Checks",
+            "integration_id": null
+          },
+          {
+            "context": "Security Audit",
+            "integration_id": null
+          },
+          {
+            "context": "Code Quality Analysis",
+            "integration_id": null
+          }
+        ],
+        "strict_required_status_checks_policy": true
+      }
+    },
+    {
+      "type": "non_fast_forward",
+      "parameters": {}
+    },
+    {
+      "type": "deletion",
+      "parameters": {}
+    },
+    {
+      "type": "max_file_size",
+      "parameters": {
+        "max_file_size": 100
+      }
+    }
+  ],
+  "bypass_actors": []
+}
