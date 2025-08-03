@@ -208,3 +208,4 @@ jobs:
             echo "Missing copyright notices in TypeScript files"
           fi
           echo "License compliance check passed"
+          echo "License compliance check passed"

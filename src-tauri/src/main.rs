@@ -27,8 +27,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, Manager};
-
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-03
 // Debug flag to control verbose logging - set to false for production builds
 const DEBUG_LOGGING: bool = false;
 
