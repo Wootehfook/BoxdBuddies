@@ -64,6 +64,19 @@ Special thanks to:
 - **Tauri Community** for the excellent cross-platform framework
 - **Open Source Contributors** for the amazing ecosystem of tools and libraries
 
+### 🤖 AI Development Transparency
+
+This project represents a collaboration between human creativity and AI assistance:
+
+- **Concept & Direction**: Originated by Woo T. Fook (idea, requirements, testing, project vision)
+- **Implementation**: Substantial portions of the codebase developed with **GitHub Copilot** assistance
+- **AI Attribution**: All AI-generated code sections are clearly marked with timestamps and model identification
+- **Quality Assurance**: Human oversight for architecture decisions, testing, and final validation
+
+The codebase includes comprehensive AI attribution comments throughout core files including the React frontend (App.tsx), Rust backend (main.rs), and testing infrastructure. This represents a modern development approach combining human insight with AI productivity tools.
+
+For transparency about specific AI contributions, developers can review the timestamped "AI Generated: GitHub Copilot" comments throughout the source code.
+
 ### 📝 License
 
 BoxdBuddies is licensed under the [AGPL-3.0 License](LICENSE) with commercial use restrictions. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for dependency licenses.

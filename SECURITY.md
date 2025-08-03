@@ -4,8 +4,8 @@
 
 BoxdBuddies is currently in active development. Security updates will be provided for:
 
-| Version | Supported          |
-| ------- | ------------------ |
+| Version | Supported               |
+| ------- | ----------------------- |
 | 0.1.x   | ✅ **Currently Active** |
 
 ## 🛡️ Security Features
@@ -30,8 +30,9 @@ BoxdBuddies is currently in active development. Security updates will be provide
 
 ### How to Report
 
-1. **Email**: Send details to [your-email] (replace with actual contact)
-2. **Include**:
+1. **GitHub Security Advisories**: Use the "Security" tab → "Report a vulnerability" (preferred)
+2. **Email**: For sensitive issues, contact via GitHub profile
+3. **Include**:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact assessment
@@ -47,6 +48,7 @@ BoxdBuddies is currently in active development. Security updates will be provide
 ## 🔍 Security Scope
 
 ### In Scope
+
 - Application security vulnerabilities
 - Data handling issues
 - Authentication/authorization flaws
@@ -54,6 +56,7 @@ BoxdBuddies is currently in active development. Security updates will be provide
 - Dependency vulnerabilities
 
 ### Out of Scope
+
 - Social engineering attacks
 - Physical security issues
 - Denial of service attacks
@@ -62,6 +65,7 @@ BoxdBuddies is currently in active development. Security updates will be provide
 ## 🛠️ Security Best Practices for Contributors
 
 ### Code Security
+
 - Never commit API keys, passwords, or sensitive data
 - Use parameterized queries for database operations
 - Validate all external inputs
@@ -69,12 +73,14 @@ BoxdBuddies is currently in active development. Security updates will be provide
 - Run security linters and dependency checks
 
 ### Dependencies
+
 - Keep dependencies updated
 - Regularly run `npm audit` and `cargo audit`
 - Review new dependencies for security issues
 - Use minimal required permissions
 
 ### Environment
+
 - Use `.env` files for local development
 - Never commit `.env` files to version control
 - Rotate API keys regularly
@@ -122,4 +128,4 @@ We appreciate security researchers who help improve BoxdBuddies. With your permi
 
 ---
 
-*Last Updated: August 2, 2025*
+_Last Updated: August 2, 2025_
