@@ -1,0 +1,945 @@
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:867:22
+    |
+867 |         .map_err(|e| format!("Failed to query watchlist: {}", e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+    = note: `#[warn(clippy::uninlined_format_args)]` on by default
+help: change this to
+    |
+867 -         .map_err(|e| format!("Failed to query watchlist: {}", e))?;
+867 +         .map_err(|e| format!("Failed to query watchlist: {e}"))?;
+    |
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:887:28
+    |
+887 |                   return Err(format!(
+    |  ____________________________^
+888 | |                     "Failed to process movie at row {}: {}",
+889 | |                     row_count, e
+890 | |                 ));
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:923:5
+    |
+923 | /     println!(
+924 | |         "Ensuring friend '{}' exists in friends table...",
+925 | |         friend_username
+926 | |     );
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:930:26
+    |
+930 |             .map_err(|e| format!("Failed to start friend transaction: {}", e))?;
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+    |
+930 -             .map_err(|e| format!("Failed to start friend transaction: {}", e))?;
+930 +             .map_err(|e| format!("Failed to start friend transaction: {e}"))?;
+    |
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:934:23
+    |
+934 |         ).map_err(|e| format!("Failed to ensure friend exists: {}", e))?;
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+    |
+934 -         ).map_err(|e| format!("Failed to ensure friend exists: {}", e))?;
+934 +         ).map_err(|e| format!("Failed to ensure friend exists: {e}"))?;
+    |
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:937:26
+    |
+937 |             .map_err(|e| format!("Failed to commit friend transaction: {}", e))?;
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+    |
+937 -             .map_err(|e| format!("Failed to commit friend transaction: {}", e))?;
+937 +             .map_err(|e| format!("Failed to commit friend transaction: {e}"))?;
+    |
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:958:28
+    |
+958 |           let delete_query = format!(
+    |  ____________________________^
+959 | |             "DELETE FROM friend_watchlists WHERE friend_username = ? AND letterboxd_slug NOT IN ({})",
+960 | |             placeholders
+961 | |         );
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+   --> src/main.rs:970:26
+    |
+970 |             .map_err(|e| format!("Failed to remove old movies: {}", e))?;
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+    |
+970 -             .map_err(|e| format!("Failed to remove old movies: {}", e))?;
+970 +             .map_err(|e| format!("Failed to remove old movies: {e}"))?;
+    |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1037:26
+     |
+1037 |             .map_err(|e| format!("Failed to start sync transaction: {}", e))?;
+     |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1037 -             .map_err(|e| format!("Failed to start sync transaction: {}", e))?;
+1037 +             .map_err(|e| format!("Failed to start sync transaction: {e}"))?;
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1045:26
+     |
+1045 |             .map_err(|e| format!("Failed to update sync status: {}", e))?;
+     |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1045 -             .map_err(|e| format!("Failed to update sync status: {}", e))?;
+1045 +             .map_err(|e| format!("Failed to update sync status: {e}"))?;
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1048:26
+     |
+1048 |             .map_err(|e| format!("Failed to commit sync transaction: {}", e))?;
+     |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1048 -             .map_err(|e| format!("Failed to commit sync transaction: {}", e))?;
+1048 +             .map_err(|e| format!("Failed to commit sync transaction: {e}"))?;
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1094:17
+     |
+1094 |             Err(format!("Failed to query sync status: {}", e))
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1094 -             Err(format!("Failed to query sync status: {}", e))
+1094 +             Err(format!("Failed to query sync status: {e}"))
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1143:5
+     |
+1143 | /     println!(
+1144 | |         "🔥 COUNT CHECK: Getting current watchlist count for {} from Letterboxd",
+1145 | |         username
+1146 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1167:22
+     |
+1167 |         .map_err(|e| format!("Failed to fetch watchlist page: {}", e))?;
+     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1167 -         .map_err(|e| format!("Failed to fetch watchlist page: {}", e))?;
+1167 +         .map_err(|e| format!("Failed to fetch watchlist page: {e}"))?;
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1170:20
+     |
+1170 |         return Err(format!("Watchlist not found for user '{}'", username));
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1170 -         return Err(format!("Watchlist not found for user '{}'", username));
+1170 +         return Err(format!("Watchlist not found for user '{username}'"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1191:5
+     |
+1191 | /     println!(
+1192 | |         "🔥 COUNT CHECK: Found {} actual watchlist movies on page 1",
+1193 | |         film_count
+1194 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1204:28
+     |
+1204 |               let page_url = format!(
+     |  ____________________________^
+1205 | |                 "https://letterboxd.com/{}/watchlist/page/{}/",
+1206 | |                 username, page
+1207 | |             );
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1236:9
+     |
+1236 | /         println!(
+1237 | |             "🔥 COUNT CHECK: Single page watchlist with {} movies",
+1238 | |             film_count
+1239 | |         );
+     | |_________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1273:21
+     |
+1273 | /                     println!(
+1274 | |                         "🔥 CACHE CHECK: Cache too old ({} hours), not fresh",
+1275 | |                         age_hours
+1276 | |                     );
+     | |_____________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1283:21
+     |
+1283 |                     println!("🔥 CACHE CHECK: Cache is recent ({} hours), trusting without count verification", age_hours);
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1283 -                     println!("🔥 CACHE CHECK: Cache is recent ({} hours), trusting without count verification", age_hours);
+1283 +                     println!("🔥 CACHE CHECK: Cache is recent ({age_hours} hours), trusting without count verification");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1293:25
+     |
+1293 | /                         println!(
+1294 | |                             "🔥 CACHE CHECK: Current Letterboxd count: {}",
+1295 | |                             current_count
+1296 | |                         );
+     | |_________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1298:25
+     |
+1298 | /                         println!(
+1299 | |                             "🔥 CACHE CHECK: Cache age: {} hours, counts match: {}, is_fresh: {}",
+1300 | |                             age_hours, counts_match, counts_match
+1301 | |                         );
+     | |_________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1305:25
+     |
+1305 |                         println!("🔥 CACHE CHECK: Failed to get current count, assuming cache is fresh: {}", e);
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1305 -                         println!("🔥 CACHE CHECK: Failed to get current count, assuming cache is fresh: {}", e);
+1305 +                         println!("🔥 CACHE CHECK: Failed to get current count, assuming cache is fresh: {e}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1316:13
+     |
+1316 | /             println!(
+1317 | |                 "🔥 CACHE CHECK: No sync status found for user {}",
+1318 | |                 friend_username
+1319 | |             );
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1330:5
+     |
+1330 | /     println!(
+1331 | |         "🔥 CACHE CHECK: Checking cache freshness for {} (max age: {} hours)",
+1332 | |         friend_username, max_age_hours
+1333 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1347:17
+     |
+1347 | /                 println!(
+1348 | |                     "🔥 CACHE CHECK: Cache age: {} hours, is_fresh: {}",
+1349 | |                     age_hours, is_fresh
+1350 | |                 );
+     | |_________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1358:13
+     |
+1358 | /             println!(
+1359 | |                 "🔥 CACHE CHECK: No sync status found for user {}",
+1360 | |                 friend_username
+1361 | |             );
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1413:13
+     |
+1413 | /             println!(
+1414 | |                 "Scraping failed for {}, trying cached data: {}",
+1415 | |                 friend_username, e
+1416 | |             );
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1463:20
+     |
+1463 |         return Err(format!("User '{}' not found on Letterboxd", username));
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1463 -         return Err(format!("User '{}' not found on Letterboxd", username));
+1463 +         return Err(format!("User '{username}' not found on Letterboxd"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1564:24
+     |
+1564 |     let selector_str = format!("a[href*='/{}/'] .value", link_type);
+     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1564 -     let selector_str = format!("a[href*='/{}/'] .value", link_type);
+1564 +     let selector_str = format!("a[href*='/{link_type}/'] .value");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1607:13
+     |
+1607 | /             format!(
+1608 | |                 "https://letterboxd.com/{}/following/page/{}/",
+1609 | |                 username, page
+1610 | |             )
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1624:28
+     |
+1624 |                 return Err(format!("Following page not found for user '{}'", username));
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1624 -                 return Err(format!("Following page not found for user '{}'", username));
+1624 +                 return Err(format!("Following page not found for user '{username}'"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1681:9
+     |
+1681 |         eprintln!("🚨 Error saving friends to database: {}", e);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1681 -         eprintln!("🚨 Error saving friends to database: {}", e);
+1681 +         eprintln!("🚨 Error saving friends to database: {e}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1908:5
+     |
+1908 | /     println!(
+1909 | |         "Comparing watchlists for {} with friends: {:?}",
+1910 | |         main_username, friend_usernames
+1911 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1951:9
+     |
+1951 | /         println!(
+1952 | |             "DEBUG: Filtered out main user '{}' from friends list",
+1953 | |             main_username
+1954 | |         );
+     | |_________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1955:9
+     |
+1955 |         println!("DEBUG: Original friends: {:?}", friend_usernames);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1955 -         println!("DEBUG: Original friends: {:?}", friend_usernames);
+1955 +         println!("DEBUG: Original friends: {friend_usernames:?}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:1956:9
+     |
+1956 |         println!("DEBUG: Filtered friends: {:?}", filtered_friends);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+1956 -         println!("DEBUG: Filtered friends: {:?}", filtered_friends);
+1956 +         println!("DEBUG: Filtered friends: {filtered_friends:?}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2036:9
+     |
+2036 | /         println!(
+2037 | |             "🔍 DEBUG: First 5 movies from main user ({}):",
+2038 | |             main_username
+2039 | |         );
+     | |_________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2116:13
+     |
+2116 | /             format!(
+2117 | |                 "https://letterboxd.com/{}/watchlist/page/{}/",
+2118 | |                 username, page
+2119 | |             )
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2133:28
+     |
+2133 |                 return Err(format!("Watchlist not found for user '{}'", username));
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2133 -                 return Err(format!("Watchlist not found for user '{}'", username));
+2133 +                 return Err(format!("Watchlist not found for user '{username}'"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2176:13
+     |
+2176 |             println!("  Total '/film/' occurrences: {}", film_count);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2176 -             println!("  Total '/film/' occurrences: {}", film_count);
+2176 +             println!("  Total '/film/' occurrences: {film_count}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2212:9
+     |
+2212 |         println!("HTML start sample:\n{}\n", sample_start);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2212 -         println!("HTML start sample:\n{}\n", sample_start);
+2212 +         println!("HTML start sample:\n{sample_start}\n");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2214:13
+     |
+2214 |             println!("HTML end sample:\n{}\n", sample_end);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2214 -             println!("HTML end sample:\n{}\n", sample_end);
+2214 +             println!("HTML end sample:\n{sample_end}\n");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2227:17
+     |
+2227 |                 println!("✓ Found movie '{}' in HTML", pattern);
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2227 -                 println!("✓ Found movie '{}' in HTML", pattern);
+2227 +                 println!("✓ Found movie '{pattern}' in HTML");
+     |
+
+warning: this expression creates a reference which is immediately dereferenced by the compiler
+    --> src/main.rs:2330:43
+     |
+2330 |         movies = extract_movies_from_text(&document)?;
+     |                                           ^^^^^^^^^ help: change this to: `document`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_borrow
+     = note: `#[warn(clippy::needless_borrow)]` on by default
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2424:21
+     |
+2424 |                     println!("DEBUG: Found movie alt text: '{}'", alt_text);
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2424 -                     println!("DEBUG: Found movie alt text: '{}'", alt_text);
+2424 +                     println!("DEBUG: Found movie alt text: '{alt_text}'");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2430:25
+     |
+2430 | /                         println!(
+2431 | |                             "DEBUG: Extracted movie - Title: '{}', Year: {:?}",
+2432 | |                             title, year
+2433 | |                         );
+     | |_________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2481:25
+     |
+2481 |                         println!("DEBUG: Found movie via target-link - Alt: '{}'", alt_text);
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2481 -                         println!("DEBUG: Found movie via target-link - Alt: '{}'", alt_text);
+2481 +                         println!("DEBUG: Found movie via target-link - Alt: '{alt_text}'");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2486:29
+     |
+2486 | / ...                   println!(
+2487 | | ...                       "DEBUG: Extracted movie via target-link - Title: '{}', Year: {:?}",
+2488 | | ...                       title, year
+2489 | | ...                   );
+     | |_______________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2731:5
+     |
+2731 | /     println!(
+2732 | |         "🎬 TMDB SEARCH: Searching for '{}' (year: {:?})",
+2733 | |         title, year
+2734 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2753:9
+     |
+2753 |         println!("🎬 TMDB SEARCH: No results found for '{}'", title);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2753 -         println!("🎬 TMDB SEARCH: No results found for '{}'", title);
+2753 +         println!("🎬 TMDB SEARCH: No results found for '{title}'");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2901:9
+     |
+2901 |         println!("🎬 TMDB CREDITS: Found director '{}'", director_name);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2901 -         println!("🎬 TMDB CREDITS: Found director '{}'", director_name);
+2901 +         println!("🎬 TMDB CREDITS: Found director '{director_name}'");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:2936:13
+     |
+2936 |             println!("🎬 CACHE DEBUG: Parsing year from date: '{}'", date);
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+2936 -             println!("🎬 CACHE DEBUG: Parsing year from date: '{}'", date);
+2936 +             println!("🎬 CACHE DEBUG: Parsing year from date: '{date}'");
+     |
+
+error: this loop never actually loops
+    --> src/main.rs:3110:5
+     |
+3110 | /     for movie in movie_iter {
+3111 | |         return Ok(Some(movie?));
+3112 | |     }
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#never_loop
+     = note: `#[deny(clippy::never_loop)]` on by default
+help: if you need the first element of the iterator, try writing
+     |
+3110 -     for movie in movie_iter {
+3110 +     if let Some(movie) = movie_iter.next() {
+     |
+
+warning: enclosing `Ok` and `?` operator are unneeded
+    --> src/main.rs:3138:15
+     |
+3138 |         |row| Ok(row.get::<_, i32>(0)?),
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_question_mark
+     = note: `#[warn(clippy::needless_question_mark)]` on by default
+help: remove the enclosing `Ok` and `?` operator
+     |
+3138 -         |row| Ok(row.get::<_, i32>(0)?),
+3138 +         |row| row.get::<_, i32>(0),
+     |
+
+error: this loop never actually loops
+    --> src/main.rs:3141:5
+     |
+3141 | /     for tmdb_id in tmdb_id_iter {
+3142 | |         return Ok(Some(tmdb_id?));
+3143 | |     }
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#never_loop
+help: if you need the first element of the iterator, try writing
+     |
+3141 -     for tmdb_id in tmdb_id_iter {
+3141 +     if let Some(tmdb_id) = tmdb_id_iter.next() {
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3326:17
+     |
+3326 |                 println!("🔥 GENRE PARSE: Failed to parse genre_ids: {}", e);
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3326 -                 println!("🔥 GENRE PARSE: Failed to parse genre_ids: {}", e);
+3326 +                 println!("🔥 GENRE PARSE: Failed to parse genre_ids: {e}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3545:29
+     |
+3545 | ...                   println!("🎬 TMDB ENHANCE: Warning - failed to cache movie: {}", e);
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3545 -                             println!("🎬 TMDB ENHANCE: Warning - failed to cache movie: {}", e);
+3545 +                             println!("🎬 TMDB ENHANCE: Warning - failed to cache movie: {e}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3555:29
+     |
+3555 | ...                   println!("🎬 TMDB ENHANCE: Warning - failed to update TMDB ID: {}", e);
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3555 -                             println!("🎬 TMDB ENHANCE: Warning - failed to update TMDB ID: {}", e);
+3555 +                             println!("🎬 TMDB ENHANCE: Warning - failed to update TMDB ID: {e}");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3631:25
+     |
+3631 |         n if n <= 15 => format!("👥👥👥👥👥+ ({})", n), // More than 10
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3631 -         n if n <= 15 => format!("👥👥👥👥👥+ ({})", n), // More than 10
+3631 +         n if n <= 15 => format!("👥👥👥👥👥+ ({n})"), // More than 10
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3632:25
+     |
+3632 |         n if n <= 25 => format!("🎭🎭🎭 ({})", n), // Theater masks for large groups
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3632 -         n if n <= 25 => format!("🎭🎭🎭 ({})", n), // Theater masks for large groups
+3632 +         n if n <= 25 => format!("🎭🎭🎭 ({n})"), // Theater masks for large groups
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3633:25
+     |
+3633 |         n if n <= 50 => format!("🏟️ ({})", n), // Stadium for very large groups
+     |                         ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3633 -         n if n <= 50 => format!("🏟️ ({})", n), // Stadium for very large groups
+3633 +         n if n <= 50 => format!("🏟️ ({n})"), // Stadium for very large groups
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3634:14
+     |
+3634 |         n => format!("🌍 ({})", n),     // Globe for massive groups
+     |              ^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3634 -         n => format!("🌍 ({})", n),     // Globe for massive groups
+3634 +         n => format!("🌍 ({n})"),     // Globe for massive groups
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3686:5
+     |
+3686 | /     println!(
+3687 | |         "DEBUG: get_watchlist_size for {}: found {} movies on first page",
+3688 | |         username, movies_on_page
+3689 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3706:13
+     |
+3706 | /             println!(
+3707 | |                 "DEBUG: get_watchlist_size for {}: detected max page {}",
+3708 | |                 username, max_page
+3709 | |             );
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3716:17
+     |
+3716 | /                 println!(
+3717 | |                     "DEBUG: get_watchlist_size for {}: estimated total {}",
+3718 | |                     username, estimated_total
+3719 | |                 );
+     | |_________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3724:17
+     |
+3724 | /                 println!(
+3725 | |                     "DEBUG: get_watchlist_size for {}: estimated total (no pagination) {}",
+3726 | |                     username, estimated_total
+3727 | |                 );
+     | |_________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3734:5
+     |
+3734 | /     println!(
+3735 | |         "DEBUG: get_watchlist_size for {}: small watchlist, actual count {}",
+3736 | |         username, movies_on_page
+3737 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3745:20
+     |
+3745 |     let mut info = format!("Database path: {:?}\n", db_path);
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3745 -     let mut info = format!("Database path: {:?}\n", db_path);
+3745 +     let mut info = format!("Database path: {db_path:?}\n");
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3769:32
+     |
+3769 |                 info.push_str(&format!("🎬 Movies in cache: {}\n", count));
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3769 -                 info.push_str(&format!("🎬 Movies in cache: {}\n", count));
+3769 +                 info.push_str(&format!("🎬 Movies in cache: {count}\n"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3776:32
+     |
+3776 |                 info.push_str(&format!("👥 Friends in database: {}\n", count));
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3776 -                 info.push_str(&format!("👥 Friends in database: {}\n", count));
+3776 +                 info.push_str(&format!("👥 Friends in database: {count}\n"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3785:32
+     |
+3785 |                 info.push_str(&format!("🖼️ Movies with posters: {}\n", count));
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3785 -                 info.push_str(&format!("🖼️ Movies with posters: {}\n", count));
+3785 +                 info.push_str(&format!("🖼️ Movies with posters: {count}\n"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3789:28
+     |
+3789 |             info.push_str(&format!("❌ Failed to connect to database: {}\n", e));
+     |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3789 -             info.push_str(&format!("❌ Failed to connect to database: {}\n", e));
+3789 +             info.push_str(&format!("❌ Failed to connect to database: {e}\n"));
+     |
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3820:5
+     |
+3820 |     println!("🗑️ CLEAR CACHE: Clearing cache for movie '{}'", movie_title);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+help: change this to
+     |
+3820 -     println!("🗑️ CLEAR CACHE: Clearing cache for movie '{}'", movie_title);
+3820 +     println!("🗑️ CLEAR CACHE: Clearing cache for movie '{movie_title}'");
+     |
+
+warning: the borrowed expression implements the required traits
+    --> src/main.rs:3826:13
+     |
+3826 |             &[&movie_title as &dyn rusqlite::ToSql],
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: change this to: `[&movie_title as &dyn rusqlite::ToSql]`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_borrows_for_generic_args
+     = note: `#[warn(clippy::needless_borrows_for_generic_args)]` on by default
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3830:5
+     |
+3830 | /     println!(
+3831 | |         "🗑️ CLEAR CACHE: Updated {} rows in friend_watchlists for '{}'",
+3832 | |         watchlist_updated, movie_title
+3833 | |     );
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+warning: variables can be used directly in the `format!` string
+    --> src/main.rs:3835:8
+     |
+3835 |       Ok(format!(
+     |  ________^
+3836 | |         "Cleared cache for movie: {} (updated {} watchlist entries)",
+3837 | |         movie_title, watchlist_updated
+3838 | |     ))
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#uninlined_format_args
+
+error: could not compile `boxdbuddies` (bin "boxdbuddies") due to 2 previous errors; 75 warnings emitted

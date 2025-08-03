@@ -14,6 +14,7 @@ import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/shell";
 import "./App.css";
+import logger from "./utils/logger";
 
 // AI Generated: GitHub Copilot - 2025-01-23
 
@@ -136,6 +137,13 @@ interface Friend {
   watchlistCount?: number;
 }
 
+// AI Generated: GitHub Copilot - 2025-08-03
+interface UserPreferences {
+  username: string;
+  tmdb_api_key: string;
+  always_on_top?: boolean;
+}
+
 interface EnhancementProgress {
   completed: number;
   total: number;
@@ -203,12 +211,14 @@ function App() {
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
-        console.log("🔧 FRONTEND: Checking for existing user preferences...");
-        const userPrefs = (await invoke("load_user_preferences")) as any;
+        logger.debug("FRONTEND: Checking for existing user preferences...");
+        const userPrefs = (await invoke(
+          "load_user_preferences"
+        )) as UserPreferences;
 
         if (userPrefs.username && userPrefs.tmdb_api_key) {
-          console.log(
-            "🔧 FRONTEND: Found existing user preferences, loading user data"
+          logger.debug(
+            "FRONTEND: Found existing user preferences, loading user data"
           );
           setUsername(userPrefs.username);
           setTmdbApiKey(userPrefs.tmdb_api_key);
@@ -241,10 +251,10 @@ function App() {
 
           // Skip setup page and go directly to friend selection
           setPage("friend-selection");
-          console.log("🔧 FRONTEND: Skipped setup, going to friend selection");
+          logger.debug("FRONTEND: Skipped setup, going to friend selection");
         } else {
-          console.log(
-            "🔧 FRONTEND: No existing user preferences found, staying on setup page"
+          logger.debug(
+            "FRONTEND: No existing user preferences found, staying on setup page"
           );
         }
       } catch (err) {
@@ -283,7 +293,7 @@ function App() {
     try {
       await invoke("set_window_focus");
     } catch (err) {
-      console.warn("Failed to set window focus:", err);
+      logger.warn("Failed to set window focus:", err);
     }
   };
 
@@ -303,7 +313,7 @@ function App() {
               alwaysOnTop: newState,
             },
           });
-          console.log("🔧 FRONTEND: Pin preference saved");
+          logger.debug("FRONTEND: Pin preference saved");
         } catch (saveErr) {
           console.error("🔧 FRONTEND: Error saving pin preference:", saveErr);
         }
@@ -322,10 +332,10 @@ function App() {
     return true;
   };
 
-  const backendCallWithTimeout = async (
-    operation: () => Promise<any>,
+  const backendCallWithTimeout = async <T = unknown,>(
+    operation: () => Promise<T>,
     timeoutMs: number = 120000 // 2 minutes
-  ): Promise<any> => {
+  ): Promise<T> => {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(
@@ -346,9 +356,9 @@ function App() {
   };
 
   const handleUserSetup = async () => {
-    console.log("🔧 FRONTEND: handleUserSetup called");
-    console.log("🔧 FRONTEND: username =", username);
-    console.log("🔧 FRONTEND: tmdbApiKey =", tmdbApiKey);
+    logger.debug("FRONTEND: handleUserSetup called");
+    logger.debug("FRONTEND: username =", username);
+    logger.debug("FRONTEND: tmdbApiKey =", tmdbApiKey);
 
     if (!validateInputs()) return;
 
@@ -357,11 +367,11 @@ function App() {
     setSetupProgress({ profileSaved: false, friendsLoaded: false });
 
     try {
-      console.log(
-        "🔧 FRONTEND: About to call backendCallWithTimeout for save_user_preferences"
+      logger.debug(
+        "FRONTEND: About to call backendCallWithTimeout for save_user_preferences"
       );
       await backendCallWithTimeout(async () => {
-        console.log("🔧 FRONTEND: About to invoke save_user_preferences");
+        logger.debug("FRONTEND: About to invoke save_user_preferences");
         await invoke("save_user_preferences", {
           request: {
             username: username.trim(),
@@ -369,9 +379,7 @@ function App() {
             alwaysOnTop: isAlwaysOnTop,
           },
         });
-        console.log(
-          "🔧 FRONTEND: save_user_preferences completed successfully"
-        );
+        logger.debug("FRONTEND: save_user_preferences completed successfully");
       });
 
       // Profile saved successfully
@@ -379,7 +387,7 @@ function App() {
 
       // Auto-fetch friends
       try {
-        console.log("🔧 FRONTEND: About to fetch friends");
+        logger.debug("FRONTEND: About to fetch friends");
         await invoke<Friend[]>("scrape_letterboxd_friends", {
           username: username.trim(),
         });
@@ -398,8 +406,8 @@ function App() {
         // Proceed directly to friend selection without delay
         setPage("friend-selection");
       } catch (friendsError) {
-        console.log(
-          "🔧 FRONTEND: Friends fetch failed, but profile was saved:",
+        logger.debug(
+          "FRONTEND: Friends fetch failed, but profile was saved:",
           friendsError
         );
         // Still proceed to friends page even if auto-fetch fails
@@ -414,8 +422,8 @@ function App() {
       );
       setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
-      console.log(
-        "🔧 FRONTEND: handleUserSetup finished, setting isLoading to false"
+      logger.debug(
+        "FRONTEND: handleUserSetup finished, setting isLoading to false"
       );
       setIsLoading(false);
     }
@@ -466,18 +474,18 @@ function App() {
   };
 
   const handleCompareWatchlists = async () => {
-    console.log(
-      "🔧 FRONTEND: handleCompareWatchlists called, selectedFriends.length:",
+    logger.debug(
+      "FRONTEND: handleCompareWatchlists called, selectedFriends.length:",
       selectedFriends.length
     );
 
     if (selectedFriends.length === 0) {
-      console.log("🔧 FRONTEND: No friends selected, showing error");
+      logger.debug("FRONTEND: No friends selected, showing error");
       setError("Please select at least one friend to compare with");
       return;
     }
 
-    console.log("🔧 FRONTEND: Starting comparison process...");
+    logger.debug("FRONTEND: Starting comparison process...");
     clearMessages();
     setIsComparing(true);
     setEnhancementProgress({
@@ -518,17 +526,17 @@ function App() {
     };
 
     try {
-      console.log("🔧 FRONTEND: About to call backendCallWithTimeout...");
+      logger.debug("FRONTEND: About to call backendCallWithTimeout...");
       startProgressSimulation(); // Start simulating progress during backend work
 
       await backendCallWithTimeout(async () => {
         const friendUsernames = selectedFriends.map((f) => f.username);
-        console.log(
-          "🔧 FRONTEND: Calling compare_watchlists with friends:",
+        logger.debug(
+          "FRONTEND: Calling compare_watchlists with friends:",
           friendUsernames
         );
 
-        console.log("🔧 FRONTEND: About to invoke compare_watchlists...");
+        logger.debug("FRONTEND: About to invoke compare_watchlists...");
         const compareResult = await invoke<{ commonMovies: Movie[] }>(
           "compare_watchlists",
           {
@@ -538,20 +546,20 @@ function App() {
             limitTo500: false,
           }
         );
-        console.log(
-          "🔧 FRONTEND: compare_watchlists returned result:",
+        logger.debug(
+          "FRONTEND: compare_watchlists returned result:",
           compareResult
         );
 
         const results = compareResult.commonMovies;
-        console.log(
-          "🔧 FRONTEND: extracted common movies:",
+        logger.debug(
+          "FRONTEND: extracted common movies:",
           results.length,
           "movies"
         );
 
         if (results.length === 0) {
-          console.log("🔧 FRONTEND: No common movies found");
+          logger.debug("FRONTEND: No common movies found");
           setError("No common movies found in watchlists");
           return;
         }
@@ -592,8 +600,8 @@ function App() {
         err instanceof Error ? err.message : "Failed to compare watchlists"
       );
     } finally {
-      console.log(
-        "🔧 FRONTEND: handleCompareWatchlists finally block, setting isComparing to false"
+      logger.debug(
+        "FRONTEND: handleCompareWatchlists finally block, setting isComparing to false"
       );
       stopProgressSimulation(); // Ensure progress simulation is stopped
       setIsComparing(false);
@@ -1011,6 +1019,7 @@ function FriendSelectionPage({
                   <div className="progress-bar-modern">
                     <div
                       className="progress-bar-fill-modern"
+                      // Dynamic width based on progress percentage
                       style={{ width: `${progressPercent}%` }}
                     />
                     <div className="progress-percentage-modern">
@@ -1149,24 +1158,27 @@ function ResultsPage({
     // Sort movies with multi-level sorting: friends first, then rating as tiebreaker
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case "friends":
+        case "friends": {
           // Primary sort: friend count (descending)
           const friendDiff = b.friendCount - a.friendCount;
           if (friendDiff !== 0) return friendDiff;
           // Secondary sort: average rating (descending) for tiebreaker
           return (b.averageRating || 0) - (a.averageRating || 0);
-        case "rating":
+        }
+        case "rating": {
           // Primary sort: rating (descending)
           const ratingDiff = (b.averageRating || 0) - (a.averageRating || 0);
           if (ratingDiff !== 0) return ratingDiff;
           // Secondary sort: friend count (descending) for tiebreaker
           return b.friendCount - a.friendCount;
-        case "year":
+        }
+        case "year": {
           // Primary sort: year (descending)
           const yearDiff = (b.year || 0) - (a.year || 0);
           if (yearDiff !== 0) return yearDiff;
           // Secondary sort: friend count (descending) for tiebreaker
           return b.friendCount - a.friendCount;
+        }
         default:
           return 0;
       }
@@ -1324,7 +1336,7 @@ function ResultsPage({
             {filteredMovies.map((movie, index) => (
               <div
                 key={index}
-                className="movie-card fade-in"
+                className="movie-card fade-in clickable"
                 onClick={async () => {
                   // AI Generated: GitHub Copilot - 2025-08-02
                   // Open Letterboxd URL in user's default browser for saved cookies/preferences
@@ -1339,7 +1351,6 @@ function ResultsPage({
                     window.open(generateLetterboxdUrl(movie), "_blank");
                   }
                 }}
-                style={{ cursor: "pointer" }}
               >
                 <div
                   className={`movie-poster-section ${movie.posterPath ? "has-poster" : "no-poster"}`}

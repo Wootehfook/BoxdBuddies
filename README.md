@@ -1,10 +1,20 @@
-# BoxdBuddies
+# 🎬 BoxdBuddies
 
-A modern desktop application for comparing Letterboxd watchlists between friends, built with Tauri (Rust) backend and React frontend. Find movies that you and your friends all want to watch!
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)](https://tauri.app/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
+[![Rust](https://img.shields.io/badge/Rust-Latest-red)](https://www.rust-lang.org/)
 
-## 🎉 Status: Production Ready
+> **A modern desktop application for comparing Letterboxd watchlists between friends**
 
-**BoxdBuddies is now fully functional and ready for use!** All core features have been implemented and thoroughly tested.
+Find movies that you and your friends all want to watch! BoxdBuddies connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch.
+
+![BoxdBuddies Demo](docs/images/demo-hero.png)
+_Coming Soon: Demo screenshot showing the beautiful interface_
+
+## 🎉 Status: Production Ready ✨
+
+**BoxdBuddies v1.0.0 is now live and ready for public use!** All core features have been implemented, tested, and polished for production deployment.
 
 ### ✅ Recent Achievements (August 3, 2025)
 
