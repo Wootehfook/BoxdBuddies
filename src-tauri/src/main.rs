@@ -1,5 +1,5 @@
 /*
- * BoxdBuddies - Movie Watchlist Comparison Tool
+ * BoxdBuddies - Compare Letterboxd watchlists with friends
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify
@@ -14,8 +14,6 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * COMMERCIAL USE PROHIBITED - See LICENSE file for details.
  */
 
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
@@ -133,8 +131,10 @@ struct Movie {
     friend_list: Vec<String>,
     genre: Option<String>,
     director: Option<String>,
+
     #[serde(rename = "averageRating")]
     average_rating: Option<f64>,
+
     #[serde(rename = "letterboxdSlug")]
     letterboxd_slug: Option<String>,
 }
@@ -3192,7 +3192,7 @@ fn create_enhanced_movie_from_details_with_director(
         friend_visual: create_friend_visual(friend_count),
         friend_list,
         genre: genres,
-        director, // Now we pass the actual director from credits API
+        director: director.clone(), // Now we pass the actual director from credits API
         average_rating: details.vote_average,
         letterboxd_slug: movie.letterboxd_slug.clone(),
     }
