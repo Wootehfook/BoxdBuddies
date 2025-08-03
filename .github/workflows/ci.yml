@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   CARGO_TERM_COLOR: always
 
