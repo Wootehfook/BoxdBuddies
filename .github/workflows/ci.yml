@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,137 +14,172 @@ jobs:
     name: Frontend Quality Checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Type check
-      run: npm run type-check
-    
-    - name: Lint check
-      run: npx eslint src --ext .ts,.tsx
-    
-    - name: Format check
-      run: npm run format:check
-    
-    - name: Build frontend
-      run: npm run build
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint check
+        run: npx eslint src --ext .ts,.tsx
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Build frontend
+        run: npm run build
 
   backend-checks:
     name: Backend Quality Checks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt, clippy
-    
-    - name: Rust cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: src-tauri
-    
-    - name: Format check
-      run: cargo fmt --all -- --check
-      working-directory: src-tauri
-    
-    - name: Clippy check
-      run: cargo clippy --all-targets --all-features -- -D warnings
-      working-directory: src-tauri
-    
-    - name: Test
-      run: cargo test
-      working-directory: src-tauri
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+        working-directory: src-tauri
+
+      - name: Clippy check
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: src-tauri
+
+      - name: Test
+        run: cargo test
+        working-directory: src-tauri
 
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Install cargo-audit
-      run: cargo install cargo-audit
-    
-    - name: NPM Security Audit
-      run: npm audit --audit-level moderate
-    
-    - name: Cargo Security Audit
-      run: cargo audit
-      working-directory: src-tauri
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: NPM Security Audit
+        run: npm audit --audit-level moderate
+
+      - name: Cargo Security Audit
+        run: cargo audit
+        working-directory: src-tauri
+
+  codacy-analysis:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Codacy CLI
+        run: |
+          curl -sSL https://get.codacy.com/cli | sh
+          ./codacy analyze --tool eslint --directory src
+          ./codacy analyze --tool trivy --directory .
+
+      - name: Verify Pre-commit Hooks
+        run: |
+          npm install
+          npx husky install
+          echo "test: verify pre-commit setup" > test-commit.txt
+          git add test-commit.txt
+          git -c user.email="ci@github.com" -c user.name="GitHub CI" commit -m "test: verify hooks work"
+          rm test-commit.txt
 
   build-test:
     name: Build Application
-    needs: [frontend-checks, backend-checks]
+    needs: [frontend-checks, backend-checks, codacy-analysis]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Install Tauri dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-    
-    - name: Install frontend dependencies
-      run: npm ci
-    
-    - name: Build application
-      run: npm run tauri build
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: boxdbuddies-${{ matrix.os }}
-        path: |
-          src-tauri/target/release/bundle/
-          !src-tauri/target/release/bundle/**/*.deb
-          !src-tauri/target/release/bundle/**/*.rpm
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run tauri build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: boxdbuddies-${{ matrix.os }}
+          path: |
+            src-tauri/target/release/bundle/
+            !src-tauri/target/release/bundle/**/*.deb
+            !src-tauri/target/release/bundle/**/*.rpm
 
   license-compliance:
     name: License Compliance Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Check license headers
-      run: |
-        echo "Checking for AGPL-3.0 license headers..."
-        if ! grep -r "GNU Affero General Public License" src-tauri/src/ --include="*.rs"; then
-          echo "Missing license headers in Rust files"
-          exit 1
-        fi
-        if ! grep -r "Copyright (C) 2025 Wootehfook" src/ --include="*.tsx" --include="*.ts"; then
-          echo "Missing copyright notices in TypeScript files"
-        fi
-        echo "License compliance check passed"
+      - uses: actions/checkout@v4
+
+      - name: Check license headers
+        run: |
+          echo "Checking for AGPL-3.0 license headers..."
+          if ! grep -r "GNU Affero General Public License" src-tauri/src/ --include="*.rs"; then
+            echo "Missing license headers in Rust files"
+            exit 1
+          fi
+          if ! grep -r "Copyright (C) 2025 Wootehfook" src/ --include="*.tsx" --include="*.ts"; then
+            echo "Missing copyright notices in TypeScript files"
+          fi
+          echo "License compliance check passed"

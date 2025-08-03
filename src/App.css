@@ -121,8 +121,8 @@ body {
   color: #9ab;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 
@@ -469,8 +469,8 @@ body {
   z-index: 1000;
   max-width: 350px;
   word-wrap: break-word;
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   animation:
@@ -838,6 +838,7 @@ body {
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -2099,6 +2100,7 @@ body {
   border-radius: 12px;
   border: 1px solid;
   background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: inline-block;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);

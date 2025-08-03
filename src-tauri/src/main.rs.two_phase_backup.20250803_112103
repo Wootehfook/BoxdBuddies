@@ -833,7 +833,7 @@ async fn save_friends_to_database(friends: Vec<LetterboxdFriend>) -> Result<(), 
 async fn get_cached_watchlist(
     friend_username: String,
 ) -> Result<Vec<CachedWatchlistMovie>, String> {
-    // println!("🔥 CACHE LOAD: get_cached_watchlist called for user: {friend_username}");
+    // println!("🔥 CACHE LOAD: get_cached_watchlist called for user: {}", friend_username);
     let conn = init_database().map_err(|e| format!("Database error: {e}"))?;
     // println!("🔥 CACHE LOAD: Database connection successful");
 
@@ -884,7 +884,10 @@ async fn get_cached_watchlist(
             Err(e) => {
                 // Keep error logging for debugging issues
                 eprintln!("Error processing cached movie row {row_count}: {e}");
-                return Err(format!("Failed to process movie at row {row_count}: {e}"));
+                return Err(format!(
+                    "Failed to process movie at row {}: {}",
+                    row_count, e
+                ));
             }
         }
 
@@ -894,7 +897,7 @@ async fn get_cached_watchlist(
             break;
         }
     }
-    // println!("🔥 CACHE LOAD: Found {watchlist.len()} cached movies (processed {row_count} rows)");
+    // println!("🔥 CACHE LOAD: Found {} cached movies (processed {} rows)", watchlist.len(), row_count);
 
     Ok(watchlist)
 }
@@ -905,11 +908,11 @@ async fn save_watchlist_to_cache(
     movies: Vec<WatchlistMovie>,
 ) -> Result<(), String> {
     // println!("🔥 FUNCTION ENTRY: save_watchlist_to_cache CALLED");
-    // println!("🔥 Function parameters - username: {}, movies: {friend_username, movies.len(}"));
+    // println!("🔥 Function parameters - username: {}, movies: {}", friend_username, movies.len());
     // println!("🔥 About to initialize database connection...");
 
     // println!("=== SAVE WATCHLIST TO CACHE STARTED ===");
-    // println!("Saving {} movies for {movies.len(}"), friend_username);
+    // println!("Saving {} movies for {}", movies.len(), friend_username);
 
     // println!("🔥 Calling init_database()...");
     let conn = init_database().map_err(|e| format!("Database error: {e}"))?;
@@ -917,7 +920,10 @@ async fn save_watchlist_to_cache(
     let now = Utc::now().to_rfc3339();
 
     // Ensure the friend exists in the friends table first (required for foreign key)
-    println!("Ensuring friend '{friend_username}' exists in friends table...");
+    println!(
+        "Ensuring friend '{}' exists in friends table...",
+        friend_username
+    );
     {
         let friend_tx = conn
             .unchecked_transaction()
@@ -950,7 +956,8 @@ async fn save_watchlist_to_cache(
     if !new_slugs.is_empty() {
         let placeholders = new_slugs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let delete_query = format!(
-            "DELETE FROM friend_watchlists WHERE friend_username = ? AND letterboxd_slug NOT IN ({placeholders})"
+            "DELETE FROM friend_watchlists WHERE friend_username = ? AND letterboxd_slug NOT IN ({})",
+            placeholders
         );
 
         let mut params: Vec<&dyn rusqlite::ToSql> = vec![&friend_username];
@@ -1049,7 +1056,7 @@ async fn save_watchlist_to_cache(
 async fn get_friend_sync_status(
     friend_username: String,
 ) -> Result<Option<FriendSyncStatus>, String> {
-    // println!("🔥 SYNC STATUS: Getting sync status for {friend_username}");
+    // println!("🔥 SYNC STATUS: Getting sync status for {}", friend_username);
     let conn = init_database().map_err(|e| format!("Database error: {e}"))?;
     // println!("🔥 SYNC STATUS: Database connected");
 
@@ -1075,11 +1082,11 @@ async fn get_friend_sync_status(
 
     match result {
         Ok(status) => {
-            // println!("🔥 SYNC STATUS: Found status for {friend_username}");
+            // println!("🔥 SYNC STATUS: Found status for {}", friend_username);
             Ok(Some(status))
         }
         Err(rusqlite::Error::QueryReturnedNoRows) => {
-            // println!("🔥 SYNC STATUS: No status found for {friend_username}");
+            // println!("🔥 SYNC STATUS: No status found for {}", friend_username);
             Ok(None)
         }
         Err(e) => {
@@ -1188,7 +1195,10 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
 
         while page <= 10 {
             // Check up to 10 pages for a reasonable estimate
-            let page_url = format!("https://letterboxd.com/{username}/watchlist/page/{page}/");
+            let page_url = format!(
+                "https://letterboxd.com/{}/watchlist/page/{}/",
+                username, page
+            );
             match client.get(&page_url).send().await {
                 Ok(page_response) if page_response.status().is_success() => {
                     match page_response.text().await {
@@ -1217,7 +1227,10 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         );
         Ok(total_count)
     } else {
-        println!("🔥 COUNT CHECK: Single page watchlist with {film_count} movies");
+        println!(
+            "🔥 COUNT CHECK: Single page watchlist with {} movies",
+            film_count
+        );
         Ok(film_count)
     }
 }
@@ -1228,7 +1241,7 @@ async fn is_watchlist_cache_fresh_with_count_check(
     friend_username: String,
     max_age_hours: u64,
 ) -> Result<bool, String> {
-    // println!("🔥 CACHE CHECK: Checking cache freshness with count verification for {friend_username} (max age: {max_age_hours} hours)");
+    // println!("🔥 CACHE CHECK: Checking cache freshness with count verification for {} (max age: {} hours)", friend_username, max_age_hours);
 
     // First check basic time-based freshness
     match get_friend_sync_status(friend_username.clone()).await? {
@@ -1251,7 +1264,10 @@ async fn is_watchlist_cache_fresh_with_count_check(
                 let age_hours = age.num_hours();
 
                 if age_hours >= max_age_hours as i64 {
-                    println!("🔥 CACHE CHECK: Cache too old ({age_hours} hours), not fresh");
+                    println!(
+                        "🔥 CACHE CHECK: Cache too old ({} hours), not fresh",
+                        age_hours
+                    );
                     return Ok(false);
                 }
 
@@ -1268,10 +1284,14 @@ async fn is_watchlist_cache_fresh_with_count_check(
 
                 match get_letterboxd_watchlist_count(&friend_username).await {
                     Ok(current_count) => {
-                        println!("🔥 CACHE CHECK: Current Letterboxd count: {current_count}");
+                        println!(
+                            "🔥 CACHE CHECK: Current Letterboxd count: {}",
+                            current_count
+                        );
                         let counts_match = cached_count == current_count;
                         println!(
-                            "🔥 CACHE CHECK: Cache age: {age_hours} hours, counts match: {counts_match}, is_fresh: {counts_match}"
+                            "🔥 CACHE CHECK: Cache age: {} hours, counts match: {}, is_fresh: {}",
+                            age_hours, counts_match, counts_match
                         );
                         Ok(counts_match)
                     }
@@ -1287,7 +1307,10 @@ async fn is_watchlist_cache_fresh_with_count_check(
             }
         }
         None => {
-            println!("🔥 CACHE CHECK: No sync status found for user {friend_username}");
+            println!(
+                "🔥 CACHE CHECK: No sync status found for user {}",
+                friend_username
+            );
             Ok(false)
         }
     }
@@ -1299,7 +1322,8 @@ async fn is_watchlist_cache_fresh(
     max_age_hours: u64,
 ) -> Result<bool, String> {
     println!(
-        "🔥 CACHE CHECK: Checking cache freshness for {friend_username} (max age: {max_age_hours} hours)"
+        "🔥 CACHE CHECK: Checking cache freshness for {} (max age: {} hours)",
+        friend_username, max_age_hours
     );
     match get_friend_sync_status(friend_username.clone()).await? {
         Some(status) => {
@@ -1314,7 +1338,10 @@ async fn is_watchlist_cache_fresh(
                 let age_hours = age.num_hours();
                 let is_fresh =
                     age_hours < max_age_hours as i64 && status.sync_status == "completed";
-                println!("🔥 CACHE CHECK: Cache age: {age_hours} hours, is_fresh: {is_fresh}");
+                println!(
+                    "🔥 CACHE CHECK: Cache age: {} hours, is_fresh: {}",
+                    age_hours, is_fresh
+                );
                 Ok(is_fresh)
             } else {
                 println!("🔥 CACHE CHECK: No last_sync time found");
@@ -1322,7 +1349,10 @@ async fn is_watchlist_cache_fresh(
             }
         }
         None => {
-            println!("🔥 CACHE CHECK: No sync status found for user {friend_username}");
+            println!(
+                "🔥 CACHE CHECK: No sync status found for user {}",
+                friend_username
+            );
             Ok(false)
         }
     }
@@ -1333,13 +1363,13 @@ async fn get_watchlist_cached_or_scrape(
     friend_username: String,
     max_cache_age_hours: u64,
 ) -> Result<Vec<WatchlistMovie>, String> {
-    // println!("🔥 WATCHLIST FETCH: get_watchlist_cached_or_scrape called for {friend_username} (max_age: {max_cache_age_hours} hours)");
+    // println!("🔥 WATCHLIST FETCH: get_watchlist_cached_or_scrape called for {} (max_age: {} hours)", friend_username, max_cache_age_hours);
 
     // Check if we have fresh cached data with count verification
     if is_watchlist_cache_fresh_with_count_check(friend_username.clone(), max_cache_age_hours)
         .await?
     {
-        // println!("🔥 WATCHLIST FETCH: Using cached watchlist for {friend_username}");
+        // println!("🔥 WATCHLIST FETCH: Using cached watchlist for {}", friend_username);
         let cached_movies = get_cached_watchlist(friend_username).await?;
 
         // Convert cached movies back to WatchlistMovie format
@@ -1360,7 +1390,7 @@ async fn get_watchlist_cached_or_scrape(
     }
 
     // Cache is stale or counts don't match, scrape fresh data
-    // println!("🔥 WATCHLIST FETCH: Cache stale or counts mismatch, scraping fresh data for {friend_username}");
+    // println!("🔥 WATCHLIST FETCH: Cache stale or counts mismatch, scraping fresh data for {}", friend_username);
     match scrape_user_watchlist(&friend_username).await {
         Ok(movies) => {
             // Save to cache for next time
@@ -1374,7 +1404,10 @@ async fn get_watchlist_cached_or_scrape(
         }
         Err(e) => {
             // If scraping fails but we have old cached data, use it
-            println!("Scraping failed for {friend_username}, trying cached data: {e}");
+            println!(
+                "Scraping failed for {}, trying cached data: {}",
+                friend_username, e
+            );
             let cached_movies = get_cached_watchlist(friend_username).await?;
             if !cached_movies.is_empty() {
                 println!("Using stale cached data as fallback");
@@ -1565,7 +1598,10 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
         let url = if page == 1 {
             format!("https://letterboxd.com/{username}/following/")
         } else {
-            format!("https://letterboxd.com/{username}/following/page/{page}/")
+            format!(
+                "https://letterboxd.com/{}/following/page/{}/",
+                username, page
+            )
         };
 
         println!("Scraping friends page {page}: {url}");
@@ -1863,7 +1899,10 @@ async fn compare_watchlists(
     limit_to500: Option<bool>,
 ) -> Result<CompareResult, String> {
     println!("=== COMPARE_WATCHLISTS COMMAND STARTED ===");
-    println!("Comparing watchlists for {main_username} with friends: {friend_usernames:?}");
+    println!(
+        "Comparing watchlists for {} with friends: {:?}",
+        main_username, friend_usernames
+    );
 
     let should_limit = limit_to500.unwrap_or(false);
     if should_limit {
@@ -1903,7 +1942,10 @@ async fn compare_watchlists(
         .collect();
 
     if filtered_friends.len() != friend_usernames.len() {
-        println!("DEBUG: Filtered out main user '{main_username}' from friends list");
+        println!(
+            "DEBUG: Filtered out main user '{}' from friends list",
+            main_username
+        );
         println!("DEBUG: Original friends: {friend_usernames:?}");
         println!("DEBUG: Filtered friends: {filtered_friends:?}");
     }
@@ -1985,7 +2027,10 @@ async fn compare_watchlists(
 
     // Show first few movies from main user for debugging
     if !main_watchlist.is_empty() {
-        println!("🔍 DEBUG: First 5 movies from main user ({main_username}):");
+        println!(
+            "🔍 DEBUG: First 5 movies from main user ({}):",
+            main_username
+        );
         for (i, movie) in main_watchlist.iter().take(5).enumerate() {
             println!("  {}. '{}'", i + 1, movie.title);
         }
@@ -2062,7 +2107,10 @@ async fn scrape_user_watchlist_with_limit(
         let url = if page == 1 {
             format!("https://letterboxd.com/{username}/watchlist/")
         } else {
-            format!("https://letterboxd.com/{username}/watchlist/page/{page}/")
+            format!(
+                "https://letterboxd.com/{}/watchlist/page/{}/",
+                username, page
+            )
         };
 
         println!("Scraping watchlist page {page}: {url}");
@@ -2373,7 +2421,10 @@ fn extract_movies_from_html_text(html_content: &str) -> Vec<WatchlistMovie> {
                     let (title, year) = extract_title_and_year_from_alt(alt_text);
 
                     if !title.is_empty() {
-                        println!("DEBUG: Extracted movie - Title: '{title}', Year: {year:?}");
+                        println!(
+                            "DEBUG: Extracted movie - Title: '{}', Year: {:?}",
+                            title, year
+                        );
 
                         // Get poster URL if available
                         let poster_url = img.value().attr("src").map(|src| {
@@ -2427,7 +2478,8 @@ fn extract_movies_from_html_text(html_content: &str) -> Vec<WatchlistMovie> {
 
                         if !title.is_empty() {
                             println!(
-                                "DEBUG: Extracted movie via target-link - Title: '{title}', Year: {year:?}"
+                                "DEBUG: Extracted movie via target-link - Title: '{}', Year: {:?}",
+                                title, year
                             );
                             movies.push(WatchlistMovie {
                                 title,
@@ -2670,7 +2722,10 @@ async fn search_tmdb_movie(
 
     let url = "https://api.themoviedb.org/3/search/movie";
 
-    println!("🎬 TMDB SEARCH: Searching for '{title}' (year: {year:?})");
+    println!(
+        "🎬 TMDB SEARCH: Searching for '{}' (year: {:?})",
+        title, year
+    );
 
     let response = client
         .get(url)
@@ -3022,7 +3077,7 @@ fn get_cached_tmdb_movie_sync(
          FROM tmdb_movies WHERE tmdb_id = ?1",
     )?;
 
-    let mut movie_iter = stmt.query_map([tmdb_id], |row| {
+    let movie_iter = stmt.query_map([tmdb_id], |row| {
         Ok(TmdbMovieCache {
             tmdb_id: row.get(0)?,
             title: row.get(1)?,
@@ -3046,7 +3101,11 @@ fn get_cached_tmdb_movie_sync(
         })
     })?;
 
-    movie_iter.next().transpose()
+    for movie in movie_iter {
+        return Ok(Some(movie?));
+    }
+
+    Ok(None)
 }
 
 // AI Generated: GitHub Copilot - 2025-08-03
@@ -3068,12 +3127,16 @@ fn get_movie_tmdb_id_sync(
         "SELECT tmdb_id FROM friend_watchlists WHERE movie_title = ?1 AND movie_year = ?2 AND tmdb_id IS NOT NULL LIMIT 1"
     )?;
 
-    let mut tmdb_id_iter = stmt.query_map(
+    let tmdb_id_iter = stmt.query_map(
         [title, &year.map(|y| y.to_string()).unwrap_or_default()],
-        |row| row.get::<_, i32>(0),
+        |row| Ok(row.get::<_, i32>(0)?),
     )?;
 
-    tmdb_id_iter.next().transpose()
+    for tmdb_id in tmdb_id_iter {
+        return Ok(Some(tmdb_id?));
+    }
+
+    Ok(None)
 }
 
 // AI Generated: GitHub Copilot - 2025-08-03
@@ -3615,7 +3678,8 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
     let movies_on_page = extract_movies_from_html_text(&html_content).len();
 
     println!(
-        "DEBUG: get_watchlist_size for {username}: found {movies_on_page} movies on first page"
+        "DEBUG: get_watchlist_size for {}: found {} movies on first page",
+        username, movies_on_page
     );
 
     // If we have 28 movies (full page), check if there are more pages
@@ -3633,7 +3697,10 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
                 }
             }
 
-            println!("DEBUG: get_watchlist_size for {username}: detected max page {max_page}");
+            println!(
+                "DEBUG: get_watchlist_size for {}: detected max page {}",
+                username, max_page
+            );
 
             // If we found pagination, estimate total movies
             if max_page > 1 {
@@ -3641,14 +3708,16 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
                 // This might slightly underestimate, but it's safer
                 let estimated_total = ((max_page - 1) as usize * 28) + movies_on_page;
                 println!(
-                    "DEBUG: get_watchlist_size for {username}: estimated total {estimated_total}"
+                    "DEBUG: get_watchlist_size for {}: estimated total {}",
+                    username, estimated_total
                 );
                 return Ok(estimated_total);
             } else {
                 // No pagination detected but has "next" link - assume at least 2 pages
                 let estimated_total = 28 + movies_on_page; // Conservative estimate
                 println!(
-                    "DEBUG: get_watchlist_size for {username}: estimated total (no pagination) {estimated_total}"
+                    "DEBUG: get_watchlist_size for {}: estimated total (no pagination) {}",
+                    username, estimated_total
                 );
                 return Ok(estimated_total);
             }
@@ -3657,7 +3726,8 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
 
     // If no pagination or small watchlist, return actual count
     println!(
-        "DEBUG: get_watchlist_size for {username}: small watchlist, actual count {movies_on_page}"
+        "DEBUG: get_watchlist_size for {}: small watchlist, actual count {}",
+        username, movies_on_page
     );
     Ok(movies_on_page)
 }
@@ -3666,7 +3736,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
 #[command]
 async fn get_database_info() -> Result<String, String> {
     let db_path = get_database_path()?;
-    let mut info = format!("Database path: {db_path:?}\n");
+    let mut info = format!("Database path: {:?}\n", db_path);
 
     if !db_path.exists() {
         info.push_str("❌ Database file does not exist\n");
@@ -3690,14 +3760,14 @@ async fn get_database_info() -> Result<String, String> {
             if let Ok(count) = conn.query_row("SELECT COUNT(*) FROM friend_watchlists", [], |row| {
                 row.get::<_, i64>(0)
             }) {
-                info.push_str(&format!("🎬 Movies in cache: {count}\n"));
+                info.push_str(&format!("🎬 Movies in cache: {}\n", count));
             }
 
             // Check friends table
             if let Ok(count) = conn.query_row("SELECT COUNT(*) FROM friends", [], |row| {
                 row.get::<_, i64>(0)
             }) {
-                info.push_str(&format!("👥 Friends in database: {count}\n"));
+                info.push_str(&format!("👥 Friends in database: {}\n", count));
             }
 
             // Check for TMDB data
@@ -3706,11 +3776,11 @@ async fn get_database_info() -> Result<String, String> {
                 [],
                 |row| row.get::<_, i64>(0),
             ) {
-                info.push_str(&format!("🖼️ Movies with posters: {count}\n"));
+                info.push_str(&format!("🖼️ Movies with posters: {}\n", count));
             }
         }
         Err(e) => {
-            info.push_str(&format!("❌ Failed to connect to database: {e}\n"));
+            info.push_str(&format!("❌ Failed to connect to database: {}\n", e));
         }
     }
 
@@ -3747,16 +3817,18 @@ async fn clear_movie_cache(movie_title: String) -> Result<String, String> {
     let watchlist_updated = conn
         .execute(
             "UPDATE friend_watchlists SET tmdb_id = NULL WHERE movie_title = ?1",
-            [&movie_title],
+            &[&movie_title as &dyn rusqlite::ToSql],
         )
         .map_err(|e| format!("Failed to clear cached TMDB data: {e}"))?;
 
     println!(
-        "🗑️ CLEAR CACHE: Updated {watchlist_updated} rows in friend_watchlists for '{movie_title}'"
+        "🗑️ CLEAR CACHE: Updated {} rows in friend_watchlists for '{}'",
+        watchlist_updated, movie_title
     );
 
     Ok(format!(
-        "Cleared cache for movie: {movie_title} (updated {watchlist_updated} watchlist entries)"
+        "Cleared cache for movie: {} (updated {} watchlist entries)",
+        movie_title, watchlist_updated
     ))
 }
 
