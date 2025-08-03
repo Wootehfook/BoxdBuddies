@@ -20,11 +20,16 @@
 }
 
 body {
-  font-family: 'Tiempos Text Web', Georgia, serif;
+  font-family:
+    "Tiempos Text Web", Georgia, serif, "Noto Color Emoji", "Apple Color Emoji",
+    "Segoe UI Emoji";
   background-color: #14181c;
   color: #9ab;
   line-height: 1.6;
   min-height: 100vh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-feature-settings: "liga";
+  font-feature-settings: "liga";
 }
 
 /* Container and Layout */
@@ -179,13 +184,13 @@ body {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .btn-pin {
     position: absolute;
     top: 1rem;
     right: 1rem;
   }
-  
+
   .app-header {
     position: relative;
     padding-top: 3rem;
@@ -393,13 +398,18 @@ body {
 }
 
 .btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s ease;
 }
 
@@ -463,7 +473,9 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  animation: toast-slide-in 0.3s ease-out forwards, toast-fade-out 0.5s ease-in 2.5s forwards;
+  animation:
+    toast-slide-in 0.3s ease-out forwards,
+    toast-fade-out 0.5s ease-in 2.5s forwards;
   pointer-events: none;
 }
 
@@ -901,13 +913,17 @@ body {
 }
 
 .friend-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 128, 0, 0.05) 0%, rgba(255, 102, 0, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 128, 0, 0.05) 0%,
+    rgba(255, 102, 0, 0.05) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -915,7 +931,9 @@ body {
 .friend-card:hover {
   border-color: #ff8000;
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 128, 0, 0.3);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 128, 0, 0.3);
 }
 
 .friend-card:hover::before {
@@ -924,8 +942,14 @@ body {
 
 .friend-card.selected {
   border-color: #ff8000;
-  background: linear-gradient(135deg, rgba(255, 128, 0, 0.15) 0%, rgba(255, 102, 0, 0.1) 100%);
-  box-shadow: 0 8px 24px rgba(255, 128, 0, 0.3), 0 0 0 2px rgba(255, 128, 0, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 128, 0, 0.15) 0%,
+    rgba(255, 102, 0, 0.1) 100%
+  );
+  box-shadow:
+    0 8px 24px rgba(255, 128, 0, 0.3),
+    0 0 0 2px rgba(255, 128, 0, 0.5);
   transform: translateY(-2px);
 }
 
@@ -1088,7 +1112,7 @@ body {
 }
 
 .friend-tips li::before {
-  content: '•';
+  content: "•";
   color: #00d9ff;
   position: absolute;
   left: 0;
@@ -1149,7 +1173,11 @@ body {
   margin: 0 auto;
   text-align: center;
   padding: 2rem;
-  background: linear-gradient(135deg, rgba(255, 128, 0, 0.05) 0%, rgba(255, 102, 0, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 128, 0, 0.05) 0%,
+    rgba(255, 102, 0, 0.05) 100%
+  );
   border: 1px solid rgba(255, 128, 0, 0.2);
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -1158,7 +1186,7 @@ body {
 }
 
 .progress-button-container::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -1210,22 +1238,24 @@ body {
 }
 
 .loading-dots::after {
-  content: '';
+  content: "";
   animation: loadingDots 1.5s ease-in-out infinite;
 }
 
 @keyframes loadingDots {
-  0%, 20% {
-    content: '';
+  0%,
+  20% {
+    content: "";
   }
   40% {
-    content: '.';
+    content: ".";
   }
   60% {
-    content: '..';
+    content: "..";
   }
-  80%, 100% {
-    content: '...';
+  80%,
+  100% {
+    content: "...";
   }
 }
 
@@ -1371,13 +1401,18 @@ body {
 }
 
 .btn.loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
   animation: buttonShimmer 1.5s ease-in-out infinite;
   border-radius: inherit;
 }
@@ -1404,18 +1439,42 @@ body {
 }
 
 /* Staggered Animation Delays */
-.fade-in:nth-child(1) { animation-delay: 0s; }
-.fade-in:nth-child(2) { animation-delay: 0.05s; }
-.fade-in:nth-child(3) { animation-delay: 0.1s; }
-.fade-in:nth-child(4) { animation-delay: 0.15s; }
-.fade-in:nth-child(5) { animation-delay: 0.2s; }
-.fade-in:nth-child(6) { animation-delay: 0.25s; }
-.fade-in:nth-child(7) { animation-delay: 0.3s; }
-.fade-in:nth-child(8) { animation-delay: 0.35s; }
-.fade-in:nth-child(9) { animation-delay: 0.4s; }
-.fade-in:nth-child(10) { animation-delay: 0.45s; }
-.fade-in:nth-child(11) { animation-delay: 0.5s; }
-.fade-in:nth-child(12) { animation-delay: 0.55s; }
+.fade-in:nth-child(1) {
+  animation-delay: 0s;
+}
+.fade-in:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.fade-in:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.fade-in:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.fade-in:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.fade-in:nth-child(6) {
+  animation-delay: 0.25s;
+}
+.fade-in:nth-child(7) {
+  animation-delay: 0.3s;
+}
+.fade-in:nth-child(8) {
+  animation-delay: 0.35s;
+}
+.fade-in:nth-child(9) {
+  animation-delay: 0.4s;
+}
+.fade-in:nth-child(10) {
+  animation-delay: 0.45s;
+}
+.fade-in:nth-child(11) {
+  animation-delay: 0.5s;
+}
+.fade-in:nth-child(12) {
+  animation-delay: 0.55s;
+}
 
 /* Filter Dropdown */
 .filter-dropdown {
@@ -1553,7 +1612,7 @@ body {
 }
 
 .genre-option input[type="checkbox"]:checked + .checkmark::after {
-  content: '✓';
+  content: "✓";
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -1650,8 +1709,16 @@ body {
 }
 
 @keyframes fadeInOut {
-  0%, 10%, 90%, 100% { opacity: 1; }
-  45%, 55% { opacity: 0.7; }
+  0%,
+  10%,
+  90%,
+  100% {
+    opacity: 1;
+  }
+  45%,
+  55% {
+    opacity: 0.7;
+  }
 }
 
 /* Modern Progress Bar Styles */
@@ -1676,7 +1743,7 @@ body {
 }
 
 .progress-bar-fill-modern::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1791,13 +1858,17 @@ body {
 }
 
 .movie-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 128, 0, 0.03) 0%, rgba(255, 102, 0, 0.03) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 128, 0, 0.03) 0%,
+    rgba(255, 102, 0, 0.03) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 1;
@@ -1807,7 +1878,9 @@ body {
 .movie-card:hover {
   transform: translateY(-6px) scale(1.02);
   border-color: #ff8000;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 128, 0, 0.3);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 128, 0, 0.3);
 }
 
 .movie-card:hover::before {
@@ -1820,7 +1893,9 @@ body {
 
 .movie-card.clickable:hover {
   border-color: #ff8000;
-  box-shadow: 0 16px 40px rgba(255, 128, 0, 0.3), 0 0 0 1px rgba(255, 128, 0, 0.5);
+  box-shadow:
+    0 16px 40px rgba(255, 128, 0, 0.3),
+    0 0 0 1px rgba(255, 128, 0, 0.5);
 }
 
 /* Movie Poster Section - 75% of card space */
@@ -1852,7 +1927,7 @@ body {
 }
 
 .movie-poster-section.no-poster::after {
-  content: '🎬';
+  content: "🎬";
 }
 
 .movie-poster {
@@ -2069,7 +2144,7 @@ body {
   .main {
     padding: 0.5rem 0.25rem;
   }
-  
+
   .setup-card {
     padding: 1.5rem;
   }
@@ -2094,25 +2169,25 @@ body {
   .back-icon {
     font-size: 1.1rem;
   }
-  
+
   .friends-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .friends-actions {
     justify-content: center;
   }
-  
+
   .friends-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-  
+
   .friends-page .compare-actions {
     padding: 0.75rem 1rem;
   }
-  
+
   .friend-avatar {
     width: 50px;
     height: 50px;
@@ -2141,24 +2216,24 @@ body {
     order: 2;
     align-self: flex-start;
   }
-  
+
   .movies-grid {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
-  
+
   .profile-card {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   /* Responsive sync info */
   .sync-info {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .sync-status {
     justify-content: center;
   }
@@ -2219,13 +2294,18 @@ body {
 }
 
 .progress-bar::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
 }
 
 .progress-bar-fill {
@@ -2242,23 +2322,31 @@ body {
 }
 
 .progress-bar-fill::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
   animation: progressGlide 1.5s ease-in-out infinite;
 }
 
 .progress-bar-fill.indeterminate {
   width: 100% !important;
-  animation: progressPulse 2s ease-in-out infinite, progressShimmer 2s ease-in-out infinite;
+  animation:
+    progressPulse 2s ease-in-out infinite,
+    progressShimmer 2s ease-in-out infinite;
 }
 
 @keyframes progressShimmer {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -2347,22 +2435,22 @@ body {
   .title {
     font-size: 2rem;
   }
-  
+
   .friends-grid {
     grid-template-columns: repeat(1, 1fr);
     gap: 0.75rem;
   }
-  
+
   .friend-avatar {
     width: 45px;
     height: 45px;
     font-size: 1.2rem;
   }
-  
+
   .movies-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
-  
+
   .comparison-section {
     padding: 0.75rem;
   }
@@ -2378,5 +2466,48 @@ body {
   .friend-card {
     padding: 1rem;
     min-height: 120px;
+  }
+}
+
+/* Linux-specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* Reduce animation intensity on Linux to prevent flicker */
+  .progress-bar-fill-modern::before {
+    animation-duration: 6s !important;
+    opacity: 0.3 !important;
+  }
+
+  .loading-skeleton {
+    animation-duration: 3s !important;
+    opacity: 0.5 !important;
+  }
+
+  .btn.loading::after {
+    animation-duration: 3s !important;
+    opacity: 0.4 !important;
+  }
+
+  .progress-bar-fill::before {
+    animation-duration: 4s !important;
+    opacity: 0.3 !important;
+  }
+
+  .progress-percentage-modern {
+    animation: none !important;
+  }
+
+  /* Disable GPU acceleration for animations to reduce flicker */
+  .progress-bar-fill-modern,
+  .loading-skeleton,
+  .btn.loading::after,
+  .progress-bar-fill {
+    transform: translateZ(0) !important;
+    will-change: auto !important;
+  }
+
+  /* Pin button improvements */
+  .btn-pin:hover {
+    transform: none !important;
+    background-color: rgba(255, 128, 0, 0.2) !important;
   }
 }

@@ -474,11 +474,29 @@ async fn set_always_on_top(
     debug_log!("🪟 Setting always on top: {}", always_on_top);
 
     if let Some(window) = app_handle.get_window("main") {
-        window
-            .set_always_on_top(always_on_top)
-            .map_err(|e| format!("Failed to set always on top: {}", e))?;
-        debug_log!("🪟 Always on top set successfully: {}", always_on_top);
-        Ok(())
+        match window.set_always_on_top(always_on_top) {
+            Ok(_) => {
+                debug_log!("🪟 Always on top set successfully: {}", always_on_top);
+                Ok(())
+            }
+            Err(e) => {
+                // On Linux, always-on-top might not be supported by the window manager
+                // Log the error but don't fail completely
+                eprintln!(
+                    "⚠️ Could not set always on top (this is normal on some Linux systems): {}",
+                    e
+                );
+
+                // Try to request user attention as an alternative
+                if always_on_top {
+                    let _ = window
+                        .request_user_attention(Some(tauri::UserAttentionType::Informational));
+                }
+
+                // Return success even if always-on-top failed (graceful degradation)
+                Ok(())
+            }
+        }
     } else {
         Err("Main window not found".to_string())
     }
@@ -794,12 +812,8 @@ async fn save_friends_to_database(friends: Vec<LetterboxdFriend>) -> Result<(), 
         .unchecked_transaction()
         .map_err(|e| format!("Failed to begin transaction: {}", e))?;
 
-    // Clear existing friends
-    tx.execute("DELETE FROM friends", [])
-        .map_err(|e| format!("Failed to clear friends: {}", e))?;
-
-    // Insert new friends
-    let mut stmt = tx.prepare("INSERT INTO friends (username, display_name, avatar_url, last_updated) VALUES (?1, ?2, ?3, ?4)")
+    // Use INSERT OR REPLACE to update existing friends and add new ones
+    let mut stmt = tx.prepare("INSERT OR REPLACE INTO friends (username, display_name, avatar_url, last_updated) VALUES (?1, ?2, ?3, ?4)")
         .map_err(|e| format!("Failed to prepare insert statement: {}", e))?;
 
     let now = Utc::now().to_rfc3339();
@@ -1679,6 +1693,17 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
         page,
         all_friends.len()
     );
+
+    // Save the scraped friends to the database
+    if let Err(e) = save_friends_to_database(all_friends.clone()).await {
+        eprintln!("🚨 Error saving friends to database: {}", e);
+        return Err(format!("Failed to save friends to database: {}", e));
+    }
+    println!(
+        "✅ Successfully saved {} friends to the database.",
+        all_friends.len()
+    );
+
     Ok(all_friends)
 }
 
@@ -3966,31 +3991,11 @@ fn main() {
                 }
             });
 
-            // Test our debug messages for save_watchlist_to_cache
-            println!("🚀 APP SETUP: Testing save_watchlist_to_cache debug messages");
-            tauri::async_runtime::spawn(async {
-                println!("🚀 Spawned test task for save_watchlist_to_cache");
-                let test_movies = vec![
-                    WatchlistMovie {
-                        title: "Test Movie 1".to_string(),
-                        year: Some(2023),
-                        letterboxd_slug: Some("test-movie-1".to_string()),
-                        poster_url: None,
-                    },
-                    WatchlistMovie {
-                        title: "Test Movie 2".to_string(),
-                        year: Some(2024),
-                        letterboxd_slug: Some("test-movie-2".to_string()),
-                        poster_url: None,
-                    },
-                ];
-
-                println!("🚀 About to call save_watchlist_to_cache with test data");
-                match save_watchlist_to_cache("test_user".to_string(), test_movies).await {
-                    Ok(()) => println!("🚀 Test save_watchlist_to_cache completed successfully"),
-                    Err(e) => println!("🚀 Test save_watchlist_to_cache failed: {}", e),
-                }
-            });
+            // AI Generated: GitHub Copilot - 2025-01-29
+            // Removed hardcoded test data creation to allow real friend discovery
+            println!(
+                "🚀 APP SETUP: Application started - ready for real Letterboxd friend discovery"
+            );
             Ok(())
         })
         .run(tauri::generate_context!())
