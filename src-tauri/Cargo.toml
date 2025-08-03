@@ -1,10 +1,10 @@
 [package]
 name = "boxdbuddies"
 version = "0.1.0"
-description = "A Tauri App for managing BoxdBuddies"
-authors = ["you"]
-license = ""
-repository = ""
+description = "Compare Letterboxd watchlists between friends to find movies everyone wants to watch"
+authors = ["Wootehfook"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/Wootehfook/BoxdBuddies"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
