@@ -540,7 +540,7 @@ function App() {
         const compareResult = await invoke<{ commonMovies: Movie[] }>(
           "compare_watchlists",
           {
-            mainUsername: username || "Wootehfook",
+            mainUsername: username,
             friendUsernames: friendUsernames,
             tmdbApiKey: tmdbApiKey || null,
             limitTo500: false,
