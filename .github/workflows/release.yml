@@ -11,6 +11,10 @@ on:
         required: true
         default: "v1.0.1"
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   # Build for Windows
   build-windows:
