@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "author": "Wootehfook",
+  "description": "Compare Letterboxd watchlists between friends to find movies everyone wants to watch",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wootehfook/BoxdBuddies.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -12,9 +19,17 @@
     "tauri:build": "tauri build",
     "format": "prettier --write src/**/*.{ts,tsx,css,json}",
     "format:check": "prettier --check src/**/*.{ts,tsx,css,json}",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "clean": "rm -rf dist target node_modules/.vite",
-    "dev:full": "concurrently \"npm run dev\" \"npm run tauri:dev\""
+    "dev:full": "concurrently \"npm run dev\" \"npm run tauri:dev\"",
+    "audit:security": "npm audit --audit-level moderate",
+    "prepare": "husky",
+    "pre-commit": "lint-staged"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
@@ -23,10 +38,29 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.0",
+    "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.54.2",
+    "@tauri-apps/cli": "^2.7.1",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
+    "lint-staged": "^16.1.2",
+    "playwright": "^1.54.2",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.0",
     "typescript": "^5.0.2",
     "vite": "^5.4.0"
   }

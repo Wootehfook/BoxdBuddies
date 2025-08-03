@@ -1,9 +1,106 @@
-﻿import { useState, useEffect, useRef } from 'react';
+﻿/*
+ * BoxdBuddies - Movie Watchlist Comparison Tool
+ * Copyright (C) 2025 Wootehfook
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * COMMERCIAL USE PROHIBITED - See LICENSE file for details.
+ */
+
+import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { movieEnhancementService } from './services/movieEnhancementService';
+import { open } from '@tauri-apps/api/shell';
 import './App.css';
 
-// AI Generated: GitHub Copilot - 2025-08-01
+  // AI Generated: GitHub Copilot - 2025-01-23
+
+// Color generation utilities for consistent friend colors
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
+const generateFriendColor = (username: string) => {
+  const hash = hashString(username.toLowerCase());
+  
+  // Generate HSL values with guardrails for readability
+  const hue = hash % 360; // Full hue range for variety
+  const saturation = 60 + (hash % 30); // 60-90% saturation for vibrant but not oversaturated
+  const lightness = 50 + (hash % 20); // 50-70% lightness for good contrast
+  
+  const hsl = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const borderHsl = `hsl(${hue}, ${saturation + 10}%, ${lightness + 15}%)`;
+  const bgHsl = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.2)`;
+  
+  return {
+    color: hsl,
+    borderColor: borderHsl,
+    backgroundColor: bgHsl
+  };
+};
+
+// AI Generated: GitHub Copilot - 2025-01-27
+const generateLetterboxdUrl = (movie: Movie) => {
+  const baseUrl = 'https://letterboxd.com/film/';
+  
+  // Use the actual Letterboxd slug if available, otherwise generate one from the title
+  if (movie.letterboxdSlug) {
+    return `${baseUrl}${movie.letterboxdSlug}/`;
+  }
+  
+  // Fallback: Create slug from title with year disambiguation if needed
+  let slug = movie.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')  // Remove special characters
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/-+/g, '-')          // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '');       // Remove leading/trailing hyphens
+  
+  // For movies that might have year disambiguation (like Hamilton)
+  // Add year if it's not the most common/earliest version
+  if (movie.year && movie.year > 2000) {
+    // This is a heuristic - we might need year disambiguation for newer films
+    // with common titles
+    const commonTitles = ['hamilton', 'it', 'dune', 'ghostbusters', 'fantastic-four'];
+    if (commonTitles.includes(slug)) {
+      slug = `${slug}-${movie.year}`;
+    }
+  }
+  
+  return `${baseUrl}${slug}/`;
+};
+
+// AI Generated: GitHub Copilot - 2025-08-02
+const FAMOUS_MOVIE_QUOTES = [
+  { quote: "May the Force be with you.", movie: "Star Wars" },
+  { quote: "I'll be back.", movie: "The Terminator" },
+  { quote: "Here's looking at you, kid.", movie: "Casablanca" },
+  { quote: "You can't handle the truth!", movie: "A Few Good Men" },
+  { quote: "Houston, we have a problem.", movie: "Apollo 13" },
+  { quote: "Frankly, my dear, I don't give a damn.", movie: "Gone with the Wind" },
+  { quote: "I see dead people.", movie: "The Sixth Sense" },
+  { quote: "You're gonna need a bigger boat.", movie: "Jaws" },
+  { quote: "Nobody puts Baby in a corner.", movie: "Dirty Dancing" },
+  { quote: "Life is like a box of chocolates.", movie: "Forrest Gump" },
+  { quote: "I feel the need... the need for speed!", movie: "Top Gun" },
+  { quote: "Show me the money!", movie: "Jerry Maguire" },
+  { quote: "After all this time? Always.", movie: "Harry Potter" },
+  { quote: "Why so serious?", movie: "The Dark Knight" },
+  { quote: "I am inevitable.", movie: "Avengers: Endgame" },
+  { quote: "That's what I'm talking about!", movie: "Rush Hour" },
+  { quote: "Keep your friends close, but your enemies closer.", movie: "The Godfather" },
+  { quote: "The truth is out there.", movie: "The X-Files" },
+  { quote: "I have a very particular set of skills.", movie: "Taken" },
+  { quote: "Say hello to my little friend!", movie: "Scarface" }
+];
 
 interface Movie {
   id: number;
@@ -17,15 +114,7 @@ interface Movie {
   averageRating?: number;
   friendCount: number;
   friendList?: string[];
-}
-
-interface LetterboxdUser {
-  username: string;
-  displayName?: string;
-  avatarUrl?: string;
-  followersCount?: number;
-  followingCount?: number;
-  filmsCount?: number;
+  letterboxdSlug?: string;
 }
 
 interface Friend {
@@ -52,10 +141,12 @@ function App() {
   // Window state
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
   
+  // Progress enhancement state
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  
   // Setup state
   const [username, setUsername] = useState('');
   const [tmdbApiKey, setTmdbApiKey] = useState('');
-  const [userProfile, setUserProfile] = useState<LetterboxdUser | null>(null);
   const [setupProgress, setSetupProgress] = useState({
     profileSaved: false,
     friendsLoaded: false
@@ -72,29 +163,12 @@ function App() {
     total: 0,
     status: 'Initializing...'
   });
-  const [comparisonResults, setComparisonResults] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
 
-  // Debug state
-  const [debugInfo, setDebugInfo] = useState({
-    page: page,
-    movieCount: 0,
-    filteredCount: 0,
-    databaseDebug: '' // AI Generated: GitHub Copilot - 2025-08-01
-  });
-
-  // Update debug info when state changes and ensure window focus
+  // Ensure window focus when navigating between pages
   useEffect(() => {
-    setDebugInfo({
-      page: page,
-      movieCount: comparisonResults.length,
-      filteredCount: filteredMovies.length,
-      databaseDebug: debugInfo.databaseDebug // Preserve existing debug data
-    });
-    
-    // Ensure window focus when navigating between pages
     ensureWindowFocus();
-  }, [page, comparisonResults.length, filteredMovies.length]);
+  }, [page]);
 
   // Ensure window focus on app startup
   useEffect(() => {
@@ -156,40 +230,27 @@ function App() {
     checkExistingUser();
   }, []);
 
+  // AI Generated: GitHub Copilot - 2025-08-02
+  // Rotate movie quotes during comparison
+  useEffect(() => {
+    let quoteInterval: ReturnType<typeof setInterval>;
+    
+    if (isComparing) {
+      quoteInterval = setInterval(() => {
+        setCurrentQuoteIndex((prev) => (prev + 1) % FAMOUS_MOVIE_QUOTES.length);
+      }, 4000); // Change quote every 4 seconds
+    }
+    
+    return () => {
+      if (quoteInterval) {
+        clearInterval(quoteInterval);
+      }
+    };
+  }, [isComparing]);
+
   const clearMessages = () => {
     setError(null);
     setSuccess(null);
-  };
-
-  // AI Generated: GitHub Copilot - 2025-08-01
-  // Temporary debugging function to inspect database contents
-  const debugDatabase = async () => {
-    try {
-      console.log('🔧 DEBUG: debugDatabase function called');
-      setIsLoading(true);
-      setError(null); // Clear any existing errors
-      console.log('🔧 DEBUG: About to call invoke(debug_database_contents)...');
-      
-      const debugData = await invoke('debug_database_contents') as string;
-      console.log('🔧 DEBUG: Database contents received:', debugData);
-      console.log('🔧 DEBUG: Debug info type:', typeof debugData);
-      console.log('🔧 DEBUG: Debug info length:', debugData.length);
-      
-      // Store in persistent debug state
-      setDebugInfo(prev => ({
-        ...prev,
-        databaseDebug: debugData
-      }));
-      
-      console.log('🔧 DEBUG: Set debug data in debug panel');
-      
-    } catch (err) {
-      console.error('🔧 DEBUG: Error getting database info:', err);
-      setError('Error getting database info: ' + err);
-    } finally {
-      setIsLoading(false);
-      console.log('🔧 DEBUG: debugDatabase function completed');
-    }
   };
 
   const ensureWindowFocus = async () => {
@@ -205,7 +266,6 @@ function App() {
       const newState = !isAlwaysOnTop;
       await invoke('set_always_on_top', { alwaysOnTop: newState });
       setIsAlwaysOnTop(newState);
-      setSuccess(newState ? 'Window pinned on top' : 'Window unpinned');
       
       // Save the preference if we have user data
       if (username && tmdbApiKey) {
@@ -371,10 +431,38 @@ function App() {
     console.log('🔧 FRONTEND: Starting comparison process...');
     clearMessages();
     setIsComparing(true);
-    setEnhancementProgress({ completed: 0, total: 0, status: 'Starting comparison...' });
+    setEnhancementProgress({ completed: 0, total: 100, status: 'Starting comparison...' });
+
+    // Simulate progress during backend comparison
+    let progressSimulation: ReturnType<typeof setInterval> | null = null;
+    const startProgressSimulation = () => {
+      let progress = 0;
+      progressSimulation = setInterval(() => {
+        if (progress < 85) { // Simulate up to 85% during comparison phase
+          progress += Math.random() * 6 + 1; // Random increment between 1-7
+          setEnhancementProgress(() => ({
+            completed: Math.round(progress),
+            total: 100,
+            status: progress < 25 ? 'Loading watchlists from cache...' 
+                  : progress < 50 ? 'Comparing movies...'
+                  : progress < 75 ? 'Processing results...'
+                  : 'Almost ready...'
+          }));
+        }
+      }, 300); // Update every 300ms for smoother animation
+    };
+
+    const stopProgressSimulation = () => {
+      if (progressSimulation) {
+        clearInterval(progressSimulation);
+        progressSimulation = null;
+      }
+    };
 
     try {
       console.log('🔧 FRONTEND: About to call backendCallWithTimeout...');
+      startProgressSimulation(); // Start simulating progress during backend work
+      
       await backendCallWithTimeout(async () => {
         const friendUsernames = selectedFriends.map(f => f.username);
         console.log('🔧 FRONTEND: Calling compare_watchlists with friends:', friendUsernames);
@@ -397,46 +485,24 @@ function App() {
           return;
         }
 
-        setComparisonResults(results);
         setFilteredMovies(results);
         
-        // Start enhancement process
+        // Stop progress simulation and continue with real enhancement tracking
+        stopProgressSimulation();
+        
+        // If we have TMDB API key, enhancement happens in backend during comparison
+        // No separate frontend enhancement needed - backend handles caching efficiently
         setEnhancementProgress({ 
-          completed: 0, 
-          total: results.length, 
-          status: 'Enhancing movie data with TMDB...' 
+          completed: 100, 
+          total: 100, 
+          status: 'Complete!' 
         });
-
-        // Process movies in batches for better UX
-        const batchSize = 25;
-        const enhancedResults: Movie[] = [];
-
-        for (let i = 0; i < results.length; i += batchSize) {
-          const batch = results.slice(i, i + batchSize);
-          const enhancedBatch = await movieEnhancementService.enhanceMovies(batch);
-          
-          // Transform enhanced movies to match our Movie interface
-          const transformedBatch = enhancedBatch.map(movie => ({
-            ...movie,
-            friendCount: results.find(r => r.title === movie.title && r.year === movie.year)?.friendCount || 0,
-            friendList: results.find(r => r.title === movie.title && r.year === movie.year)?.friendList || []
-          }));
-          
-          enhancedResults.push(...transformedBatch);
-          
-          setEnhancementProgress({
-            completed: enhancedResults.length,
-            total: results.length,
-            status: `Enhanced ${enhancedResults.length} of ${results.length} movies...`
-          });
-
-          // Small delay to prevent overwhelming the UI
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        setComparisonResults(enhancedResults);
-        setFilteredMovies(enhancedResults);
+        
+        // The results already include TMDB data from backend
+        setFilteredMovies(results);
+        setFilteredMovies(results);
         setPage('results');
+        return;
       }, 180000); // 3 minutes for comparison
     } catch (err) {
       console.error('🚨 FRONTEND: Error in handleCompareWatchlists:', err);
@@ -444,16 +510,17 @@ function App() {
       console.error('🚨 FRONTEND: Error message:', err instanceof Error ? err.message : 'Unknown error');
       console.error('🚨 FRONTEND: Error stack:', err instanceof Error ? err.stack : 'No stack trace');
       
+      stopProgressSimulation(); // Clean up progress simulation on error
       setError(err instanceof Error ? err.message : 'Failed to compare watchlists');
     } finally {
       console.log('🔧 FRONTEND: handleCompareWatchlists finally block, setting isComparing to false');
+      stopProgressSimulation(); // Ensure progress simulation is stopped
       setIsComparing(false);
     }
   };
 
   const handleBackToFriends = () => {
     setPage('friend-selection');
-    setComparisonResults([]);
     setFilteredMovies([]);
     setEnhancementProgress({ completed: 0, total: 0, status: '' });
   };
@@ -462,9 +529,7 @@ function App() {
     setPage('setup');
     setFriends([]);
     setSelectedFriends([]);
-    setComparisonResults([]);
     setFilteredMovies([]);
-    setUserProfile(null);
   };
 
   const renderCurrentPage = () => {
@@ -493,6 +558,8 @@ function App() {
             isLoading={isLoading}
             isComparing={isComparing}
             enhancementProgress={enhancementProgress}
+            tmdbApiKey={tmdbApiKey}
+            currentQuoteIndex={currentQuoteIndex}
           />
         );
       case 'results':
@@ -511,21 +578,6 @@ function App() {
 
   return (
     <div className="container">
-      {/* Debug Panel - Enabled for debugging */}
-      {true && (
-        <div className="debug-panel">
-          Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered: {debugInfo.filteredCount}
-          <button onClick={debugDatabase} style={{marginLeft: '10px', fontSize: '12px'}} disabled={isLoading}>
-            Debug DB
-          </button>
-          {debugInfo.databaseDebug && (
-            <div style={{marginTop: '5px', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '100px', overflow: 'auto'}}>
-              {debugInfo.databaseDebug}
-            </div>
-          )}
-        </div>
-      )}
-
       <header className="app-header">
         <div className="header-content">
           <div className="header-title">
@@ -678,6 +730,8 @@ interface FriendSelectionPageProps {
   isLoading: boolean;
   isComparing: boolean;
   enhancementProgress: EnhancementProgress;
+  tmdbApiKey: string;
+  currentQuoteIndex: number;
 }
 
 function FriendSelectionPage({ 
@@ -689,21 +743,13 @@ function FriendSelectionPage({
   onRefreshFriends,
   isLoading,
   isComparing,
-  enhancementProgress
+  enhancementProgress,
+  tmdbApiKey,
+  currentQuoteIndex
 }: FriendSelectionPageProps) {
-  const progressBarRef = useRef<HTMLDivElement>(null);
   const progressPercent = enhancementProgress.total > 0 
     ? Math.round((enhancementProgress.completed / enhancementProgress.total) * 100) 
     : 0;
-
-  useEffect(() => {
-    if (progressBarRef.current && isComparing) {
-      const fillElement = progressBarRef.current.querySelector('.progress-bar-fill') as HTMLElement;
-      if (fillElement) {
-        fillElement.style.width = `${progressPercent}%`;
-      }
-    }
-  }, [progressPercent, isComparing]);
 
   return (
     <section className="page friends-page">
@@ -739,11 +785,33 @@ function FriendSelectionPage({
       </div>
       
       <div className="page-content">
-      {friends.length === 0 ? (
+      {isLoading ? (
+        <div className="friends-grid">
+          {/* Skeleton loading friends */}
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="friend-card loading-skeleton">
+              <div className="friend-avatar loading-skeleton"></div>
+              <div className="friend-info">
+                <div className="loading-skeleton name"></div>
+                <div className="loading-skeleton username"></div>
+                <div className="loading-skeleton watchlist"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : friends.length === 0 ? (
         <div className="empty-state">
-          <p>No friends found or still loading...</p>
+          <div className="empty-state-icon">👥</div>
+          <h3>No friends added yet</h3>
+          <p>Add some friends to start comparing watchlists!</p>
           <button onClick={onRefreshFriends} disabled={isLoading} className="btn btn-primary">
-            {isLoading ? 'Loading...' : 'Try Again'}
+            {isLoading ? (
+              <>
+                <span className="loading-dots">Loading</span>
+              </>
+            ) : (
+              'Try Again'
+            )}
           </button>
         </div>
       ) : (
@@ -751,10 +819,11 @@ function FriendSelectionPage({
           <div className="friends-grid">
             {friends
               .sort((a, b) => a.username.localeCompare(b.username))
-              .map((friend) => (
+              .map((friend, index) => (
               <div
                 key={friend.username}
-                className={`friend-card ${selectedFriends.some(f => f.username === friend.username) ? 'selected' : ''}`}
+                className={`friend-card fade-in ${selectedFriends.some(f => f.username === friend.username) ? 'selected' : ''}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
                 onClick={() => onToggleFriend(friend)}
               >
                 <div className="friend-avatar">
@@ -781,33 +850,82 @@ function FriendSelectionPage({
           </div>
           
           <div className="compare-actions">
-            <p>{selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected</p>
             {isComparing ? (
               <div className="progress-button-container">
                 <div className="progress-info">
-                  <h3>{enhancementProgress.status}</h3>
-                  <p>
-                    {enhancementProgress.completed} of {enhancementProgress.total} movies processed
-                  </p>
+                  <h3>Comparing Watchlists...</h3>
+                  <div className="progress-details">
+                    <p>
+                      Progress: {progressPercent}% complete
+                    </p>
+                    {enhancementProgress.total > 0 && (
+                      <p className="progress-status">
+                        {enhancementProgress.completed === 0 
+                          ? "Getting ready to compare..." 
+                          : enhancementProgress.completed < 85 
+                            ? "Comparing watchlists..." 
+                            : enhancementProgress.completed < 100
+                            ? "Adding TMDB movie details..."
+                            : "Complete!"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="movie-quote-display">
+                    <p className="movie-quote">
+                      "{FAMOUS_MOVIE_QUOTES[currentQuoteIndex].quote}"
+                    </p>
+                    <p className="movie-source">
+                      — {FAMOUS_MOVIE_QUOTES[currentQuoteIndex].movie}
+                    </p>
+                  </div>
                 </div>
-                <div 
-                  ref={progressBarRef}
-                  className="progress-bar"
-                >
-                  <div className="progress-bar-fill" />
-                </div>
-                <div className="progress-text">
-                  {progressPercent}% complete
+                <div className="progress-bar-modern">
+                  <div 
+                    className="progress-bar-fill-modern" 
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                  <div className="progress-percentage-modern">{progressPercent}%</div>
                 </div>
               </div>
             ) : (
-              <button
-                onClick={onCompareWatchlists}
-                disabled={selectedFriends.length === 0}
-                className="btn btn-primary"
-              >
-                Compare Watchlists
-              </button>
+              <>
+                <p className="friends-selected-text">{selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected</p>
+                {!tmdbApiKey && (
+                  <div className="tmdb-info-banner">
+                    <div className="tmdb-info-content">
+                      <div className="tmdb-info-icon">🎬</div>
+                      <div className="tmdb-info-text">
+                        <h4>Get Movie Posters & Details!</h4>
+                        <p>Add your free TMDB API key to see movie posters, ratings, and descriptions. <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">Get one here →</a></p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={onCompareWatchlists}
+                  disabled={selectedFriends.length === 0 || isComparing}
+                  className={`btn btn-primary ${isComparing ? 'loading' : ''}`}
+                >
+                  {isComparing ? (
+                    <>
+                      <svg className="loading-spinner" viewBox="0 0 24 24" width="16" height="16">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="60 40" strokeDashoffset="0">
+                          <animateTransform
+                            attributeName="transform"
+                            type="rotate"
+                            values="0 12 12;360 12 12"
+                            dur="1s"
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </svg>
+                      <span className="loading-dots">Comparing</span>
+                    </>
+                  ) : (
+                    'Compare Watchlists'
+                  )}
+                </button>
+              </>
             )}
           </div>
         </>
@@ -818,37 +936,106 @@ function FriendSelectionPage({
 }
 
 // Results Page Component
-interface ResultsPageProps {
-  movies: Movie[];
-  selectedFriends: Friend[];
-  onBack: () => void;
-  onNewComparison: () => void;
-}
-
-function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: ResultsPageProps) {
+function ResultsPage({ movies, onBack }: { movies: Movie[]; selectedFriends: Friend[]; onBack: () => void; onNewComparison: () => void }) {
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>(movies);
   const [sortBy, setSortBy] = useState<'friends' | 'rating' | 'year'>('friends');
-  const [minFriends, setMinFriends] = useState<number>(1);
+  const [showSortMenu, setShowSortMenu] = useState<boolean>(false);
+  // AI Generated: GitHub Copilot - 2025-08-02
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [showGenreFilter, setShowGenreFilter] = useState<boolean>(false);
+
+  // AI Generated: GitHub Copilot - 2025-08-02
+  // Extract unique genres from all movies
+  const availableGenres = React.useMemo(() => {
+    const genreSet = new Set<string>();
+    movies.forEach(movie => {
+      if (movie.genre) {
+        // Split comma-separated genres and add each one
+        movie.genre.split(', ').forEach(genre => {
+          genreSet.add(genre.trim());
+        });
+      }
+    });
+    return Array.from(genreSet).sort();
+  }, [movies]);
 
   useEffect(() => {
-    let filtered = movies.filter(movie => movie.friendCount >= minFriends);
+    let filtered = [...movies];
     
-    // Sort movies
+    // AI Generated: GitHub Copilot - 2025-08-02
+    // Apply genre filtering first
+    if (selectedGenres.length > 0) {
+      filtered = filtered.filter(movie => {
+        if (!movie.genre) return false;
+        const movieGenres = movie.genre.split(', ').map(g => g.trim());
+        // Movie must have at least one of the selected genres
+        return selectedGenres.some(selectedGenre => 
+          movieGenres.includes(selectedGenre)
+        );
+      });
+    }
+    
+    // AI Generated: GitHub Copilot - 2025-08-02
+    // Sort movies with multi-level sorting: friends first, then rating as tiebreaker
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'friends':
-          return b.friendCount - a.friendCount;
-        case 'rating':
+          // Primary sort: friend count (descending)
+          const friendDiff = b.friendCount - a.friendCount;
+          if (friendDiff !== 0) return friendDiff;
+          // Secondary sort: average rating (descending) for tiebreaker
           return (b.averageRating || 0) - (a.averageRating || 0);
+        case 'rating':
+          // Primary sort: rating (descending)
+          const ratingDiff = (b.averageRating || 0) - (a.averageRating || 0);
+          if (ratingDiff !== 0) return ratingDiff;
+          // Secondary sort: friend count (descending) for tiebreaker
+          return b.friendCount - a.friendCount;
         case 'year':
-          return (b.year || 0) - (a.year || 0);
+          // Primary sort: year (descending)
+          const yearDiff = (b.year || 0) - (a.year || 0);
+          if (yearDiff !== 0) return yearDiff;
+          // Secondary sort: friend count (descending) for tiebreaker
+          return b.friendCount - a.friendCount;
         default:
           return 0;
       }
     });
     
     setFilteredMovies(filtered);
-  }, [movies, sortBy, minFriends]);
+  }, [movies, sortBy, selectedGenres]);
+
+  // AI Generated: GitHub Copilot - 2025-08-02
+  const handleGenreToggle = (genre: string) => {
+    setSelectedGenres(prev => {
+      if (prev.includes(genre)) {
+        return prev.filter(g => g !== genre);
+      } else {
+        return [...prev, genre];
+      }
+    });
+  };
+
+  const clearGenreFilter = () => {
+    setSelectedGenres([]);
+  };
+
+  // AI Generated: GitHub Copilot - 2025-08-02
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.filter-dropdown')) {
+        setShowSortMenu(false);
+        setShowGenreFilter(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <section className="page results-page">
@@ -859,59 +1046,106 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
           </svg>
           Back to Friends
         </button>
-        <h2>Movie Matches</h2>
-        <button onClick={onNewComparison} className="btn btn-secondary btn-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2v20M2 12h20"/>
-          </svg>
-          New Comparison
-        </button>
+        <h2>
+          <span className="movie-count">{filteredMovies.length}</span>
+          <span className="movie-label">Movie Match{filteredMovies.length !== 1 ? 'es' : ''}</span>
+        </h2>
+        <div className="header-controls">
+          {/* AI Generated: GitHub Copilot - 2025-08-02 */}
+          {/* Genre Filter Dropdown */}
+          <div className="filter-dropdown">
+            <button 
+              onClick={() => setShowGenreFilter(!showGenreFilter)} 
+              className={`btn btn-secondary ${selectedGenres.length > 0 ? 'active' : ''}`}
+              title="Filter by genre"
+            >
+              Filter
+              {selectedGenres.length > 0 && (
+                <span className="filter-badge">{selectedGenres.length}</span>
+              )}
+            </button>
+            {showGenreFilter && (
+              <div className="dropdown-menu genre-filter-menu">
+                <div className="dropdown-header">
+                  <span>Filter by Genre</span>
+                  {selectedGenres.length > 0 && (
+                    <button 
+                      onClick={clearGenreFilter}
+                      className="clear-filter-btn"
+                      title="Clear all genres"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                <div className="genre-options">
+                  {availableGenres.map(genre => (
+                    <label key={genre} className="genre-option">
+                      <input
+                        type="checkbox"
+                        checked={selectedGenres.includes(genre)}
+                        onChange={() => handleGenreToggle(genre)}
+                      />
+                      <span className="checkmark"></span>
+                      <span className="genre-name">{genre}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Sort Dropdown */}
+          <div className="filter-dropdown">
+            <button 
+              onClick={() => setShowSortMenu(!showSortMenu)} 
+              className="btn btn-secondary"
+              title="Sort movies"
+            >
+              Sort
+            </button>
+            {showSortMenu && (
+              <div className="dropdown-menu">
+                <button onClick={() => { setSortBy('friends'); setShowSortMenu(false); }}>
+                  Friend Count
+                </button>
+                <button onClick={() => { setSortBy('rating'); setShowSortMenu(false); }}>
+                  Rating
+                </button>
+                <button onClick={() => { setSortBy('year'); setShowSortMenu(false); }}>
+                  Year
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       <div className="page-content">
-        <div className="results-controls">
-          <div className="filter-group">
-            <label htmlFor="sort-by">Sort by:</label>
-            <select 
-              id="sort-by"
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value as 'friends' | 'rating' | 'year')}
-            >
-              <option value="friends">Friend Count</option>
-              <option value="rating">Rating</option>
-              <option value="year">Year</option>
-            </select>
-          </div>
-          
-          <div className="filter-group">
-            <label htmlFor="min-friends">Min friends:</label>
-            <input
-              id="min-friends"
-              type="number"
-              min="1"
-              max={selectedFriends.length}
-              value={minFriends}
-              onChange={(e) => setMinFriends(parseInt(e.target.value) || 1)}
-            />
-          </div>
-        </div>
-
       {filteredMovies.length === 0 ? (
         <div className="empty-state">
           <h3>No movies found</h3>
-          <p>Try adjusting your filters or select different friends.</p>
+          <p>Try selecting different friends for comparison.</p>
         </div>
       ) : (
-        <>
-          <div className="results-count">
-            <p>{filteredMovies.length} movie{filteredMovies.length !== 1 ? 's' : ''} found</p>
-          </div>
           
           <div className="movies-grid">
             {filteredMovies.map((movie, index) => (
               <div 
                 key={index} 
-                className="movie-card"
+                className="movie-card fade-in"
+                onClick={async () => {
+                  // AI Generated: GitHub Copilot - 2025-08-02
+                  // Open Letterboxd URL in user's default browser for saved cookies/preferences
+                  try {
+                    await open(generateLetterboxdUrl(movie));
+                  } catch (error) {
+                    console.error('Failed to open URL in default browser:', error);
+                    // Fallback to window.open if Tauri API fails
+                    window.open(generateLetterboxdUrl(movie), '_blank');
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
               >
                 <div 
                   className={`movie-poster-section ${movie.posterPath ? 'has-poster' : 'no-poster'}`}
@@ -921,49 +1155,63 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
                 />
                 
                 <div className="movie-info">
-                  <h3>{movie.title}{movie.year && movie.year > 0 ? ` (${movie.year})` : ''}</h3>
-                  
-                  <div className="movie-details">
-                    {movie.genre && (
-                      <span className="movie-genre">{movie.genre}</span>
-                    )}
-                  </div>
-                  
-                  {movie.director && (
-                    <p className="movie-director">Directed by {movie.director}</p>
-                  )}
-                  
-                  {movie.averageRating && (
-                    <div className="movie-rating">
-                      <span>⭐ {movie.averageRating.toFixed(1)}/10</span>
-                    </div>
-                  )}
-                  
-                  <div className="movie-friends">
-                    <div className="friend-count-visual">
-                      <span className="friend-visual">
-                        {'🎫'.repeat(movie.friendCount)}
-                      </span>
-                      <span className="friend-count-text">
-                        {movie.friendCount} friend{movie.friendCount !== 1 ? 's' : ''} want{movie.friendCount === 1 ? 's' : ''} to see this
-                      </span>
+                  <div className="movie-content">
+                    <div className="movie-title-section">
+                      <h3>{movie.title}{movie.year && movie.year > 0 ? ` (${movie.year})` : ''}</h3>
                     </div>
                     
-                    {movie.friendList && movie.friendList.length > 0 && (
-                      <div className="friend-list-expanded">
-                        {movie.friendList.map((friendName: string, idx: number) => (
-                          <span key={idx} className="friend-tag">
-                            {friendName}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <div className="movie-details-list">
+                      {movie.director && (
+                        <div className="movie-detail-item">
+                          <span className="detail-icon">🎬</span>
+                          <span>Directed by {movie.director}</span>
+                        </div>
+                      )}
+                      
+                      {movie.genre && (
+                        <div className="movie-detail-item">
+                          <span className="detail-icon">🎭</span>
+                          <span>{movie.genre}</span>
+                        </div>
+                      )}
+                      
+                      {movie.averageRating && (
+                        <div className="movie-detail-item">
+                          <span className="detail-icon movie-rating-stars">⭐</span>
+                          <span>{movie.averageRating.toFixed(1)}/10</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="movie-friends">
+                    <div className="friends-inline-container">
+                      {movie.friendList && movie.friendList.length > 0 && (
+                        <div className="friend-list-expanded">
+                          {movie.friendList.map((friendName: string, idx: number) => {
+                            const friendColors = generateFriendColor(friendName);
+                            return (
+                              <span 
+                                key={idx} 
+                                className="friend-tag"
+                                style={{
+                                  borderColor: friendColors.borderColor,
+                                  backgroundColor: friendColors.backgroundColor,
+                                  color: '#fff'
+                                }}
+                              >
+                                {friendName}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </>
       )}
       </div>
     </section>
