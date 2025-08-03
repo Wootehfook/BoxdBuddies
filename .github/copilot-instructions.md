@@ -8,6 +8,7 @@
 ---
 
 ## 🎯 Project Overview
+
 **BoxdBuddies** is a professionally developed Tauri-based desktop application (Rust backend + React TypeScript frontend) that compares Letterboxd watchlists between friends to find movies everyone wants to watch. The app scrapes Letterboxd profiles, enhances movie data via TMDB API, and provides an elegant comparison interface.
 
 **Design Philosophy:** Emphasizes security, code quality, accessibility, and responsible AI attribution.
@@ -19,27 +20,27 @@
 ## 📋 General Development Standards
 
 - **Max Line Length:** 100 characters (TypeScript/React) | 80 characters (Rust)
-- **Code Style:** 
+- **Code Style:**
   - **Rust:** Follow `rustfmt` and `clippy` recommendations
   - **TypeScript/React:** ESLint + Prettier configuration
   - **Database:** Use snake_case for SQL identifiers
-- **Documentation:** 
+- **Documentation:**
   - **Rust:** Standard `///` doc comments with examples
   - **TypeScript:** JSDoc comments for complex functions
   - **README:** Keep project documentation current
-- **Type Safety:** 
+- **Type Safety:**
   - **Rust:** Leverage strong type system, avoid `unwrap()` in production
   - **TypeScript:** Strict mode enabled, no `any` types
 - **AI Code Attribution:** All AI-generated code must include comments with timestamp and model identity
   ```rust
   // AI Generated: GitHub Copilot - 2025-08-02
   ```
-- **Security:**  
+- **Security:**
   - Never commit API keys, database files, or credentials
   - Validate all external inputs (Letterboxd scraping, TMDB API)
   - Use environment variables for sensitive configuration
   - Sanitize all HTML parsing operations
-- **Accessibility & Compliance:**  
+- **Accessibility & Compliance:**
   - React components follow WCAG 2.1 guidelines
   - Keyboard navigation support
   - Screen reader compatibility
@@ -51,12 +52,12 @@
 
 ## 🔧 Automation & Tooling
 
-- **Automated Quality Checks:**  
+- **Automated Quality Checks:**
   - **Rust:** `cargo clippy`, `cargo fmt`, `cargo test` in CI/CD
   - **Frontend:** ESLint, Prettier, TypeScript compiler checks
   - **Security:** Regular dependency audits with `cargo audit` and `npm audit`
   - **Database:** SQL migration validation and rollback testing
-- **Recommended Tools:**  
+- **Recommended Tools:**
   - **Development:** Tauri CLI, VS Code with Rust Analyzer and TypeScript extensions
   - **Testing:** Automated browser testing for Letterboxd scraping reliability
   - **Debugging:** Comprehensive logging with categorized prefixes (🔥 for cache, ⚡ for API calls)
@@ -65,7 +66,7 @@
 
 ## 🧪 Testing & Quality Assurance
 
-- **Testing Strategy:**  
+- **Testing Strategy:**
   - **Unit Tests:** Rust backend functions with `#[cfg(test)]` modules
   - **Integration Tests:** End-to-end Letterboxd scraping and TMDB API calls
   - **Frontend Tests:** React component testing with testing-library
@@ -95,6 +96,7 @@ BoxdBuddies/
 ---
 
 ### ✅ COMPLETED PHASES - PRODUCTION READY
+
 - [x] **Project Scaffolding**: Complete Tauri + React + TypeScript setup
 - [x] **Core Infrastructure**: Docker containerization, Vite build system, task configurations
 - [x] **Database Architecture**: SQLite with 5-table schema (friends, friend_watchlists, friend_sync_status, users, watched_movies)
@@ -109,30 +111,34 @@ BoxdBuddies/
 - [x] **Production Testing**: Successfully processing 313+ movies with 27 common movies found across multiple friends
 
 ### ✅ ALL CRITICAL ISSUES RESOLVED - PRODUCTION READY
+
 **Previous Issue**: Application hanging on progress page when loading from cache
 **Root Cause**: Database data type mismatch - `movie_year` stored as TEXT but code expected INTEGER  
 **Solution**: Modified cache reading to handle TEXT-stored years with parsing fallback
 **Status**: ✅ **FULLY RESOLVED** - Cache loading working perfectly
 
-**Previous Issue**: Hamilton (2020) linking to wrong movie (1998 version) 
+**Previous Issue**: Hamilton (2020) linking to wrong movie (1998 version)
 **Root Cause**: URL generation using title-based slugs instead of actual Letterboxd slugs
 **Solution**: Enhanced Movie struct with letterboxdSlug field and updated URL generation to use real scraped slugs
 **Status**: ✅ **FULLY RESOLVED** - 100% accurate movie links
 
 ### 🎯 CURRENT PROJECT STATUS - PRODUCTION READY APPLICATION
+
 **Achievement**: Fully functional desktop application with all core features working flawlessly
-**Performance Metrics**: 
+**Performance Metrics**:
+
 - Cache loading: 313 movies processed in <1 second
 - Fresh scraping: 30+ seconds for initial data
 - TMDB enhancement: 27 movies enhanced with full metadata
 - Real-time progress tracking with smooth UI updates
-**Quality Assurance**: Multiple successful test runs with 3+ friends, all comparison scenarios working
-**UI/UX**: Letterboxd-inspired dark theme with responsive design and accessibility features
-**Ready for**: Desktop app distribution, GitHub releases, and public availability
+  **Quality Assurance**: Multiple successful test runs with 3+ friends, all comparison scenarios working
+  **UI/UX**: Letterboxd-inspired dark theme with responsive design and accessibility features
+  **Ready for**: Desktop app distribution, GitHub releases, and public availability
 
 ## 🏗️ Architecture Deep Dive
 
 ### Database Schema
+
 ```sql
 friends: (username PK)
 friend_watchlists: (id, friend_username FK, movie_title, movie_year, letterboxd_slug, tmdb_id, date_added, last_updated)
@@ -142,6 +148,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ```
 
 ### Key Backend Functions
+
 - `scrape_user_watchlist()`: Robust Letterboxd scraping with retry logic
 - `save_watchlist_to_cache()`: Batch processing with friend table insertion
 - `get_watchlist_cached_or_scrape()`: Smart cache/scrape decision logic
@@ -149,6 +156,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 - `compare_watchlists()`: Core comparison algorithm with TMDB enhancement
 
 ### Frontend Architecture
+
 - React 18 + TypeScript with Vite
 - Tauri API integration via `@tauri-apps/api`
 - Real-time progress tracking with `backendCallWithTimeout()` wrapper
@@ -157,18 +165,21 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ## 🐛 RESOLVED DEBUGGING HISTORY
 
 ### ✅ Cache Loading Issue (RESOLVED)
+
 **Symptom**: Second comparison hangs on progress page showing "Page: progress | Movies: 0 | Filtered: 0"
 **Root Cause**: Database data type mismatch - `movie_year` stored as TEXT but code expected INTEGER
 **Solution**: Modified cache reading to handle TEXT-stored years with parsing fallback
 **Status**: ✅ **FULLY RESOLVED** - Cache loading working perfectly
 
-### ✅ Letterboxd URL Accuracy Issue (RESOLVED) 
+### ✅ Letterboxd URL Accuracy Issue (RESOLVED)
+
 **Symptom**: Hamilton (2020) linking to wrong movie (1998 version)
 **Root Cause**: URL generation using title-based slugs instead of actual Letterboxd slugs
 **Solution**: Enhanced Movie struct with letterboxdSlug field, updated URL generation
 **Status**: ✅ **FULLY RESOLVED** - 100% accurate movie links using real scraped slugs
 
 ### ✅ UI Polish Issues (RESOLVED)
+
 **Symptoms**: Movie count text off-center, verbose button labels, suboptimal window sizing
 **Solutions**: Absolute positioning CSS, shortened button text, updated window dimensions
 **Status**: ✅ **FULLY RESOLVED** - Professional UI with responsive design
@@ -184,11 +195,13 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ## 🔬 DEBUGGING METHODOLOGY
 
 ### Current Debug Infrastructure
+
 - **Backend**: 🔥 prefixed console logs with function entry/exit, parameter logging, step-by-step progress
 - **Frontend**: 2-minute timeout wrappers, debug panel with real-time state display
 - **Database**: Transaction-based operations with rollback on failure
 
 ### Tools Available
+
 - Tauri dev server with hot reload
 - Terminal output monitoring via `get_terminal_output`
 - Simple Browser integration for testing
@@ -197,11 +210,13 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ## 💡 AI Development Guidelines
 
 ### Communication Style
+
 - **Concise & Focused**: Avoid verbose explanations unless debugging requires detail
 - **Debug-First Approach**: Always check terminal output before proposing solutions
 - **Context Preservation**: Use conversation summary to maintain debugging state
 
 ### Code Quality Standards
+
 1. **Security First**: Check for and avoid exposure of sensitive data when suggesting code
 2. **Type Safety**: Leverage Rust's type system and TypeScript strict mode
 3. **Error Handling**: Comprehensive error messages with context for debugging
@@ -209,18 +224,21 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 5. **Attribution**: All AI-generated code must include timestamp and model identity comments
 
 ### Development Patterns
+
 - **Database Safety**: Always use transactions with proper rollback
 - **Frontend Resilience**: Implement timeout wrappers for long-running backend calls
 - **Batch Processing**: Handle large datasets (300+ movies) in smaller chunks
 - **Comprehensive Logging**: Use categorized debug prefixes (🔥 for cache operations)
 
 ### Project-Specific Context
+
 - **Test Username**: "Wootehfook" (313 movies in watchlist)
 - **Cache Duration**: 24 hours default for watchlist data
 - **Batch Size**: 25 movies per database transaction
 - **Timeout Settings**: 2-minute frontend timeout for backend calls
 
 ### Debugging Protocol
+
 1. **Monitor Terminal Output**: Always examine latest output using `get_terminal_output`
 2. **Follow Debug Messages**: Look for 🔥 prefixed logs in cache operations
 3. **Verify Application State**: Use debug panel information for real-time status
@@ -229,6 +247,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ---
 
 ## 🚀 Success Metrics & Quality Gates - ALL ACHIEVED ✅
+
 - **First comparison completes successfully**: ✅ WORKING (313 movies processed, 27 common found)
 - **Second comparison loads from cache efficiently**: ✅ WORKING (cache loading in <1 second)
 - **Progress page transitions to results correctly**: ✅ WORKING (smooth UI flow with progress tracking)
@@ -245,6 +264,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ## 🏆 PUBLISHING READINESS CHECKLIST
 
 ### Core Application
+
 - ✅ **Fully functional desktop app** - All features working flawlessly
 - ✅ **Cross-platform compatibility** - Tauri ensures Windows/macOS/Linux support
 - ✅ **Production-grade performance** - Optimized caching and batch processing
@@ -253,6 +273,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 - ✅ **Security best practices** - Input validation, environment variables, sanitized parsing
 
 ### Documentation & Distribution
+
 - 🔧 **Release packaging** - Create distributable executables (Tauri build)
 - 🔧 **Installation guides** - Platform-specific setup instructions
 - 🔧 **User documentation** - Feature guides and troubleshooting
@@ -262,6 +283,7 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 ---
 
 ## 📚 Reference Files
+
 - `README.md` – Updated project overview with production-ready status and achievements
 - `SETUP.md` – Updated development environment with current status and next steps
 - `database-schema-enhancements.sql` – Complete database schema and migrations
@@ -271,5 +293,67 @@ watched_movies: (id, username, movie_title, rating, date_watched)
 
 ---
 
-*Last Updated: August 2, 2025 - Production ready status with publishing roadmap*  
-*This file reflects a completed, fully functional application ready for distribution*
+## 🤖 MCP Integration & AI Productivity Requirements
+
+### **MANDATORY MCP Usage**
+
+AI assistants MUST actively use Model Context Protocol (MCP) servers to optimize productivity:
+
+#### **Primary MCPs (Use Regularly)**
+
+- **@memory** - Knowledge graph management for project context and decisions
+- **@github** - Repository operations, issue management, PR workflows
+- **@sequentialthinking** - Complex problem analysis and multi-step reasoning
+- **@codacy** - Code quality analysis and security scanning
+
+#### **Secondary MCPs (Use When Applicable)**
+
+- **@playwright** - Browser testing and automation
+- **@markitdown** - Document conversion and processing
+
+### **MCP Usage Patterns**
+
+1. **Start Every Session**: Query `@memory` to understand current project state
+2. **Before Major Changes**: Use `@sequentialthinking` for planning and analysis
+3. **Code Quality**: Run `@codacy` analysis before commits
+4. **Documentation Updates**: Use `@memory` to track decisions and update knowledge graph
+5. **Repository Management**: Use `@github` for branches, issues, and releases
+
+### **Development Workflow Integration**
+
+- **Windows CMD**: Tauri builds only (`npm run tauri dev/build`)
+- **WSL**: All development tasks (git, file operations, debugging, MCP usage)
+- **VS Code**: 6 MCPs configured and operational
+- **Cross-Platform**: Validated on Windows and Linux
+
+### **Knowledge Management Protocol**
+
+- Update `@memory` after resolving issues
+- Document architectural decisions in knowledge graph
+- Track debugging sessions and solutions
+- Maintain project status and milestones
+
+---
+
+## 🎯 CURRENT STATUS - August 3, 2025
+
+### ✅ **PRODUCTION READY APPLICATION**
+
+- **Windows Build**: Working perfectly via CMD
+- **Linux Build**: Cross-platform compatibility verified
+- **All Features**: Letterboxd scraping, TMDB enhancement, intelligent caching
+- **Real Friends**: Test_User issue resolved, showing actual Letterboxd friends
+- **Database**: Foreign key constraints fixed, cache system optimized
+- **UI/UX**: Cross-platform animations, emoji support, pin button functionality
+
+### 🚀 **NEXT PRIORITIES**
+
+1. **Release Packaging**: Create Windows/macOS/Linux distributables
+2. **GitHub Releases**: Version tagging and binary distribution
+3. **Documentation**: User guides and installation instructions
+4. **Community**: Contributing guidelines and issue templates
+
+---
+
+_Last Updated: August 3, 2025 - MCP integration requirements and production status_  
+_AI assistants must actively use MCPs and maintain knowledge graph for optimal productivity_
