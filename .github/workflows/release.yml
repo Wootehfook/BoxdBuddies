@@ -6,8 +6,9 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  # Build for Windows
+  build-windows:
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     
@@ -23,27 +24,107 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Build for all platforms
+    - name: Build Windows MSI
+      run: npm run tauri build -- --bundles msi
+    
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-msi
+        path: src-tauri/target/release/bundle/msi/*.msi
+
+  # Build for macOS
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build macOS DMG
+      run: npm run tauri build -- --bundles dmg
+    
+    - name: Upload macOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-dmg
+        path: src-tauri/target/release/bundle/dmg/*.dmg
+
+  # Build for Linux
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
       run: |
-        npm run tauri build -- --target x86_64-pc-windows-msvc
-        npm run tauri build -- --target x86_64-apple-darwin
-        npm run tauri build -- --target x86_64-unknown-linux-gnu
+        sudo apt-get update
+        sudo apt-get install -y \
+          libwebkit2gtk-4.0-dev \
+          build-essential \
+          curl \
+          wget \
+          libssl-dev \
+          libgtk-3-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build Linux packages
+      run: |
+        npm run tauri build -- --bundles deb
+        npm run tauri build -- --bundles appimage
+    
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-packages
+        path: |
+          src-tauri/target/release/bundle/deb/*.deb
+          src-tauri/target/release/bundle/appimage/*.AppImage
+
+  # Create GitHub Release
+  create-release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          src-tauri/target/*/release/bundle/**/*
+          windows-msi/*.msi
+          macos-dmg/*.dmg
+          linux-packages/*.deb
+          linux-packages/*.AppImage
         generate_release_notes: true
         draft: false
         prerelease: false
+        body_path: RELEASE_NOTES.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Update package version
-      run: |
-        npm version ${{ github.ref_name }} --no-git-tag-version
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add package.json
-        git commit -m "chore: bump version to ${{ github.ref_name }}" || exit 0
