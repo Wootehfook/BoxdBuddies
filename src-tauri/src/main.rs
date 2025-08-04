@@ -1147,7 +1147,8 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
     let url = format!("https://letterboxd.com/{username}/watchlist/");
-    println!("🔥 COUNT CHECK: Fetching watchlist page: {url}");
+    // Security: Log operation without exposing full URLs containing user data
+    println!("🔥 COUNT CHECK: Fetching watchlist page");
 
     let response = client
         .get(&url)
@@ -1396,7 +1397,8 @@ async fn get_watchlist_cached_or_scrape(
 
 #[command]
 async fn scrape_letterboxd_profile(username: String) -> Result<LetterboxdUser, String> {
-    println!("Scraping real Letterboxd profile for: {username}");
+    // Security: Log operation without exposing sensitive user data
+    println!("Scraping real Letterboxd profile");
 
     // Validate username (basic sanitization)
     if username.trim().is_empty() || username.contains('/') || username.contains('\\') {
@@ -1541,7 +1543,8 @@ fn parse_count(text: &str) -> Option<u32> {
 
 #[command]
 async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFriend>, String> {
-    println!("Scraping real Letterboxd friends for: {username}");
+    // Security: Log operation without exposing sensitive user data
+    println!("Scraping real Letterboxd friends");
 
     // Validate username (basic sanitization)
     if username.trim().is_empty() || username.contains('/') || username.contains('\\') {
@@ -1567,7 +1570,8 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
             format!("https://letterboxd.com/{username}/following/page/{page}/")
         };
 
-        println!("Scraping friends page {page}: {url}");
+        // Security: Log operation without exposing full URLs containing user data
+        println!("Scraping friends page {page}");
 
         // Fetch the friends/following page
         let response = client
