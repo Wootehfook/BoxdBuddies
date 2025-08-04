@@ -67,13 +67,20 @@ jobs:
           sudo apt-get install -y libjavascriptcoregtk-4.1-dev || true
           # Check if 4.0 version is available
           sudo apt-get install -y libjavascriptcoregtk-4.0-dev || echo "4.0 version not available, creating symlink"
-          # Create symlink for pkg-config compatibility in the correct architecture path
+          # Create symlinks for pkg-config compatibility in the correct architecture path
           ARCH_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig"
+          # JavaScriptCore compatibility symlink
           if [ ! -f "${ARCH_PATH}/javascriptcoregtk-4.0.pc" ] && [ -f "${ARCH_PATH}/javascriptcoregtk-4.1.pc" ]; then
             echo "Creating JavaScriptCore 4.0 compatibility symlink..."
             sudo ln -sf "${ARCH_PATH}/javascriptcoregtk-4.1.pc" "${ARCH_PATH}/javascriptcoregtk-4.0.pc"
-            ls -la "${ARCH_PATH}"/javascript* || echo "No JavaScript pkg-config files found"
           fi
+          # WebKit2GTK compatibility symlink  
+          if [ ! -f "${ARCH_PATH}/webkit2gtk-4.0.pc" ] && [ -f "${ARCH_PATH}/webkit2gtk-4.1.pc" ]; then
+            echo "Creating WebKit2GTK 4.0 compatibility symlink..."
+            sudo ln -sf "${ARCH_PATH}/webkit2gtk-4.1.pc" "${ARCH_PATH}/webkit2gtk-4.0.pc"
+          fi
+          # Debug output to verify symlink creation
+          ls -la "${ARCH_PATH}"/webkit2gtk* "${ARCH_PATH}"/javascript* || echo "Package files not found - checking available packages"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
