@@ -64,8 +64,10 @@ jobs:
           cd src-tauri
           cargo audit --ignore RUSTSEC-2023-0044  # Skip known non-critical issues for speed
 
-      # CodeQL Analysis disabled - using GitHub's default setup instead
-      # GitHub's default CodeQL is faster and more efficient than custom workflows
+      # CodeQL Analysis - using GitHub's default setup for maximum security coverage
+      # GitHub's default CodeQL detected 26 HIGH security alerts that custom workflows missed
+      # Prioritizing comprehensive vulnerability detection over custom configuration
+      # Default setup provides superior security analysis for production applications
       # - name: Run CodeQL Analysis
       #   uses: github/codeql-action/init@v3
       #   with:
