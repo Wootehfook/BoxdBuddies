@@ -107,6 +107,9 @@ jobs:
           # Debug output to verify symlink creation
           ls -la "${ARCH_PATH}"/webkit2gtk* "${ARCH_PATH}"/javascript* || echo "Package files not found - checking available packages"
           ls -la "${LIB_PATH}"/libwebkit2gtk* "${LIB_PATH}"/libjavascriptcore* || echo "Library files not found"
+          # Set PKG_CONFIG_PATH to include the symlink directory for subsequent steps
+          echo "PKG_CONFIG_PATH=${ARCH_PATH}:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}:$PKG_CONFIG_PATH"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
