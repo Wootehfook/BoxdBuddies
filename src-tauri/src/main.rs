@@ -916,7 +916,7 @@ async fn save_watchlist_to_cache(
     let now = Utc::now().to_rfc3339();
 
     // Ensure the friend exists in the friends table first (required for foreign key)
-    println!("Ensuring friend '{friend_username}' exists in friends table...");
+    println!("🔥 CACHE SAVE: Ensuring friend exists in friends table...");
     {
         let friend_tx = conn
             .unchecked_transaction()
@@ -1082,7 +1082,7 @@ async fn get_friend_sync_status(
             Ok(None)
         }
         Err(e) => {
-            eprintln!("Error querying sync status for {friend_username}: {e}");
+            eprintln!("Error querying sync status for user: {e}");
             Err(format!("Failed to query sync status: {e}"))
         }
     }
@@ -1132,7 +1132,7 @@ fn count_watchlist_movies_in_html(document: &Html) -> usize {
 // AI Generated: GitHub Copilot - 2025-08-01
 // Function to get current watchlist count from Letterboxd without full scraping
 async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String> {
-    println!("🔥 COUNT CHECK: Getting current watchlist count for {username} from Letterboxd");
+    println!("🔥 COUNT CHECK: Getting current watchlist count from Letterboxd");
 
     // Validate username
     if username.trim().is_empty() || username.contains('/') || username.contains('\\') {
@@ -1288,7 +1288,7 @@ async fn is_watchlist_cache_fresh_with_count_check(
             }
         }
         None => {
-            println!("🔥 CACHE CHECK: No sync status found for user {friend_username}");
+            println!("🔥 CACHE CHECK: No sync status found for user");
             Ok(false)
         }
     }
@@ -1323,7 +1323,7 @@ async fn is_watchlist_cache_fresh(
             }
         }
         None => {
-            println!("🔥 CACHE CHECK: No sync status found for user {friend_username}");
+            println!("🔥 CACHE CHECK: No sync status found for user");
             Ok(false)
         }
     }
@@ -1375,7 +1375,7 @@ async fn get_watchlist_cached_or_scrape(
         }
         Err(e) => {
             // If scraping fails but we have old cached data, use it
-            println!("Scraping failed for {friend_username}, trying cached data: {e}");
+            println!("Scraping failed for user, trying cached data: {e}");
             let cached_movies = get_cached_watchlist(friend_username).await?;
             if !cached_movies.is_empty() {
                 println!("Using stale cached data as fallback");
@@ -2815,7 +2815,6 @@ async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<St
         .https_only(true) // Enforce HTTPS-only connections
         .build()
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
     let url = format!("https://api.themoviedb.org/3/movie/{tmdb_id}/credits");
 
