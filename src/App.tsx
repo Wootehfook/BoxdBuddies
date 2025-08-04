@@ -22,7 +22,7 @@ import { open } from "@tauri-apps/api/shell";
 import "./App.css";
 import logger from "./utils/logger";
 
-// AI Generated: GitHub Copilot - 2025-01-23
+// AI Generated: GitHub Copilot - 2025-08-01
 
 // Color generation utilities for consistent friend colors
 const hashString = (str: string): number => {
