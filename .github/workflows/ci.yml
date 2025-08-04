@@ -235,7 +235,46 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsoup2.4-dev
+          # Install both 4.0 and 4.1 versions for compatibility
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev libsoup2.4-dev
+          # Try to install both JavaScriptCore versions for Tauri compatibility
+          sudo apt-get install -y libjavascriptcoregtk-4.1-dev || true
+          # Check if 4.0 version is available
+          sudo apt-get install -y libjavascriptcoregtk-4.0-dev || echo "4.0 version not available, creating symlink"
+          # Create symlinks for pkg-config compatibility in the correct architecture path
+          ARCH_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig"
+          LIB_PATH="/usr/lib/x86_64-linux-gnu"
+          # JavaScriptCore compatibility symlink
+          if [ ! -f "${ARCH_PATH}/javascriptcoregtk-4.0.pc" ] && [ -f "${ARCH_PATH}/javascriptcoregtk-4.1.pc" ]; then
+            echo "Creating JavaScriptCore 4.0 compatibility symlink..."
+            sudo ln -sf "${ARCH_PATH}/javascriptcoregtk-4.1.pc" "${ARCH_PATH}/javascriptcoregtk-4.0.pc"
+          fi
+          # WebKit2GTK compatibility symlink  
+          if [ ! -f "${ARCH_PATH}/webkit2gtk-4.0.pc" ] && [ -f "${ARCH_PATH}/webkit2gtk-4.1.pc" ]; then
+            echo "Creating WebKit2GTK 4.0 compatibility symlink..."
+            sudo ln -sf "${ARCH_PATH}/webkit2gtk-4.1.pc" "${ARCH_PATH}/webkit2gtk-4.0.pc"
+          fi
+          # Create library symlinks for linker compatibility
+          echo "Creating library symlinks for linker compatibility..."
+          # JavaScriptCore library symlinks
+          if [ -f "${LIB_PATH}/libjavascriptcoregtk-4.1.so" ]; then
+            sudo ln -sf "${LIB_PATH}/libjavascriptcoregtk-4.1.so" "${LIB_PATH}/libjavascriptcoregtk-4.0.so"
+          fi
+          # WebKit2GTK library symlinks  
+          if [ -f "${LIB_PATH}/libwebkit2gtk-4.1.so" ]; then
+            sudo ln -sf "${LIB_PATH}/libwebkit2gtk-4.1.so" "${LIB_PATH}/libwebkit2gtk-4.0.so"
+          fi
+          # Debug output to verify symlink creation
+          ls -la "${ARCH_PATH}"/webkit2gtk* "${ARCH_PATH}"/javascript* || echo "Package files not found - checking available packages"
+          ls -la "${LIB_PATH}"/libwebkit2gtk* "${LIB_PATH}"/libjavascriptcore* || echo "Library files not found"
+          # Set PKG_CONFIG_PATH to include the symlink directory for subsequent steps
+          if [ -z "$PKG_CONFIG_PATH" ]; then
+            echo "PKG_CONFIG_PATH=${ARCH_PATH}" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}"
+          else
+            echo "PKG_CONFIG_PATH=${ARCH_PATH}:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}:$PKG_CONFIG_PATH"
+          fi
 
       - name: Install frontend dependencies
         run: npm ci
