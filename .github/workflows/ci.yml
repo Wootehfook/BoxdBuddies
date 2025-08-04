@@ -58,6 +58,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev libgobject-2.0-dev
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -129,12 +134,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Codacy CLI
+      - name: Download Codacy CLI
         run: |
           curl -sSL https://get.codacy.com/cli | sh
           chmod +x ./codacy
-          ./codacy analyze --tool eslint --directory src || echo "ESLint analysis completed"
-          ./codacy analyze --tool trivy --directory . || echo "Trivy analysis completed"
+
+      - name: Run ESLint Analysis
+        run: ./codacy analyze --tool eslint --directory src || echo "ESLint analysis completed"
+
+      - name: Run Trivy Analysis  
+        run: ./codacy analyze --tool trivy --directory . || echo "Trivy analysis completed"
 
       - name: Verify Pre-commit Hooks
         run: |
