@@ -242,15 +242,17 @@ jobs:
 
       - name: Build application
         run: |
-          # Debug PKG_CONFIG_PATH before build
-          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-          echo "pkg-config search paths:"
-          pkg-config --variable pc_path pkg-config || echo "pkg-config not available"
-          # Verify symlinks exist
-          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/javascript* || echo "JavaScriptCore .pc files not found"
-          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk* || echo "WebKit2GTK .pc files not found"
-          # Test pkg-config directly
-          pkg-config --exists javascriptcoregtk-4.0 && echo "javascriptcoregtk-4.0 found" || echo "javascriptcoregtk-4.0 NOT found"
+          # Platform-specific debugging for Ubuntu only
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+            echo "pkg-config search paths:"
+            pkg-config --variable pc_path pkg-config || echo "pkg-config not available"
+            # Verify symlinks exist
+            ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/javascript* || echo "JavaScriptCore .pc files not found"
+            ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk* || echo "WebKit2GTK .pc files not found"
+            # Test pkg-config directly
+            pkg-config --exists javascriptcoregtk-4.0 && echo "javascriptcoregtk-4.0 found" || echo "javascriptcoregtk-4.0 NOT found"
+          fi
           npm run tauri build
 
       - name: Upload artifacts
