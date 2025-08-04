@@ -55,7 +55,7 @@ function App() {
   
   // UI state
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const [_isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [isComparingWatchlists, setIsComparingWatchlists] = useState(false);
   const [isEnhancingMovies, setIsEnhancingMovies] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -180,7 +180,11 @@ function App() {
     try {
       const enhancedMovies = await movieEnhancementService.enhanceMovies(
         movies,
-        (progress) => setEnhancementProgress(progress)
+        (current, total) => setEnhancementProgress({ 
+          completed: current, 
+          total: total, 
+          status: `Enhanced ${current} of ${total} movies...` 
+        })
       );
       
       setCommonMovies(enhancedMovies);
@@ -393,7 +397,7 @@ function FriendsPage({ userProfile, friends, selectedFriends, setSelectedFriends
       
       {friends.length === 0 ? (
         <div className="no-friends">
-          <p>No friends found. Make sure your Letterboxd profile is public and you're following other users.</p>
+          <p>No friends found. Make sure your Letterboxd profile is public and you&apos;re following other users.</p>
         </div>
       ) : (
         <>

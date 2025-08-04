@@ -51,7 +51,7 @@ function App() {
   // Setup state
   const [username, setUsername] = useState('');
   const [tmdbApiKey, setTmdbApiKey] = useState('');
-  const [userProfile, setUserProfile] = useState<LetterboxdUser | null>(null);
+  const [_userProfile, setUserProfile] = useState<LetterboxdUser | null>(null);
   
   // Friend selection state
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -229,7 +229,15 @@ function App() {
         for (let i = 0; i < results.length; i += batchSize) {
           const batch = results.slice(i, i + batchSize);
           const enhancedBatch = await movieEnhancementService.enhanceMovies(batch);
-          enhancedResults.push(...enhancedBatch);
+          
+          // Preserve friendCount and other properties from original batch
+          const batchWithFriendCount = enhancedBatch.map((enhanced, index) => ({
+            ...enhanced,
+            friendCount: batch[index].friendCount,
+            friendList: batch[index].friendList
+          }));
+          
+          enhancedResults.push(...batchWithFriendCount);
           
           setEnhancementProgress({
             completed: enhancedResults.length,
@@ -550,7 +558,7 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
   const [minFriends, setMinFriends] = useState<number>(1);
 
   useEffect(() => {
-    let filtered = movies.filter(movie => movie.friendCount >= minFriends);
+    const filtered = movies.filter(movie => movie.friendCount >= minFriends);
     
     // Sort movies
     filtered.sort((a, b) => {
