@@ -108,8 +108,13 @@ jobs:
           ls -la "${ARCH_PATH}"/webkit2gtk* "${ARCH_PATH}"/javascript* || echo "Package files not found - checking available packages"
           ls -la "${LIB_PATH}"/libwebkit2gtk* "${LIB_PATH}"/libjavascriptcore* || echo "Library files not found"
           # Set PKG_CONFIG_PATH to include the symlink directory for subsequent steps
-          echo "PKG_CONFIG_PATH=${ARCH_PATH}:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}:$PKG_CONFIG_PATH"
+          if [ -z "$PKG_CONFIG_PATH" ]; then
+            echo "PKG_CONFIG_PATH=${ARCH_PATH}" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}"
+          else
+            echo "PKG_CONFIG_PATH=${ARCH_PATH}:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH set to: ${ARCH_PATH}:$PKG_CONFIG_PATH"
+          fi
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -236,7 +241,17 @@ jobs:
         run: npm ci
 
       - name: Build application
-        run: npm run tauri build
+        run: |
+          # Debug PKG_CONFIG_PATH before build
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "pkg-config search paths:"
+          pkg-config --variable pc_path pkg-config || echo "pkg-config not available"
+          # Verify symlinks exist
+          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/javascript* || echo "JavaScriptCore .pc files not found"
+          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk* || echo "WebKit2GTK .pc files not found"
+          # Test pkg-config directly
+          pkg-config --exists javascriptcoregtk-4.0 && echo "javascriptcoregtk-4.0 found" || echo "javascriptcoregtk-4.0 NOT found"
+          npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
