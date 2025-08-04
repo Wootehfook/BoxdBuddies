@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
-import { movieEnhancementService } from './services/movieEnhancementService';
-import './App.css';
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/tauri";
+import { movieEnhancementService } from "./services/movieEnhancementService";
+import "./App.css";
 
 interface Movie {
   id: number;
@@ -37,66 +37,67 @@ interface UserData {
 }
 
 // Page navigation types
-type AppPage = 'welcome' | 'friends' | 'progress' | 'results';
+type AppPage = "welcome" | "friends" | "progress" | "results";
 
 function App() {
   // Page state
-  const [currentPage, setCurrentPage] = useState<AppPage>('welcome');
-  
+  const [currentPage, setCurrentPage] = useState<AppPage>("welcome");
+
   const [userData, setUserData] = useState<UserData>({
     mainUser: null,
     friends: [],
-    tmdbApiKey: undefined
+    tmdbApiKey: undefined,
   });
-  
+
   // Form state
-  const [username, setUsername] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  
+  const [username, setUsername] = useState("");
+  const [apiKey, setApiKey] = useState("");
+
   // UI state
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [_isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [isComparingWatchlists, setIsComparingWatchlists] = useState(false);
   const [isEnhancingMovies, setIsEnhancingMovies] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [enhancementProgress, setEnhancementProgress] = useState({ 
-    completed: 0, 
-    total: 0, 
-    status: 'Initializing...' 
+  const [errorMessage, setErrorMessage] = useState("");
+  const [enhancementProgress, setEnhancementProgress] = useState({
+    completed: 0,
+    total: 0,
+    status: "Initializing...",
   });
-  
+
   // Results state
   const [commonMovies, setCommonMovies] = useState<any[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<any[]>([]);
-  const [searchFilter, setSearchFilter] = useState('');
-  const [sortBy, setSortBy] = useState('title');
+  const [searchFilter, setSearchFilter] = useState("");
+  const [sortBy, setSortBy] = useState("title");
 
   // Handle user profile loading
   const handleUserProfile = async () => {
     if (!username.trim()) return;
-    
+
     setIsLoadingProfile(true);
-    setErrorMessage('');
-    
+    setErrorMessage("");
+
     try {
-      const profile = await invoke<LetterboxdUser>('get_letterboxd_profile', { username });
-      
-      setUserData(prevData => ({
+      const profile = await invoke<LetterboxdUser>("get_letterboxd_profile", {
+        username,
+      });
+
+      setUserData((prevData) => ({
         ...prevData,
         mainUser: profile,
-        tmdbApiKey: apiKey || undefined
+        tmdbApiKey: apiKey || undefined,
       }));
-      
+
       // Set TMDB API key if provided
       if (apiKey.trim()) {
         movieEnhancementService.setApiKey(apiKey.trim());
       }
-      
-      setCurrentPage('friends');
+
+      setCurrentPage("friends");
       await loadFriendsList();
-      
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error("Error loading profile:", error);
       setErrorMessage(`Failed to load profile: ${error}`);
     } finally {
       setIsLoadingProfile(false);
@@ -107,25 +108,27 @@ function App() {
   const loadFriendsList = async (targetUsername?: string) => {
     const usernameToUse = targetUsername || userData.mainUser?.username;
     if (!usernameToUse) return;
-    
+
     setIsLoadingFriends(true);
-    setErrorMessage('');
-    
+    setErrorMessage("");
+
     try {
-      const friends = await invoke<LetterboxdFriend[]>('get_letterboxd_friends', { 
-        username: usernameToUse 
-      });
-      
-      setUserData(prevData => {
+      const friends = await invoke<LetterboxdFriend[]>(
+        "get_letterboxd_friends",
+        {
+          username: usernameToUse,
+        }
+      );
+
+      setUserData((prevData) => {
         const newData = {
           ...prevData,
-          friends: friends.map(friend => ({ ...friend, isSelected: false }))
+          friends: friends.map((friend) => ({ ...friend, isSelected: false })),
         };
         return newData;
       });
-      
     } catch (error) {
-      console.error('Error loading friends:', error);
+      console.error("Error loading friends:", error);
       setErrorMessage(`Failed to load friends: ${error}`);
     } finally {
       setIsLoadingFriends(false);
@@ -135,36 +138,40 @@ function App() {
   // Compare watchlists
   const compareWatchlists = async () => {
     if (!userData.mainUser) return;
-    
-    const selectedFriends = userData.friends.filter(f => f.isSelected);
+
+    const selectedFriends = userData.friends.filter((f) => f.isSelected);
     if (selectedFriends.length === 0) {
-      setErrorMessage('Please select at least one friend to compare watchlists with.');
+      setErrorMessage(
+        "Please select at least one friend to compare watchlists with."
+      );
       return;
     }
-    
-    setCurrentPage('progress');
+
+    setCurrentPage("progress");
     setIsComparingWatchlists(true);
-    setErrorMessage('');
-    
+    setErrorMessage("");
+
     try {
-      const usernames = [userData.mainUser.username, ...selectedFriends.map(f => f.username)];
-      
-      console.log('Comparing watchlists for users:', usernames);
-      const result = await invoke<any[]>('compare_watchlists', { usernames });
-      
+      const usernames = [
+        userData.mainUser.username,
+        ...selectedFriends.map((f) => f.username),
+      ];
+
+      console.log("Comparing watchlists for users:", usernames);
+      const result = await invoke<any[]>("compare_watchlists", { usernames });
+
       if (!result || result.length === 0) {
-        setErrorMessage('No common movies found between the selected users.');
+        setErrorMessage("No common movies found between the selected users.");
         return;
       }
-      
+
       setCommonMovies(result);
       setIsComparingWatchlists(false);
-      
+
       // Start movie enhancement
       await performComparison(result);
-      
     } catch (error) {
-      console.error('Error comparing watchlists:', error);
+      console.error("Error comparing watchlists:", error);
       setErrorMessage(`Failed to compare watchlists: ${error}`);
       setIsComparingWatchlists(false);
     }
@@ -173,26 +180,30 @@ function App() {
   // Perform comparison and enhancement
   const performComparison = async (movies: any[]) => {
     if (!userData.mainUser) return;
-    
+
     setIsEnhancingMovies(true);
-    setEnhancementProgress({ completed: 0, total: movies.length, status: 'Starting enhancement...' });
-    
+    setEnhancementProgress({
+      completed: 0,
+      total: movies.length,
+      status: "Starting enhancement...",
+    });
+
     try {
       const enhancedMovies = await movieEnhancementService.enhanceMovies(
         movies,
-        (current, total) => setEnhancementProgress({ 
-          completed: current, 
-          total: total, 
-          status: `Enhanced ${current} of ${total} movies...` 
-        })
+        (current, total) =>
+          setEnhancementProgress({
+            completed: current,
+            total: total,
+            status: `Enhanced ${current} of ${total} movies...`,
+          })
       );
-      
+
       setCommonMovies(enhancedMovies);
       setFilteredMovies(enhancedMovies);
-      setCurrentPage('results');
-      
+      setCurrentPage("results");
     } catch (error) {
-      console.error('Error enhancing movies:', error);
+      console.error("Error enhancing movies:", error);
       setErrorMessage(`Failed to enhance movies: ${error}`);
     } finally {
       setIsEnhancingMovies(false);
@@ -202,28 +213,28 @@ function App() {
   // Filter and sort movies effect
   useEffect(() => {
     let filtered = [...commonMovies];
-    
+
     // Apply search filter
     if (searchFilter.trim()) {
-      filtered = filtered.filter(movie => 
+      filtered = filtered.filter((movie) =>
         movie.title.toLowerCase().includes(searchFilter.toLowerCase())
       );
     }
-    
+
     // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'title':
+        case "title":
           return a.title.localeCompare(b.title);
-        case 'year':
+        case "year":
           return b.year - a.year; // Newest first
-        case 'rating':
+        case "rating":
           return (b.rating || 0) - (a.rating || 0); // Highest first
         default:
           return 0;
       }
     });
-    
+
     setFilteredMovies(filtered);
   }, [commonMovies, searchFilter, sortBy]);
 
@@ -232,28 +243,30 @@ function App() {
     setUserData({
       mainUser: null,
       friends: [],
-      tmdbApiKey: undefined
+      tmdbApiKey: undefined,
     });
-    setUsername('');
-    setApiKey('');
+    setUsername("");
+    setApiKey("");
     setCommonMovies([]);
     setFilteredMovies([]);
-    setSearchFilter('');
-    setSortBy('title');
-    setErrorMessage('');
-    setCurrentPage('welcome');
+    setSearchFilter("");
+    setSortBy("title");
+    setErrorMessage("");
+    setCurrentPage("welcome");
   };
 
   return (
     <div className="app">
       <header className="header">
         <h1 className="title">BoxdBuddies</h1>
-        <p className="subtitle">Find movies to watch together with your Letterboxd friends</p>
+        <p className="subtitle">
+          Find movies to watch together with your Letterboxd friends
+        </p>
       </header>
 
       <main className="main">
-        {currentPage === 'welcome' && (
-          <WelcomePage 
+        {currentPage === "welcome" && (
+          <WelcomePage
             username={username}
             setUsername={setUsername}
             apiKey={apiKey}
@@ -264,43 +277,43 @@ function App() {
           />
         )}
 
-        {currentPage === 'friends' && userData.mainUser && (
-          <FriendsPage 
+        {currentPage === "friends" && userData.mainUser && (
+          <FriendsPage
             userProfile={userData.mainUser}
             friends={userData.friends}
-            selectedFriends={userData.friends.filter(f => f.isSelected)}
+            selectedFriends={userData.friends.filter((f) => f.isSelected)}
             setSelectedFriends={(friends) => {
-              setUserData(prev => ({
+              setUserData((prev) => ({
                 ...prev,
-                friends: prev.friends.map(f => ({
+                friends: prev.friends.map((f) => ({
                   ...f,
-                  isSelected: friends.some(sf => sf.username === f.username)
-                }))
+                  isSelected: friends.some((sf) => sf.username === f.username),
+                })),
               }));
             }}
             onCompareWatchlists={compareWatchlists}
-            onBack={() => setCurrentPage('welcome')}
+            onBack={() => setCurrentPage("welcome")}
           />
         )}
 
-        {currentPage === 'progress' && (
-          <ProgressPage 
+        {currentPage === "progress" && (
+          <ProgressPage
             isComparing={isComparingWatchlists || isEnhancingMovies}
             enhancementProgress={enhancementProgress}
-            onBack={() => setCurrentPage('friends')}
+            onBack={() => setCurrentPage("friends")}
           />
         )}
 
-        {currentPage === 'results' && (
-          <ResultsPage 
+        {currentPage === "results" && (
+          <ResultsPage
             userProfile={userData.mainUser}
-            selectedFriends={userData.friends.filter(f => f.isSelected)}
+            selectedFriends={userData.friends.filter((f) => f.isSelected)}
             filteredMovies={filteredMovies}
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
             sortBy={sortBy}
             setSortBy={setSortBy}
-            onBack={() => setCurrentPage('friends')}
+            onBack={() => setCurrentPage("friends")}
             onClearData={clearUserData}
           />
         )}
@@ -320,17 +333,25 @@ interface WelcomePageProps {
   onConnect: () => void;
 }
 
-function WelcomePage({ username, setUsername, apiKey, setApiKey, isLoadingProfile, errorMessage, onConnect }: WelcomePageProps) {
+function WelcomePage({
+  username,
+  setUsername,
+  apiKey,
+  setApiKey,
+  isLoadingProfile,
+  errorMessage,
+  onConnect,
+}: WelcomePageProps) {
   return (
     <section className="setup-section">
       <div className="setup-card">
         <h2>Connect Your Letterboxd Account</h2>
-        <p>Enter your Letterboxd username to import your profile and friends list</p>
-        
-        {errorMessage && (
-          <div className="error-message">{errorMessage}</div>
-        )}
-        
+        <p>
+          Enter your Letterboxd username to import your profile and friends list
+        </p>
+
+        {errorMessage && <div className="error-message">{errorMessage}</div>}
+
         <div className="form-group">
           <label htmlFor="username">Letterboxd Username</label>
           <input
@@ -342,7 +363,7 @@ function WelcomePage({ username, setUsername, apiKey, setApiKey, isLoadingProfil
             disabled={isLoadingProfile}
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="api-key">TMDB API Key (Optional)</label>
           <input
@@ -353,15 +374,24 @@ function WelcomePage({ username, setUsername, apiKey, setApiKey, isLoadingProfil
             placeholder="For enhanced movie details and posters"
             disabled={isLoadingProfile}
           />
-          <small>Get your free API key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB</a></small>
+          <small>
+            Get your free API key at{" "}
+            <a
+              href="https://www.themoviedb.org/settings/api"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              TMDB
+            </a>
+          </small>
         </div>
-        
+
         <button
           onClick={onConnect}
           disabled={!username.trim() || isLoadingProfile}
           className="btn btn-primary"
         >
-          {isLoadingProfile ? 'Loading Profile...' : 'Connect Account'}
+          {isLoadingProfile ? "Loading Profile..." : "Connect Account"}
         </button>
       </div>
     </section>
@@ -378,11 +408,18 @@ interface FriendsPageProps {
   onBack: () => void;
 }
 
-function FriendsPage({ userProfile, friends, selectedFriends, setSelectedFriends, onCompareWatchlists, onBack }: FriendsPageProps) {
+function FriendsPage({
+  userProfile,
+  friends,
+  selectedFriends,
+  setSelectedFriends,
+  onCompareWatchlists,
+  onBack,
+}: FriendsPageProps) {
   const toggleFriend = (friend: any) => {
     setSelectedFriends(
-      selectedFriends.some(f => f.username === friend.username)
-        ? selectedFriends.filter(f => f.username !== friend.username)
+      selectedFriends.some((f) => f.username === friend.username)
+        ? selectedFriends.filter((f) => f.username !== friend.username)
         : [...selectedFriends, friend]
     );
   };
@@ -390,14 +427,22 @@ function FriendsPage({ userProfile, friends, selectedFriends, setSelectedFriends
   return (
     <section className="friends-section">
       <div className="friends-header">
-        <button onClick={onBack} className="btn btn-secondary">← Back</button>
+        <button onClick={onBack} className="btn btn-secondary">
+          ← Back
+        </button>
         <h2>Select Friends to Compare</h2>
-        <p>Choose friends to compare watchlists with {userProfile?.displayName || userProfile?.username}</p>
+        <p>
+          Choose friends to compare watchlists with{" "}
+          {userProfile?.displayName || userProfile?.username}
+        </p>
       </div>
-      
+
       {friends.length === 0 ? (
         <div className="no-friends">
-          <p>No friends found. Make sure your Letterboxd profile is public and you&apos;re following other users.</p>
+          <p>
+            No friends found. Make sure your Letterboxd profile is public and
+            you&apos;re following other users.
+          </p>
         </div>
       ) : (
         <>
@@ -405,11 +450,16 @@ function FriendsPage({ userProfile, friends, selectedFriends, setSelectedFriends
             {friends.map((friend) => (
               <div
                 key={friend.username}
-                className={`friend-card ${selectedFriends.some(f => f.username === friend.username) ? 'selected' : ''}`}
+                className={`friend-card ${selectedFriends.some((f) => f.username === friend.username) ? "selected" : ""}`}
                 onClick={() => toggleFriend(friend)}
               >
                 <div className="friend-avatar">
-                  {friend.avatarUrl && <img src={friend.avatarUrl} alt={friend.displayName || friend.username} />}
+                  {friend.avatarUrl && (
+                    <img
+                      src={friend.avatarUrl}
+                      alt={friend.displayName || friend.username}
+                    />
+                  )}
                 </div>
                 <div className="friend-info">
                   <h3>{friend.displayName || friend.username}</h3>
@@ -418,9 +468,12 @@ function FriendsPage({ userProfile, friends, selectedFriends, setSelectedFriends
               </div>
             ))}
           </div>
-          
+
           <div className="compare-actions">
-            <p>{selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected</p>
+            <p>
+              {selectedFriends.length} friend
+              {selectedFriends.length !== 1 ? "s" : ""} selected
+            </p>
             <button
               onClick={onCompareWatchlists}
               disabled={selectedFriends.length === 0}
@@ -442,34 +495,46 @@ interface ProgressPageProps {
   onBack: () => void;
 }
 
-function ProgressPage({ isComparing, enhancementProgress, onBack }: ProgressPageProps) {
-  const progressPercent = enhancementProgress.total > 0 
-    ? Math.round((enhancementProgress.completed / enhancementProgress.total) * 100) 
-    : 0;
+function ProgressPage({
+  isComparing,
+  enhancementProgress,
+  onBack,
+}: ProgressPageProps) {
+  const progressPercent =
+    enhancementProgress.total > 0
+      ? Math.round(
+          (enhancementProgress.completed / enhancementProgress.total) * 100
+        )
+      : 0;
 
   return (
     <section className="progress-section">
       <div className="progress-header">
-        <button onClick={onBack} className="btn btn-secondary">← Back</button>
+        <button onClick={onBack} className="btn btn-secondary">
+          ← Back
+        </button>
         <h2>Comparing Watchlists</h2>
         <p>Finding movies in common and enhancing with additional details...</p>
       </div>
-      
+
       <div className="progress-container">
         <div className="progress-bar">
-          <div 
-            className="progress-fill" 
+          <div
+            className="progress-fill"
             style={{ width: `${progressPercent}%` }}
           ></div>
         </div>
         <div className="progress-text">
           {enhancementProgress.total > 0 && (
-            <span>{enhancementProgress.completed} of {enhancementProgress.total} movies processed</span>
+            <span>
+              {enhancementProgress.completed} of {enhancementProgress.total}{" "}
+              movies processed
+            </span>
           )}
           <span>{enhancementProgress.status}</span>
         </div>
       </div>
-      
+
       {isComparing && (
         <div className="loading-spinner">
           <div className="spinner"></div>
@@ -493,25 +558,32 @@ interface ResultsPageProps {
   onClearData: () => void;
 }
 
-function ResultsPage({ 
-  userProfile, 
-  selectedFriends, 
-  filteredMovies, 
-  searchFilter, 
-  setSearchFilter, 
-  sortBy, 
-  setSortBy, 
-  onBack, 
-  onClearData 
+function ResultsPage({
+  userProfile,
+  selectedFriends,
+  filteredMovies,
+  searchFilter,
+  setSearchFilter,
+  sortBy,
+  setSortBy,
+  onBack,
+  onClearData,
 }: ResultsPageProps) {
   return (
     <section className="results-section">
       <div className="results-header">
-        <button onClick={onBack} className="btn btn-secondary">← Back</button>
+        <button onClick={onBack} className="btn btn-secondary">
+          ← Back
+        </button>
         <h2>Shared Movies</h2>
-        <p>Movies found in common between {userProfile?.displayName || userProfile?.username} and {selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''}</p>
+        <p>
+          Movies found in common between{" "}
+          {userProfile?.displayName || userProfile?.username} and{" "}
+          {selectedFriends.length} friend
+          {selectedFriends.length !== 1 ? "s" : ""}
+        </p>
       </div>
-      
+
       <div className="results-controls">
         <div className="search-group">
           <input
@@ -522,10 +594,10 @@ function ResultsPage({
             className="search-input"
           />
         </div>
-        
+
         <div className="sort-group">
-          <select 
-            value={sortBy} 
+          <select
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="sort-select"
           >
@@ -535,17 +607,22 @@ function ResultsPage({
             <option value="popularity">Sort by Popularity</option>
           </select>
         </div>
-        
+
         <button onClick={onClearData} className="btn btn-outline">
           Start Over
         </button>
       </div>
-      
+
       {filteredMovies.length === 0 ? (
         <div className="no-results">
-          <p>No shared movies found{searchFilter ? ' matching your search' : ''}.</p>
+          <p>
+            No shared movies found{searchFilter ? " matching your search" : ""}.
+          </p>
           {searchFilter && (
-            <button onClick={() => setSearchFilter('')} className="btn btn-secondary">
+            <button
+              onClick={() => setSearchFilter("")}
+              className="btn btn-secondary"
+            >
               Clear Search
             </button>
           )}
@@ -553,15 +630,18 @@ function ResultsPage({
       ) : (
         <>
           <div className="results-count">
-            <p>{filteredMovies.length} movie{filteredMovies.length !== 1 ? 's' : ''} found</p>
+            <p>
+              {filteredMovies.length} movie
+              {filteredMovies.length !== 1 ? "s" : ""} found
+            </p>
           </div>
-          
+
           <div className="movies-grid">
             {filteredMovies.map((movie, index) => (
               <div key={index} className="movie-card">
                 {movie.enhanced?.poster_path && (
                   <div className="movie-poster">
-                    <img 
+                    <img
                       src={`https://image.tmdb.org/t/p/w300${movie.enhanced.poster_path}`}
                       alt={movie.title}
                       loading="lazy"
@@ -577,7 +657,9 @@ function ResultsPage({
                   )}
                   {movie.enhanced?.vote_average && (
                     <div className="movie-rating">
-                      <span>⭐ {movie.enhanced.vote_average.toFixed(1)}/10</span>
+                      <span>
+                        ⭐ {movie.enhanced.vote_average.toFixed(1)}/10
+                      </span>
                     </div>
                   )}
                   {movie.enhanced?.overview && (

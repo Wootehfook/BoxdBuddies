@@ -1,4 +1,4 @@
-import { tmdbService, Movie as TMDBMovie } from './tmdbService';
+import { tmdbService, Movie as TMDBMovie } from "./tmdbService";
 
 export interface Movie {
   id: number;
@@ -25,7 +25,7 @@ class MovieEnhancementService {
     this.rateLimiter = {
       requests: [],
       limit: 40, // Stay under the limit
-      window: 1000 // 1 second
+      window: 1000, // 1 second
     };
   }
 
@@ -42,19 +42,19 @@ class MovieEnhancementService {
   // Rate limiting helper
   private async waitForRateLimit(): Promise<void> {
     const now = Date.now();
-    
+
     // Remove requests older than the window
     this.rateLimiter.requests = this.rateLimiter.requests.filter(
-      time => now - time < this.rateLimiter.window
+      (time) => now - time < this.rateLimiter.window
     );
 
     // If we're at the limit, wait
     if (this.rateLimiter.requests.length >= this.rateLimiter.limit) {
       const oldestRequest = Math.min(...this.rateLimiter.requests);
       const waitTime = this.rateLimiter.window - (now - oldestRequest) + 50; // Add 50ms buffer
-      
+
       if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
 
@@ -62,12 +62,15 @@ class MovieEnhancementService {
   }
 
   // Extract year from title if present
-  private extractYearFromTitle(title: string): { cleanTitle: string; year?: number } {
+  private extractYearFromTitle(title: string): {
+    cleanTitle: string;
+    year?: number;
+  } {
     const yearMatch = title.match(/\((\d{4})\)$/);
     if (yearMatch) {
       return {
-        cleanTitle: title.replace(/\s*\(\d{4}\)$/, '').trim(),
-        year: parseInt(yearMatch[1])
+        cleanTitle: title.replace(/\s*\(\d{4}\)$/, "").trim(),
+        year: parseInt(yearMatch[1]),
       };
     }
     return { cleanTitle: title };
@@ -75,13 +78,16 @@ class MovieEnhancementService {
 
   // Create cache key for movie lookup
   private getCacheKey(title: string, year?: number): string {
-    return `${title.toLowerCase()}|${year || 'unknown'}`;
+    return `${title.toLowerCase()}|${year || "unknown"}`;
   }
 
   // Search for movie on TMDB with fuzzy matching
-  private async searchTMDBMovie(title: string, year?: number): Promise<TMDBMovie | null> {
+  private async searchTMDBMovie(
+    title: string,
+    year?: number
+  ): Promise<TMDBMovie | null> {
     const cacheKey = this.getCacheKey(title, year);
-    
+
     // Check cache first
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
@@ -89,9 +95,9 @@ class MovieEnhancementService {
 
     try {
       await this.waitForRateLimit();
-      
+
       const { movies } = await tmdbService.searchMovies(title, 1);
-      
+
       if (movies.length === 0) {
         this.cache.set(cacheKey, null as any);
         return null;
@@ -99,15 +105,15 @@ class MovieEnhancementService {
 
       // Find best match considering year if available
       let bestMatch = movies[0];
-      
+
       if (year) {
-        const exactYearMatch = movies.find(movie => movie.year === year);
+        const exactYearMatch = movies.find((movie) => movie.year === year);
         if (exactYearMatch) {
           bestMatch = exactYearMatch;
         } else {
           // Find closest year match within 2 years
-          const closeMatches = movies.filter(movie => 
-            Math.abs(movie.year - year) <= 2
+          const closeMatches = movies.filter(
+            (movie) => Math.abs(movie.year - year) <= 2
           );
           if (closeMatches.length > 0) {
             bestMatch = closeMatches[0];
@@ -117,7 +123,6 @@ class MovieEnhancementService {
 
       this.cache.set(cacheKey, bestMatch);
       return bestMatch;
-      
     } catch (error) {
       console.error(`Error searching for movie "${title}":`, error);
       this.cache.set(cacheKey, null as any);
@@ -133,18 +138,20 @@ class MovieEnhancementService {
     }
 
     // Extract year from title if not provided
-    const { cleanTitle, year: extractedYear } = this.extractYearFromTitle(letterboxdMovie.title);
+    const { cleanTitle, year: extractedYear } = this.extractYearFromTitle(
+      letterboxdMovie.title
+    );
     const searchYear = letterboxdMovie.year || extractedYear;
 
     try {
       const tmdbMovie = await this.searchTMDBMovie(cleanTitle, searchYear);
-      
+
       if (!tmdbMovie) {
         // Return original movie if no TMDB match found
         return {
           ...letterboxdMovie,
           title: cleanTitle,
-          year: searchYear || letterboxdMovie.year
+          year: searchYear || letterboxdMovie.year,
         };
       }
 
@@ -156,9 +163,8 @@ class MovieEnhancementService {
         year: searchYear || tmdbMovie.year,
         posterPath: tmdbMovie.poster_path,
         overview: tmdbMovie.overview,
-        rating: tmdbMovie.rating
+        rating: tmdbMovie.rating,
       };
-      
     } catch (error) {
       console.error(`Error enhancing movie "${letterboxdMovie.title}":`, error);
       return letterboxdMovie;
@@ -167,20 +173,20 @@ class MovieEnhancementService {
 
   // Enhance multiple movies with progress tracking
   async enhanceMovies(
-    movies: Movie[], 
+    movies: Movie[],
     onProgress?: (current: number, total: number) => void
   ): Promise<Movie[]> {
     const enhancedMovies: Movie[] = [];
-    
+
     for (let i = 0; i < movies.length; i++) {
       const enhanced = await this.enhanceMovie(movies[i]);
       enhancedMovies.push(enhanced);
-      
+
       if (onProgress) {
         onProgress(i + 1, movies.length);
       }
     }
-    
+
     return enhancedMovies;
   }
 
@@ -192,7 +198,7 @@ class MovieEnhancementService {
   // Get cache stats
   getCacheStats(): { size: number; hitRate?: number } {
     return {
-      size: this.cache.size
+      size: this.cache.size,
     };
   }
 }

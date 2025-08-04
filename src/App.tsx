@@ -1,7 +1,7 @@
-﻿import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
-import { movieEnhancementService } from './services/movieEnhancementService';
-import './App.css';
+﻿import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/tauri";
+import { movieEnhancementService } from "./services/movieEnhancementService";
+import "./App.css";
 
 // AI Generated: GitHub Copilot - 2025-08-01
 
@@ -40,30 +40,31 @@ interface EnhancementProgress {
   status: string;
 }
 
-type PageType = 'setup' | 'friend-selection' | 'progress' | 'results';
+type PageType = "setup" | "friend-selection" | "progress" | "results";
 
 function App() {
-  const [page, setPage] = useState<PageType>('setup');
+  const [page, setPage] = useState<PageType>("setup");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Setup state
-  const [username, setUsername] = useState('');
-  const [tmdbApiKey, setTmdbApiKey] = useState('');
+  const [username, setUsername] = useState("");
+  const [tmdbApiKey, setTmdbApiKey] = useState("");
   const [_userProfile, setUserProfile] = useState<LetterboxdUser | null>(null);
-  
+
   // Friend selection state
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
-  
+
   // Comparison state
   const [isComparing, setIsComparing] = useState(false);
-  const [enhancementProgress, setEnhancementProgress] = useState<EnhancementProgress>({
-    completed: 0,
-    total: 0,
-    status: 'Initializing...'
-  });
+  const [enhancementProgress, setEnhancementProgress] =
+    useState<EnhancementProgress>({
+      completed: 0,
+      total: 0,
+      status: "Initializing...",
+    });
   const [comparisonResults, setComparisonResults] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
 
@@ -71,7 +72,7 @@ function App() {
   const [debugInfo, setDebugInfo] = useState({
     page: page,
     movieCount: 0,
-    filteredCount: 0
+    filteredCount: 0,
   });
 
   // Update debug info when state changes
@@ -79,7 +80,7 @@ function App() {
     setDebugInfo({
       page: page,
       movieCount: comparisonResults.length,
-      filteredCount: filteredMovies.length
+      filteredCount: filteredMovies.length,
     });
   }, [page, comparisonResults.length, filteredMovies.length]);
 
@@ -90,11 +91,11 @@ function App() {
 
   const validateInputs = () => {
     if (!username.trim()) {
-      setError('Please enter your Letterboxd username');
+      setError("Please enter your Letterboxd username");
       return false;
     }
     if (!tmdbApiKey.trim()) {
-      setError('Please enter your TMDB API key');
+      setError("Please enter your TMDB API key");
       return false;
     }
     return true;
@@ -106,15 +107,17 @@ function App() {
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        reject(new Error(`Operation timed out after ${timeoutMs / 1000} seconds`));
+        reject(
+          new Error(`Operation timed out after ${timeoutMs / 1000} seconds`)
+        );
       }, timeoutMs);
 
       operation()
-        .then(result => {
+        .then((result) => {
           clearTimeout(timeoutId);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error) => {
           clearTimeout(timeoutId);
           reject(error);
         });
@@ -123,30 +126,30 @@ function App() {
 
   const handleUserSetup = async () => {
     if (!validateInputs()) return;
-    
+
     clearMessages();
     setIsLoading(true);
-    
+
     try {
       await backendCallWithTimeout(async () => {
-        const profile = await invoke<LetterboxdUser>('save_user_profile', {
+        const profile = await invoke<LetterboxdUser>("save_user_profile", {
           username: username.trim(),
-          tmdbApiKey: tmdbApiKey.trim()
+          tmdbApiKey: tmdbApiKey.trim(),
         });
-        
+
         setUserProfile(profile);
-        setSuccess('Profile saved successfully!');
-        
+        setSuccess("Profile saved successfully!");
+
         // Auto-fetch friends after successful setup
-        const friendsList = await invoke<Friend[]>('get_letterboxd_friends', {
-          username: username.trim()
+        const friendsList = await invoke<Friend[]>("get_letterboxd_friends", {
+          username: username.trim(),
         });
-        
+
         setFriends(friendsList);
-        setPage('friend-selection');
+        setPage("friend-selection");
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setIsLoading(false);
     }
@@ -154,34 +157,34 @@ function App() {
 
   const handleFriendsFetch = async () => {
     if (!username.trim()) {
-      setError('Username is required');
+      setError("Username is required");
       return;
     }
-    
+
     clearMessages();
     setIsLoading(true);
-    
+
     try {
       await backendCallWithTimeout(async () => {
-        const friendsList = await invoke<Friend[]>('get_letterboxd_friends', {
-          username: username.trim()
+        const friendsList = await invoke<Friend[]>("get_letterboxd_friends", {
+          username: username.trim(),
         });
-        
+
         setFriends(friendsList);
         setSuccess(`Found ${friendsList.length} friends!`);
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch friends');
+      setError(err instanceof Error ? err.message : "Failed to fetch friends");
     } finally {
       setIsLoading(false);
     }
   };
 
   const toggleFriend = (friend: Friend) => {
-    setSelectedFriends(prev => {
-      const isSelected = prev.some(f => f.username === friend.username);
+    setSelectedFriends((prev) => {
+      const isSelected = prev.some((f) => f.username === friend.username);
       if (isSelected) {
-        return prev.filter(f => f.username !== friend.username);
+        return prev.filter((f) => f.username !== friend.username);
       } else {
         return [...prev, friend];
       }
@@ -190,36 +193,40 @@ function App() {
 
   const handleCompareWatchlists = async () => {
     if (selectedFriends.length === 0) {
-      setError('Please select at least one friend to compare with');
+      setError("Please select at least one friend to compare with");
       return;
     }
 
     clearMessages();
     setIsComparing(true);
-    setPage('progress');
-    setEnhancementProgress({ completed: 0, total: 0, status: 'Starting comparison...' });
+    setPage("progress");
+    setEnhancementProgress({
+      completed: 0,
+      total: 0,
+      status: "Starting comparison...",
+    });
 
     try {
       await backendCallWithTimeout(async () => {
-        const friendUsernames = selectedFriends.map(f => f.username);
-        const results = await invoke<Movie[]>('compare_watchlists', {
-          friends: friendUsernames
+        const friendUsernames = selectedFriends.map((f) => f.username);
+        const results = await invoke<Movie[]>("compare_watchlists", {
+          friends: friendUsernames,
         });
 
         if (results.length === 0) {
-          setError('No common movies found in watchlists');
-          setPage('friend-selection');
+          setError("No common movies found in watchlists");
+          setPage("friend-selection");
           return;
         }
 
         setComparisonResults(results);
         setFilteredMovies(results);
-        
+
         // Start enhancement process
-        setEnhancementProgress({ 
-          completed: 0, 
-          total: results.length, 
-          status: 'Enhancing movie data with TMDB...' 
+        setEnhancementProgress({
+          completed: 0,
+          total: results.length,
+          status: "Enhancing movie data with TMDB...",
         });
 
         // Process movies in batches for better UX
@@ -228,48 +235,51 @@ function App() {
 
         for (let i = 0; i < results.length; i += batchSize) {
           const batch = results.slice(i, i + batchSize);
-          const enhancedBatch = await movieEnhancementService.enhanceMovies(batch);
-          
+          const enhancedBatch =
+            await movieEnhancementService.enhanceMovies(batch);
+
           // Preserve friendCount and other properties from original batch
           const batchWithFriendCount = enhancedBatch.map((enhanced, index) => ({
             ...enhanced,
             friendCount: batch[index].friendCount,
-            friendList: batch[index].friendList
+            friendList: batch[index].friendList,
           }));
-          
+
           enhancedResults.push(...batchWithFriendCount);
-          
+
           setEnhancementProgress({
             completed: enhancedResults.length,
             total: results.length,
-            status: `Enhanced ${enhancedResults.length} of ${results.length} movies...`
+            status: `Enhanced ${enhancedResults.length} of ${results.length} movies...`,
           });
 
           // Small delay to prevent overwhelming the UI
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
 
         setComparisonResults(enhancedResults);
         setFilteredMovies(enhancedResults);
-        setPage('results');
+        setPage("results");
       }, 180000); // 3 minutes for comparison
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to compare watchlists');
-      setPage('friend-selection');
+      setError(
+        err instanceof Error ? err.message : "Failed to compare watchlists"
+      );
+      setPage("friend-selection");
     } finally {
       setIsComparing(false);
     }
   };
 
   const handleBackToFriends = () => {
-    setPage('friend-selection');
+    setPage("friend-selection");
     setComparisonResults([]);
     setFilteredMovies([]);
-    setEnhancementProgress({ completed: 0, total: 0, status: '' });
+    setEnhancementProgress({ completed: 0, total: 0, status: "" });
   };
 
   const handleBackToSetup = () => {
-    setPage('setup');
+    setPage("setup");
     setFriends([]);
     setSelectedFriends([]);
     setComparisonResults([]);
@@ -279,7 +289,7 @@ function App() {
 
   const renderCurrentPage = () => {
     switch (page) {
-      case 'setup':
+      case "setup":
         return (
           <SetupPage
             username={username}
@@ -290,7 +300,7 @@ function App() {
             isLoading={isLoading}
           />
         );
-      case 'friend-selection':
+      case "friend-selection":
         return (
           <FriendSelectionPage
             friends={friends}
@@ -302,7 +312,7 @@ function App() {
             isLoading={isLoading}
           />
         );
-      case 'progress':
+      case "progress":
         return (
           <ProgressPage
             isComparing={isComparing}
@@ -310,7 +320,7 @@ function App() {
             onBack={handleBackToFriends}
           />
         );
-      case 'results':
+      case "results":
         return (
           <ResultsPage
             movies={filteredMovies}
@@ -328,7 +338,8 @@ function App() {
     <div className="container">
       {/* Debug Panel */}
       <div className="debug-panel">
-        Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered: {debugInfo.filteredCount}
+        Page: {debugInfo.page} | Movies: {debugInfo.movieCount} | Filtered:{" "}
+        {debugInfo.filteredCount}
       </div>
 
       <header className="app-header">
@@ -340,14 +351,18 @@ function App() {
         {error && (
           <div className="message error">
             <p>{error}</p>
-            <button onClick={clearMessages} className="btn-close">×</button>
+            <button onClick={clearMessages} className="btn-close">
+              ×
+            </button>
           </div>
         )}
-        
+
         {success && (
           <div className="message success">
             <p>{success}</p>
-            <button onClick={clearMessages} className="btn-close">×</button>
+            <button onClick={clearMessages} className="btn-close">
+              ×
+            </button>
           </div>
         )}
 
@@ -367,14 +382,23 @@ interface SetupPageProps {
   isLoading: boolean;
 }
 
-function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, isLoading }: SetupPageProps) {
+function SetupPage({
+  username,
+  setUsername,
+  tmdbApiKey,
+  setTmdbApiKey,
+  onSetup,
+  isLoading,
+}: SetupPageProps) {
   return (
     <section className="page setup-page">
       <div className="page-content">
         <div className="setup-card">
           <h2>Get Started</h2>
-          <p>Enter your details to compare Letterboxd watchlists with friends</p>
-          
+          <p>
+            Enter your details to compare Letterboxd watchlists with friends
+          </p>
+
           <div className="form-group">
             <label htmlFor="username">Letterboxd Username</label>
             <input
@@ -386,7 +410,7 @@ function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, 
               disabled={isLoading}
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="tmdb-key">TMDB API Key</label>
             <input
@@ -398,18 +422,22 @@ function SetupPage({ username, setUsername, tmdbApiKey, setTmdbApiKey, onSetup, 
               disabled={isLoading}
             />
             <small>
-              <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://www.themoviedb.org/settings/api"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Get your free TMDB API key here
               </a>
             </small>
           </div>
-          
-          <button 
-            onClick={onSetup} 
+
+          <button
+            onClick={onSetup}
             disabled={isLoading}
             className="btn btn-primary"
           >
-            {isLoading ? 'Setting up...' : 'Continue'}
+            {isLoading ? "Setting up..." : "Continue"}
           </button>
         </div>
       </div>
@@ -428,14 +456,14 @@ interface FriendSelectionPageProps {
   isLoading: boolean;
 }
 
-function FriendSelectionPage({ 
-  friends, 
-  selectedFriends, 
-  onToggleFriend, 
-  onCompareWatchlists, 
-  onBackToSetup, 
+function FriendSelectionPage({
+  friends,
+  selectedFriends,
+  onToggleFriend,
+  onCompareWatchlists,
+  onBackToSetup,
   onRefreshFriends,
-  isLoading 
+  isLoading,
 }: FriendSelectionPageProps) {
   return (
     <section className="page friends-page">
@@ -444,56 +472,72 @@ function FriendSelectionPage({
           ← Back to Setup
         </button>
         <h2>Select Friends</h2>
-        <button onClick={onRefreshFriends} disabled={isLoading} className="btn btn-secondary">
-          {isLoading ? 'Loading...' : '🔄 Refresh'}
+        <button
+          onClick={onRefreshFriends}
+          disabled={isLoading}
+          className="btn btn-secondary"
+        >
+          {isLoading ? "Loading..." : "🔄 Refresh"}
         </button>
       </div>
-      
       <div className="page-content">
-      {friends.length === 0 ? (
-        <div className="empty-state">
-          <p>No friends found or still loading...</p>
-          <button onClick={onRefreshFriends} disabled={isLoading} className="btn btn-primary">
-            {isLoading ? 'Loading...' : 'Try Again'}
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="friends-grid">
-            {friends.map((friend) => (
-              <div
-                key={friend.username}
-                className={`friend-card ${selectedFriends.some(f => f.username === friend.username) ? 'selected' : ''}`}
-                onClick={() => onToggleFriend(friend)}
-              >
-                <div className="friend-avatar">
-                  {friend.avatarUrl ? (
-                    <img src={friend.avatarUrl} alt={`${friend.displayName || friend.username} avatar`} />
-                  ) : (
-                    friend.displayName ? friend.displayName.charAt(0).toUpperCase() : friend.username.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="friend-info">
-                  <h3>{friend.displayName || friend.username}</h3>
-                  <p>@{friend.username}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="compare-actions">
-            <p>{selectedFriends.length} friend{selectedFriends.length !== 1 ? 's' : ''} selected</p>
+        {friends.length === 0 ? (
+          <div className="empty-state">
+            <p>No friends found or still loading...</p>
             <button
-              onClick={onCompareWatchlists}
-              disabled={selectedFriends.length === 0}
+              onClick={onRefreshFriends}
+              disabled={isLoading}
               className="btn btn-primary"
             >
-              Compare Watchlists
+              {isLoading ? "Loading..." : "Try Again"}
             </button>
           </div>
-        </>
-      )}
-      </div> {/* Close page-content */}
+        ) : (
+          <>
+            <div className="friends-grid">
+              {friends.map((friend) => (
+                <div
+                  key={friend.username}
+                  className={`friend-card ${selectedFriends.some((f) => f.username === friend.username) ? "selected" : ""}`}
+                  onClick={() => onToggleFriend(friend)}
+                >
+                  <div className="friend-avatar">
+                    {friend.avatarUrl ? (
+                      <img
+                        src={friend.avatarUrl}
+                        alt={`${friend.displayName || friend.username} avatar`}
+                      />
+                    ) : friend.displayName ? (
+                      friend.displayName.charAt(0).toUpperCase()
+                    ) : (
+                      friend.username.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="friend-info">
+                    <h3>{friend.displayName || friend.username}</h3>
+                    <p>@{friend.username}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="compare-actions">
+              <p>
+                {selectedFriends.length} friend
+                {selectedFriends.length !== 1 ? "s" : ""} selected
+              </p>
+              <button
+                onClick={onCompareWatchlists}
+                disabled={selectedFriends.length === 0}
+                className="btn btn-primary"
+              >
+                Compare Watchlists
+              </button>
+            </div>
+          </>
+        )}
+      </div>{" "}
+      {/* Close page-content */}
     </section>
   );
 }
@@ -505,39 +549,49 @@ interface ProgressPageProps {
   onBack: () => void;
 }
 
-function ProgressPage({ isComparing, enhancementProgress, onBack }: ProgressPageProps) {
-  const progressPercent = enhancementProgress.total > 0 
-    ? Math.round((enhancementProgress.completed / enhancementProgress.total) * 100) 
-    : 0;
+function ProgressPage({
+  isComparing,
+  enhancementProgress,
+  onBack,
+}: ProgressPageProps) {
+  const progressPercent =
+    enhancementProgress.total > 0
+      ? Math.round(
+          (enhancementProgress.completed / enhancementProgress.total) * 100
+        )
+      : 0;
 
   return (
     <section className="page progress-page">
       <div className="page-header">
-        <button onClick={onBack} className="btn btn-secondary" disabled={isComparing}>
+        <button
+          onClick={onBack}
+          className="btn btn-secondary"
+          disabled={isComparing}
+        >
           ← Back to Friends
         </button>
         <h2>Comparing Watchlists</h2>
       </div>
-      
+
       <div className="page-content">
         <div className="progress-container">
           <div className="progress-info">
             <h3>{enhancementProgress.status}</h3>
             <p>
-              {enhancementProgress.completed} of {enhancementProgress.total} movies processed
+              {enhancementProgress.completed} of {enhancementProgress.total}{" "}
+              movies processed
             </p>
           </div>
-          
+
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          
-          <div className="progress-percent">
-            {progressPercent}% complete
-          </div>
+
+          <div className="progress-percent">{progressPercent}% complete</div>
         </div>
       </div>
     </section>
@@ -552,28 +606,35 @@ interface ResultsPageProps {
   onNewComparison: () => void;
 }
 
-function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: ResultsPageProps) {
+function ResultsPage({
+  movies,
+  selectedFriends,
+  onBack,
+  onNewComparison,
+}: ResultsPageProps) {
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>(movies);
-  const [sortBy, setSortBy] = useState<'friends' | 'rating' | 'year'>('friends');
+  const [sortBy, setSortBy] = useState<"friends" | "rating" | "year">(
+    "friends"
+  );
   const [minFriends, setMinFriends] = useState<number>(1);
 
   useEffect(() => {
-    const filtered = movies.filter(movie => movie.friendCount >= minFriends);
-    
+    const filtered = movies.filter((movie) => movie.friendCount >= minFriends);
+
     // Sort movies
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'friends':
+        case "friends":
           return b.friendCount - a.friendCount;
-        case 'rating':
+        case "rating":
           return (b.averageRating || 0) - (a.averageRating || 0);
-        case 'year':
+        case "year":
           return (b.year || 0) - (a.year || 0);
         default:
           return 0;
       }
     });
-    
+
     setFilteredMovies(filtered);
   }, [movies, sortBy, minFriends]);
 
@@ -588,22 +649,24 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
           New Comparison
         </button>
       </div>
-      
+
       <div className="page-content">
         <div className="results-controls">
           <div className="filter-group">
             <label htmlFor="sort-by">Sort by:</label>
-            <select 
+            <select
               id="sort-by"
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value as 'friends' | 'rating' | 'year')}
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(e.target.value as "friends" | "rating" | "year")
+              }
             >
               <option value="friends">Friend Count</option>
               <option value="rating">Rating</option>
               <option value="year">Year</option>
             </select>
           </div>
-          
+
           <div className="filter-group">
             <label htmlFor="min-friends">Min friends:</label>
             <input
@@ -617,75 +680,86 @@ function ResultsPage({ movies, selectedFriends, onBack, onNewComparison }: Resul
           </div>
         </div>
 
-      {filteredMovies.length === 0 ? (
-        <div className="empty-state">
-          <h3>No movies found</h3>
-          <p>Try adjusting your filters or select different friends.</p>
-        </div>
-      ) : (
-        <>
-          <div className="results-count">
-            <p>{filteredMovies.length} movie{filteredMovies.length !== 1 ? 's' : ''} found</p>
+        {filteredMovies.length === 0 ? (
+          <div className="empty-state">
+            <h3>No movies found</h3>
+            <p>Try adjusting your filters or select different friends.</p>
           </div>
-          
-          <div className="movies-grid">
-            {filteredMovies.map((movie, index) => (
-              <div 
-                key={index} 
-                className="movie-card"
-              >
-                <div 
-                  className="movie-poster-section"
-                  style={{
-                    backgroundImage: movie.posterPath ? `url(${movie.posterPath})` : 'none'
-                  }}
-                />
-                
-                <div className="movie-info">
-                  <h3>{movie.title}{movie.year && movie.year > 0 ? ` (${movie.year})` : ''}</h3>
-                  
-                  <div className="movie-details">
-                    {movie.genre && (
-                      <span className="movie-genre">{movie.genre}</span>
+        ) : (
+          <>
+            <div className="results-count">
+              <p>
+                {filteredMovies.length} movie
+                {filteredMovies.length !== 1 ? "s" : ""} found
+              </p>
+            </div>
+
+            <div className="movies-grid">
+              {filteredMovies.map((movie, index) => (
+                <div key={index} className="movie-card">
+                  <div
+                    className="movie-poster-section"
+                    style={{
+                      backgroundImage: movie.posterPath
+                        ? `url(${movie.posterPath})`
+                        : "none",
+                    }}
+                  />
+
+                  <div className="movie-info">
+                    <h3>
+                      {movie.title}
+                      {movie.year && movie.year > 0 ? ` (${movie.year})` : ""}
+                    </h3>
+
+                    <div className="movie-details">
+                      {movie.genre && (
+                        <span className="movie-genre">{movie.genre}</span>
+                      )}
+                    </div>
+
+                    {movie.director && (
+                      <p className="movie-director">
+                        Directed by {movie.director}
+                      </p>
                     )}
-                  </div>
-                  
-                  {movie.director && (
-                    <p className="movie-director">Directed by {movie.director}</p>
-                  )}
-                  
-                  {movie.averageRating && (
-                    <div className="movie-rating">
-                      <span>⭐ {movie.averageRating.toFixed(1)}/10</span>
-                    </div>
-                  )}
-                  
-                  <div className="movie-friends">
-                    <div className="friend-count-visual">
-                      <span className="friend-visual">
-                        {'🎫'.repeat(movie.friendCount)}
-                      </span>
-                      <span className="friend-count-text">
-                        {movie.friendCount} friend{movie.friendCount !== 1 ? 's' : ''} want{movie.friendCount === 1 ? 's' : ''} to see this
-                      </span>
-                    </div>
-                    
-                    {movie.friendList && movie.friendList.length > 0 && (
-                      <div className="friend-list-expanded">
-                        {movie.friendList.map((friendName: string, idx: number) => (
-                          <span key={idx} className="friend-tag">
-                            {friendName}
-                          </span>
-                        ))}
+
+                    {movie.averageRating && (
+                      <div className="movie-rating">
+                        <span>⭐ {movie.averageRating.toFixed(1)}/10</span>
                       </div>
                     )}
+
+                    <div className="movie-friends">
+                      <div className="friend-count-visual">
+                        <span className="friend-visual">
+                          {"🎫".repeat(movie.friendCount)}
+                        </span>
+                        <span className="friend-count-text">
+                          {movie.friendCount} friend
+                          {movie.friendCount !== 1 ? "s" : ""} want
+                          {movie.friendCount === 1 ? "s" : ""} to see this
+                        </span>
+                      </div>
+
+                      {movie.friendList && movie.friendList.length > 0 && (
+                        <div className="friend-list-expanded">
+                          {movie.friendList.map(
+                            (friendName: string, idx: number) => (
+                              <span key={idx} className="friend-tag">
+                                {friendName}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
