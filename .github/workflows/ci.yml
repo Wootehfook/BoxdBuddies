@@ -240,20 +240,20 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build application
+      - name: Debug Linux pkg-config (Linux only)
+        if: runner.os == 'Linux'
         run: |
-          # Platform-specific debugging for Ubuntu only
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-            echo "pkg-config search paths:"
-            pkg-config --variable pc_path pkg-config || echo "pkg-config not available"
-            # Verify symlinks exist
-            ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/javascript* || echo "JavaScriptCore .pc files not found"
-            ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk* || echo "WebKit2GTK .pc files not found"
-            # Test pkg-config directly
-            pkg-config --exists javascriptcoregtk-4.0 && echo "javascriptcoregtk-4.0 found" || echo "javascriptcoregtk-4.0 NOT found"
-          fi
-          npm run tauri build
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "pkg-config search paths:"
+          pkg-config --variable pc_path pkg-config || echo "pkg-config not available"
+          # Verify symlinks exist
+          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/javascript* || echo "JavaScriptCore .pc files not found"
+          ls -la /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk* || echo "WebKit2GTK .pc files not found"
+          # Test pkg-config directly
+          pkg-config --exists javascriptcoregtk-4.0 && echo "javascriptcoregtk-4.0 found" || echo "javascriptcoregtk-4.0 NOT found"
+
+      - name: Build application
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
