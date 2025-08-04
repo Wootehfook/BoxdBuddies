@@ -48,16 +48,17 @@ jobs:
           cd src-tauri
           cargo audit
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript, typescript
+      # CodeQL Analysis disabled - using GitHub's default setup instead
+      # - name: Run CodeQL Analysis
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     languages: javascript, typescript
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      # - name: Autobuild
+      #   uses: github/codeql-action/autobuild@v3
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      # - name: Perform CodeQL Analysis
+      #   uses: github/codeql-action/analyze@v3
 
   dependency-review:
     name: Dependency Review
