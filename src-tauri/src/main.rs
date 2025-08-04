@@ -1139,12 +1139,13 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         return Err("Invalid username format".to_string());
     }
 
-    // Create HTTP client
+    // Create secure HTTP client with SSL verification
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .timeout(std::time::Duration::from_secs(10))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let url = format!("https://letterboxd.com/{username}/watchlist/");
     // Security: Log operation without exposing full URLs containing user data
@@ -1407,12 +1408,13 @@ async fn scrape_letterboxd_profile(username: String) -> Result<LetterboxdUser, S
 
     let url = format!("https://letterboxd.com/{username}/");
 
-    // Create HTTP client with proper headers
+    // Create secure HTTP client with proper headers
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     // Fetch the profile page
     let response = client
@@ -1551,12 +1553,13 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
         return Err("Invalid username format".to_string());
     }
 
-    // Create HTTP client with proper headers
+    // Create secure HTTP client with proper headers
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let mut all_friends = Vec::new();
     let mut page = 1;
@@ -2049,12 +2052,13 @@ async fn scrape_user_watchlist_with_limit(
         return Err("Invalid username format".to_string());
     }
 
-    // Create HTTP client
+    // Create secure HTTP client
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let mut all_movies = Vec::new();
     let mut page = 1;
@@ -2655,8 +2659,9 @@ async fn search_tmdb_movie(
     let client = reqwest::Client::builder()
         .user_agent("BoxdBuddies/1.0")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let mut query_params = vec![
         ("api_key", api_key),
@@ -2771,8 +2776,9 @@ async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovie
     let client = reqwest::Client::builder()
         .user_agent("BoxdBuddies/1.0")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let url = format!("https://api.themoviedb.org/3/movie/{tmdb_id}");
 
@@ -2806,7 +2812,9 @@ async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<St
     let client = reqwest::Client::builder()
         .user_agent("BoxdBuddies/1.0")
         .timeout(std::time::Duration::from_secs(30))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
     let url = format!("https://api.themoviedb.org/3/movie/{tmdb_id}/credits");
@@ -3595,8 +3603,9 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .timeout(std::time::Duration::from_secs(10))
+        .https_only(true) // Enforce HTTPS-only connections
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let url = format!("https://letterboxd.com/{username}/watchlist/");
     let response = client
