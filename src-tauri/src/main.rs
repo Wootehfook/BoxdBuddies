@@ -3944,5 +3944,5 @@ fn main() {
 fn build_letterboxd_url(path_segments: Vec<&str>) -> String {
     let base = "https://letterboxd.com";
     let path = path_segments.join("/");
-    format!("{}/{}", base, path)
+    format!("{base}/{path}")
 }
