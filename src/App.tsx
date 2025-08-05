@@ -22,7 +22,7 @@ import { open } from "@tauri-apps/api/shell";
 import "./App.css";
 import logger from "./utils/logger";
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 
 // Color generation utilities for consistent friend colors
 const hashString = (str: string): number => {
@@ -143,7 +143,7 @@ interface Friend {
   watchlistCount?: number;
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 interface UserPreferences {
   username: string;
   tmdb_api_key: string;
@@ -1125,11 +1125,11 @@ function ResultsPage({
     "friends"
   );
   const [showSortMenu, setShowSortMenu] = useState<boolean>(false);
-  // AI Generated: GitHub Copilot - 2025-08-02
+  // AI Generated: GitHub Copilot - 2025-08-05
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [showGenreFilter, setShowGenreFilter] = useState<boolean>(false);
 
-  // AI Generated: GitHub Copilot - 2025-08-02
+  // AI Generated: GitHub Copilot - 2025-08-05
   // Extract unique genres from all movies
   const availableGenres = React.useMemo(() => {
     const genreSet = new Set<string>();

@@ -17,6 +17,7 @@
  */
 
 import { tmdbService, Movie as TMDBMovie } from "./tmdbService";
+import { logger } from "../utils/logger";
 
 export interface Movie {
   id: number;
@@ -142,7 +143,7 @@ class MovieEnhancementService {
       this.cache.set(cacheKey, bestMatch);
       return bestMatch;
     } catch (error) {
-      console.error(`Error searching for movie "${title}":`, error);
+      logger.error(`Error searching for movie "${title}":`, error);
       this.cache.set(cacheKey, null as unknown as Movie);
       return null;
     }
@@ -184,7 +185,7 @@ class MovieEnhancementService {
         rating: tmdbMovie.rating,
       };
     } catch (error) {
-      console.error(`Error enhancing movie "${letterboxdMovie.title}":`, error);
+      logger.error(`Error enhancing movie "${letterboxdMovie.title}":`, error);
       return letterboxdMovie;
     }
   }

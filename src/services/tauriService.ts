@@ -18,6 +18,7 @@
 
 import { invoke } from "@tauri-apps/api/tauri";
 import { Movie } from "./tmdbService";
+import { logger } from "../utils/logger";
 
 // Updated User interface to match Rust backend
 export interface User {
@@ -51,7 +52,7 @@ class TauriService {
       });
       return movies;
     } catch (error) {
-      console.error("Error searching movies via Rust:", error);
+      logger.error("Error searching movies via Rust:", error);
       throw new Error("Failed to search movies");
     }
   }
@@ -65,7 +66,7 @@ class TauriService {
       });
       return movies;
     } catch (error) {
-      console.error("Error fetching popular movies via Rust:", error);
+      logger.error("Error fetching popular movies via Rust:", error);
       throw new Error("Failed to fetch popular movies");
     }
   }
@@ -76,7 +77,7 @@ class TauriService {
       const user = await invoke<User>("create_user", { username });
       return user;
     } catch (error) {
-      console.error("Error creating user via Rust:", error);
+      logger.error("Error creating user via Rust:", error);
       throw new Error("Failed to create user");
     }
   }
@@ -87,7 +88,7 @@ class TauriService {
       const users = await invoke<User[]>("get_all_users");
       return users;
     } catch (error) {
-      console.error("Error fetching users via Rust:", error);
+      logger.error("Error fetching users via Rust:", error);
       return [];
     }
   }
@@ -100,7 +101,7 @@ class TauriService {
         movie,
       });
     } catch (error) {
-      console.error("Error adding movie via Rust:", error);
+      logger.error("Error adding movie via Rust:", error);
       throw new Error("Failed to add movie to watchlist");
     }
   }
@@ -116,7 +117,7 @@ class TauriService {
         movieId,
       });
     } catch (error) {
-      console.error("Error removing movie via Rust:", error);
+      logger.error("Error removing movie via Rust:", error);
       throw new Error("Failed to remove movie from watchlist");
     }
   }
@@ -127,7 +128,7 @@ class TauriService {
       const commonMovies = await invoke<Movie[]>("find_common_movies");
       return commonMovies;
     } catch (error) {
-      console.error("Error finding common movies via Rust:", error);
+      logger.error("Error finding common movies via Rust:", error);
       return [];
     }
   }
@@ -138,7 +139,7 @@ class TauriService {
       const json = await invoke<string>("export_watchlist", { userId });
       return json;
     } catch (error) {
-      console.error("Error exporting watchlist via Rust:", error);
+      logger.error("Error exporting watchlist via Rust:", error);
       throw new Error("Failed to export watchlist");
     }
   }
@@ -149,7 +150,7 @@ class TauriService {
       const syncInfo = await invoke<SyncInfo>("get_sync_info");
       return syncInfo;
     } catch (error) {
-      console.error("Error getting sync info:", error);
+      logger.error("Error getting sync info:", error);
       throw new Error("Failed to get sync info");
     }
   }
@@ -161,7 +162,7 @@ class TauriService {
       );
       return friends;
     } catch (error) {
-      console.error("Error getting friends from database:", error);
+      logger.error("Error getting friends from database:", error);
       throw new Error("Failed to get friends from database");
     }
   }
@@ -170,7 +171,7 @@ class TauriService {
     try {
       await invoke("save_friends_to_database", { friends });
     } catch (error) {
-      console.error("Error saving friends to database:", error);
+      logger.error("Error saving friends to database:", error);
       throw new Error("Failed to save friends to database");
     }
   }
