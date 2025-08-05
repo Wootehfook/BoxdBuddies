@@ -1149,7 +1149,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     // Security: Using helper function with additional indirection to break CodeQL analysis
-    let url = build_letterboxd_url(vec![username, "watchlist"]);
+    let url = build_letterboxd_url(vec![&username, "watchlist"]);
 
     // Security: Log operation without exposing full URLs containing user data
     println!("🔥 COUNT CHECK: Fetching watchlist page");
@@ -1195,7 +1195,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
             // Check up to 10 pages for a reasonable estimate
             // Security: Using helper function with additional indirection to break CodeQL analysis
             let page_url =
-                build_letterboxd_url(vec![username, "watchlist", "page", &page.to_string()]);
+                build_letterboxd_url(vec![&username, "watchlist", "page", &page.to_string()]);
 
             // codeql[rust/cleartext-transmission] - Public profile identifier access
             match client.get(&page_url).send().await {
@@ -1409,7 +1409,7 @@ async fn scrape_letterboxd_profile(username: String) -> Result<LetterboxdUser, S
     }
 
     // Security: Using helper function with additional indirection to break CodeQL analysis
-    let url = build_letterboxd_url(vec![username]);
+    let url = build_letterboxd_url(vec![&username]);
 
     // Create secure HTTP client with proper headers
     let client = reqwest::Client::builder()
@@ -1573,9 +1573,9 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
         // Build the URL for the user's following page with pagination
         // Security: Using helper function with additional indirection to break CodeQL analysis
         let url = if page == 1 {
-            build_letterboxd_url(vec![username, "following"])
+            build_letterboxd_url(vec![&username, "following"])
         } else {
-            build_letterboxd_url(vec![username, "following", "page", &page.to_string()])
+            build_letterboxd_url(vec![&username, "following", "page", &page.to_string()])
         };
 
         // Security: Log operation without exposing full URLs containing user data
@@ -2079,9 +2079,9 @@ async fn scrape_user_watchlist_with_limit(
         // Build URL for watchlist page
         // Security: Using helper function with additional indirection to break CodeQL analysis
         let url = if page == 1 {
-            build_letterboxd_url(vec![username, "watchlist"])
+            build_letterboxd_url(vec![&username, "watchlist"])
         } else {
-            build_letterboxd_url(vec![username, "watchlist", "page", &page.to_string()])
+            build_letterboxd_url(vec![&username, "watchlist", "page", &page.to_string()])
         };
 
         println!("Scraping watchlist page {page}");
@@ -3619,7 +3619,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     // Security: Using helper function with additional indirection to break CodeQL analysis
-    let url = build_letterboxd_url(vec![username, "watchlist"]);
+    let url = build_letterboxd_url(vec![&username, "watchlist"]);
 
     // codeql[rust/cleartext-transmission] - Public profile identifier access
     let response = client
