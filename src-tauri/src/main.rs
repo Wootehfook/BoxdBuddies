@@ -73,10 +73,8 @@ fn log_debug(message: &str) {
     let log_entry = format!("[{timestamp}] {message}\n");
 
     // Print sanitized message to console (no sensitive data)
-    println!(
-        "[{}] Application log entry created",
-        timestamp.format("%H:%M:%S")
-    );
+    let console_time = chrono::Local::now().format("%H:%M:%S");
+    println!("[{}] Application log entry created", console_time);
 
     // Write to log file
     if let Ok(mut file) = OpenOptions::new()
