@@ -54,7 +54,7 @@ const generateFriendColor = (username: string) => {
   };
 };
 
-// AI Generated: GitHub Copilot - 2025-01-27
+// AI Generated: GitHub Copilot - 2025-08-05
 const generateLetterboxdUrl = (movie: Movie) => {
   const baseUrl = "https://letterboxd.com/film/";
 

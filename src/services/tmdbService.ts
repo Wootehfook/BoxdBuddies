@@ -17,6 +17,7 @@
  */
 
 import axios from "axios";
+import { logger } from "../utils/logger";
 
 // TMDB API configuration
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -114,7 +115,7 @@ class TMDBService {
         totalPages: response.data.total_pages,
       };
     } catch (error) {
-      console.error("Error searching movies:", error);
+      logger.error("Error searching movies:", error);
       throw new Error("Failed to search movies");
     }
   }
@@ -143,7 +144,7 @@ class TMDBService {
         totalPages: response.data.total_pages,
       };
     } catch (error) {
-      console.error("Error fetching popular movies:", error);
+      logger.error("Error fetching popular movies:", error);
       throw new Error("Failed to fetch popular movies");
     }
   }
@@ -162,7 +163,7 @@ class TMDBService {
 
       return this.convertTMDBMovie(response.data);
     } catch (error) {
-      console.error("Error fetching movie details:", error);
+      logger.error("Error fetching movie details:", error);
       throw new Error("Failed to fetch movie details");
     }
   }
@@ -178,7 +179,7 @@ class TMDBService {
       const count = Math.floor(Math.random() * 5) + 4; // 4-8 movies
       return shuffled.slice(0, count);
     } catch (error) {
-      console.error("Error generating sample watchlist:", error);
+      logger.error("Error generating sample watchlist:", error);
       // Fallback to static data if API fails
       return this.getFallbackMovies();
     }
