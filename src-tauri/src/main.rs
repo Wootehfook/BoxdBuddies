@@ -72,8 +72,11 @@ fn log_debug(message: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
     let log_entry = format!("[{timestamp}] {message}\n");
 
-    // Print to console as well
-    println!("{message}");
+    // Print sanitized message to console (no sensitive data)
+    println!(
+        "[{}] Application log entry created",
+        timestamp.format("%H:%M:%S")
+    );
 
     // Write to log file
     if let Ok(mut file) = OpenOptions::new()
@@ -1299,9 +1302,7 @@ async fn is_watchlist_cache_fresh(
     friend_username: String,
     max_age_hours: u64,
 ) -> Result<bool, String> {
-    println!(
-        "🔥 CACHE CHECK: Checking cache freshness for {friend_username} (max age: {max_age_hours} hours)"
-    );
+    println!("🔥 CACHE CHECK: Checking cache freshness (max age: {max_age_hours} hours)");
     match get_friend_sync_status(friend_username.clone()).await? {
         Some(status) => {
             println!(
@@ -1365,11 +1366,7 @@ async fn get_watchlist_cached_or_scrape(
     match scrape_user_watchlist(&friend_username).await {
         Ok(movies) => {
             // Save to cache for next time
-            println!(
-                "Saving {} movies to cache for {}",
-                movies.len(),
-                friend_username
-            );
+            println!("Saving {} movies to cache for user", movies.len());
             save_watchlist_to_cache(friend_username, movies.clone()).await?;
             Ok(movies)
         }
@@ -1869,7 +1866,10 @@ async fn compare_watchlists(
     limit_to500: Option<bool>,
 ) -> Result<CompareResult, String> {
     println!("=== COMPARE_WATCHLISTS COMMAND STARTED ===");
-    println!("Comparing watchlists for {main_username} with friends: {friend_usernames:?}");
+    println!(
+        "Comparing watchlists for main user with {} friends",
+        friend_usernames.len()
+    );
 
     let should_limit = limit_to500.unwrap_or(false);
     if should_limit {
@@ -2072,7 +2072,7 @@ async fn scrape_user_watchlist_with_limit(
             format!("https://letterboxd.com/{username}/watchlist/page/{page}/")
         };
 
-        println!("Scraping watchlist page {page}: {url}");
+        println!("Scraping watchlist page {page}");
 
         // Fetch the page
         let response = client
@@ -2109,7 +2109,7 @@ async fn scrape_user_watchlist_with_limit(
 
         // Debug: Log detailed information about the HTML content
         println!("=== WATCHLIST DEBUG INFO ===");
-        println!("URL: {url}");
+        println!("Processing watchlist page request");
         println!("HTML content length: {} chars", html_content.len());
         println!(
             "Response status was successful: {}",
@@ -2220,8 +2220,7 @@ async fn scrape_user_watchlist_with_limit(
     }
 
     println!(
-        "Total movies found in {}'s watchlist: {}",
-        username,
+        "Total movies found in user's watchlist: {}",
         all_movies.len()
     );
     Ok(all_movies)
@@ -3625,9 +3624,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
     // Use the same movie extraction logic as the main scraper to be consistent
     let movies_on_page = extract_movies_from_html_text(&html_content).len();
 
-    println!(
-        "DEBUG: get_watchlist_size for {username}: found {movies_on_page} movies on first page"
-    );
+    println!("DEBUG: get_watchlist_size: found {movies_on_page} movies on first page");
 
     // If we have 28 movies (full page), check if there are more pages
     if movies_on_page >= 28 {
@@ -3644,22 +3641,20 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
                 }
             }
 
-            println!("DEBUG: get_watchlist_size for {username}: detected max page {max_page}");
+            println!("DEBUG: get_watchlist_size: detected max page {max_page}");
 
             // If we found pagination, estimate total movies
             if max_page > 1 {
                 // Conservative estimate: (max_page - 1) * 28 + movies_on_first_page
                 // This might slightly underestimate, but it's safer
                 let estimated_total = ((max_page - 1) as usize * 28) + movies_on_page;
-                println!(
-                    "DEBUG: get_watchlist_size for {username}: estimated total {estimated_total}"
-                );
+                println!("DEBUG: get_watchlist_size: estimated total {estimated_total}");
                 return Ok(estimated_total);
             } else {
                 // No pagination detected but has "next" link - assume at least 2 pages
                 let estimated_total = 28 + movies_on_page; // Conservative estimate
                 println!(
-                    "DEBUG: get_watchlist_size for {username}: estimated total (no pagination) {estimated_total}"
+                    "DEBUG: get_watchlist_size: estimated total (no pagination) {estimated_total}"
                 );
                 return Ok(estimated_total);
             }
@@ -3667,9 +3662,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
     }
 
     // If no pagination or small watchlist, return actual count
-    println!(
-        "DEBUG: get_watchlist_size for {username}: small watchlist, actual count {movies_on_page}"
-    );
+    println!("DEBUG: get_watchlist_size: small watchlist, actual count {movies_on_page}");
     Ok(movies_on_page)
 }
 
