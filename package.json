@@ -29,7 +29,18 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run tauri:dev\"",
     "audit:security": "npm audit --audit-level moderate",
     "prepare": "husky",
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "mcp:start": "bash .devcontainer/start-mcp-servers.sh",
+    "mcp:monitor": "bash .devcontainer/mcp-monitor.sh",
+    "mcp:status": "bash scripts/mcp-status.sh",
+    "mcp:restart": "bash scripts/mcp-restart.sh",
+    "mcp:stop": "bash scripts/mcp-stop.sh",
+    "dev:mcp": "npm run mcp:start && npm run dev",
+    "tauri:dev:mcp": "npm run mcp:start && npm run tauri:dev",
+    "setup:dev": "bash .devcontainer/setup-with-mcp.sh",
+    "health:check": "npm run type-check && npm run lint && npm run test && npm run mcp:status",
+    "ai:workflow": "npm run mcp:start && npm run health:check && echo '🤖 AI development environment ready!'",
+    "release:prepare": "npm run clean && npm run health:check && npm run build && npm run tauri:build"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
