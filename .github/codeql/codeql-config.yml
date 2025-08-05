@@ -1,0 +1,23 @@
+name: "CodeQL Configuration"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths-ignore:
+  - "node_modules/**"
+  - "target/**"
+  - "dist/**"
+  - "build/**"
+  - "*.min.js"
+
+paths:
+  - "src/**"
+  - "src-tauri/src/**"
+
+# Ensure consistent analysis across branches
+languages:
+  - javascript
+  - rust
