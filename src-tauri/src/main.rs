@@ -1161,7 +1161,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         .map_err(|e| format!("Failed to fetch watchlist page: {e}"))?;
 
     if response.status() == 404 {
-        return Err(format!("Watchlist not found for user"));
+        return Err("Watchlist not found for user".to_string());
     }
 
     if !response.status().is_success() {
@@ -1425,7 +1425,7 @@ async fn scrape_letterboxd_profile(username: String) -> Result<LetterboxdUser, S
         .map_err(|e| format!("Failed to fetch profile page: {e}"))?;
 
     if response.status() == 404 {
-        return Err(format!("User not found on Letterboxd"));
+        return Err("User not found on Letterboxd".to_string());
     }
 
     if !response.status().is_success() {
@@ -1588,7 +1588,7 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
 
         if response.status() == 404 {
             if page == 1 {
-                return Err(format!("Following page not found for user"));
+                return Err("Following page not found for user".to_string());
             } else {
                 // No more pages, break the loop
                 break;
@@ -2092,7 +2092,7 @@ async fn scrape_user_watchlist_with_limit(
 
         if response.status() == 404 {
             if page == 1 {
-                return Err(format!("Watchlist not found for user"));
+                return Err("Watchlist not found for user".to_string());
             } else {
                 // No more pages
                 break;
