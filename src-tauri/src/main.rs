@@ -1868,8 +1868,9 @@ fn has_next_page_in_html(html_content: &str) -> bool {
 }
 
 #[tauri::command]
-// codeql[rust/cleartext-logging] - Function parameters are public profile identifiers, not sensitive data
-// codeql[rust/cleartext-transmission] - Public profile identifiers used for legitimate Letterboxd API access
+// AI Generated: GitHub Copilot - 2025-08-05
+// Security: Removed cleartext username logging to prevent sensitive information exposure
+// CodeQL finding resolution: rust/cleartext-logging - usernames are anonymized in log output
 async fn compare_watchlists(
     main_username: String,
     friend_usernames: Vec<String>,
@@ -1906,9 +1907,8 @@ async fn compare_watchlists(
         get_watchlist_cached_or_scrape(main_username.clone(), 24).await?
     };
     println!(
-        "Found {} movies in {}'s watchlist",
-        main_watchlist.len(),
-        main_username
+        "Found {} movies in main user's watchlist",
+        main_watchlist.len()
     );
 
     // Step 2: Get all friends' watchlists (with caching)
@@ -1952,11 +1952,7 @@ async fn compare_watchlists(
             }
         };
 
-        println!(
-            "Found {} movies in {}'s watchlist",
-            watchlist.len(),
-            friend_username
-        );
+        println!("Found {} movies in friend's watchlist", watchlist.len());
         friend_watchlists_with_names.push((friend_username.clone(), watchlist));
     }
 
@@ -1968,11 +1964,7 @@ async fn compare_watchlists(
 
     // Step 3: Find common movies across all watchlists
     println!("=== DEBUGGING COMPARISON PROCESS ===");
-    println!(
-        "Main user '{}' has {} movies",
-        main_username,
-        main_watchlist.len()
-    );
+    println!("Main user has {} movies", main_watchlist.len());
     println!("Processing {} friend watchlists", friend_watchlists.len());
 
     // Show a few sample movies from each list for debugging
@@ -2009,15 +2001,11 @@ async fn compare_watchlists(
     }
 
     // Show first few movies from each friend for debugging
-    for (friend_idx, (friend_name, friend_watchlist)) in
+    for (friend_idx, (_friend_name, friend_watchlist)) in
         friend_watchlists_with_names.iter().enumerate()
     {
         if !friend_watchlist.is_empty() {
-            println!(
-                "🔍 DEBUG: First 5 movies from friend {} ({}):",
-                friend_idx + 1,
-                friend_name
-            );
+            println!("🔍 DEBUG: First 5 movies from friend {}:", friend_idx + 1);
             for (i, movie) in friend_watchlist.iter().take(5).enumerate() {
                 println!("  {}. '{}'", i + 1, movie.title);
             }
