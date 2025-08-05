@@ -91,7 +91,7 @@ const generateLetterboxdUrl = (movie: Movie) => {
   return `${baseUrl}${slug}/`;
 };
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 const FAMOUS_MOVIE_QUOTES = [
   { quote: "May the Force be with you.", movie: "Star Wars" },
   { quote: "I'll be back.", movie: "The Terminator" },
@@ -272,7 +272,7 @@ function App() {
     checkExistingUser();
   }, []);
 
-  // AI Generated: GitHub Copilot - 2025-08-02
+  // AI Generated: GitHub Copilot - 2025-08-05
   // Rotate movie quotes during comparison
   useEffect(() => {
     let quoteInterval: ReturnType<typeof setInterval>;
@@ -1147,7 +1147,7 @@ function ResultsPage({
   useEffect(() => {
     let filtered = [...movies];
 
-    // AI Generated: GitHub Copilot - 2025-08-02
+    // AI Generated: GitHub Copilot - 2025-08-05
     // Apply genre filtering first
     if (selectedGenres.length > 0) {
       filtered = filtered.filter((movie) => {
@@ -1160,7 +1160,7 @@ function ResultsPage({
       });
     }
 
-    // AI Generated: GitHub Copilot - 2025-08-02
+    // AI Generated: GitHub Copilot - 2025-08-05
     // Sort movies with multi-level sorting: friends first, then rating as tiebreaker
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -1193,7 +1193,7 @@ function ResultsPage({
     setFilteredMovies(filtered);
   }, [movies, sortBy, selectedGenres]);
 
-  // AI Generated: GitHub Copilot - 2025-08-02
+  // AI Generated: GitHub Copilot - 2025-08-05
   const handleGenreToggle = (genre: string) => {
     setSelectedGenres((prev) => {
       if (prev.includes(genre)) {
@@ -1208,7 +1208,7 @@ function ResultsPage({
     setSelectedGenres([]);
   };
 
-  // AI Generated: GitHub Copilot - 2025-08-02
+  // AI Generated: GitHub Copilot - 2025-08-05
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1246,7 +1246,7 @@ function ResultsPage({
           </span>
         </h2>
         <div className="header-controls">
-          {/* AI Generated: GitHub Copilot - 2025-08-02 */}
+          {/* AI Generated: GitHub Copilot - 2025-08-05 */}
           {/* Genre Filter Dropdown */}
           <div className="filter-dropdown">
             <button
@@ -1344,7 +1344,7 @@ function ResultsPage({
                 key={index}
                 className="movie-card fade-in clickable"
                 onClick={async () => {
-                  // AI Generated: GitHub Copilot - 2025-08-02
+                  // AI Generated: GitHub Copilot - 2025-08-05
                   // Open Letterboxd URL in user's default browser for saved cookies/preferences
                   try {
                     await open(generateLetterboxdUrl(movie));
