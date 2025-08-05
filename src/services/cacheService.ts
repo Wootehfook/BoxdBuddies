@@ -20,6 +20,7 @@
 // Handles local database caching operations
 
 import { invoke } from "@tauri-apps/api/tauri";
+import { logger } from "../utils/logger";
 
 export interface CachedWatchlistMovie {
   id?: number;
@@ -59,7 +60,7 @@ class CacheService {
         friendUsername,
       });
     } catch (error) {
-      console.error("Failed to get cached watchlist:", error);
+      logger.error("Failed to get cached watchlist:", error);
       throw error;
     }
   }
@@ -77,7 +78,7 @@ class CacheService {
         movies,
       });
     } catch (error) {
-      console.error("Failed to save watchlist to cache:", error);
+      logger.error("Failed to save watchlist to cache:", error);
       throw error;
     }
   }
@@ -93,7 +94,7 @@ class CacheService {
         friendUsername,
       });
     } catch (error) {
-      console.error("Failed to get friend sync status:", error);
+      logger.error("Failed to get friend sync status:", error);
       throw error;
     }
   }
@@ -111,7 +112,7 @@ class CacheService {
         maxAgeHours,
       });
     } catch (error) {
-      console.error("Failed to check cache freshness:", error);
+      logger.error("Failed to check cache freshness:", error);
       return false;
     }
   }
@@ -129,7 +130,7 @@ class CacheService {
         try {
           statuses[username] = await this.getFriendSyncStatus(username);
         } catch (error) {
-          console.error(`Failed to get cache status for ${username}:`, error);
+          logger.error(`Failed to get cache status for ${username}:`, error);
           statuses[username] = null;
         }
       })
