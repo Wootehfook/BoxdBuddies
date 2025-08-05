@@ -1,0 +1,143 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🤖 Start MCP Servers",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "mcp:start"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "🔍 Check MCP Status",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "mcp:status"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔄 Restart MCP Servers",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "mcp:restart"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 Start Development with MCP",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "tauri:dev:mcp"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "dependsOn": "🤖 Start MCP Servers"
+        },
+        {
+            "label": "🏥 Health Check",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "health:check"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🤖 AI Workflow Setup",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "ai:workflow"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🦀 Rust Check",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["check"],
+            "options": {
+                "cwd": "${workspaceFolder}/src-tauri"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "🦀 Rust Clippy",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["clippy", "--all-targets", "--all-features"],
+            "options": {
+                "cwd": "${workspaceFolder}/src-tauri"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$rustc"]
+        }
+    ]
+}
