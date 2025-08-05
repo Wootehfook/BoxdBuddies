@@ -238,7 +238,7 @@ function App() {
                 alwaysOnTop: userPrefs.always_on_top,
               });
             } catch (error) {
-              console.error(
+              logger.error(
                 "🔧 FRONTEND: Error setting always on top from preferences:",
                 error
               );
@@ -264,7 +264,7 @@ function App() {
           );
         }
       } catch (err) {
-        console.error("🔧 FRONTEND: Error checking existing user:", err);
+        logger.error("🔧 FRONTEND: Error checking existing user:", err);
         // Stay on setup page if there's an error
       }
     };
@@ -321,7 +321,7 @@ function App() {
           });
           logger.debug("FRONTEND: Pin preference saved");
         } catch (saveErr) {
-          console.error("🔧 FRONTEND: Error saving pin preference:", saveErr);
+          logger.error("🔧 FRONTEND: Error saving pin preference:", saveErr);
         }
       }
     } catch (err) {
@@ -420,9 +420,9 @@ function App() {
         setPage("friend-selection");
       }
     } catch (err) {
-      console.error("🔧 FRONTEND: Error in handleUserSetup:", err);
-      console.error("🔧 FRONTEND: Error type:", typeof err);
-      console.error(
+      logger.error("🔧 FRONTEND: Error in handleUserSetup:", err);
+      logger.error("🔧 FRONTEND: Error type:", typeof err);
+      logger.error(
         "🔧 FRONTEND: Error message:",
         err instanceof Error ? err.message : String(err)
       );
@@ -590,13 +590,13 @@ function App() {
         return;
       }, 180000); // 3 minutes for comparison
     } catch (err) {
-      console.error("🚨 FRONTEND: Error in handleCompareWatchlists:", err);
-      console.error("🚨 FRONTEND: Error type:", typeof err);
-      console.error(
+      logger.error("🚨 FRONTEND: Error in handleCompareWatchlists:", err);
+      logger.error("🚨 FRONTEND: Error type:", typeof err);
+      logger.error(
         "🚨 FRONTEND: Error message:",
         err instanceof Error ? err.message : "Unknown error"
       );
-      console.error(
+      logger.error(
         "🚨 FRONTEND: Error stack:",
         err instanceof Error ? err.stack : "No stack trace"
       );
@@ -1349,7 +1349,7 @@ function ResultsPage({
                   try {
                     await open(generateLetterboxdUrl(movie));
                   } catch (error) {
-                    console.error(
+                    logger.error(
                       "Failed to open URL in default browser:",
                       error
                     );
