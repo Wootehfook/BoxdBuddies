@@ -1152,6 +1152,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
     // Security: Log operation without exposing full URLs containing user data
     println!("🔥 COUNT CHECK: Fetching watchlist page");
 
+    // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
     let response = client
         .get(&url)
         .send()
@@ -1191,6 +1192,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
         while page <= 10 {
             // Check up to 10 pages for a reasonable estimate
             let page_url = format!("https://letterboxd.com/{username}/watchlist/page/{page}/");
+            // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
             match client.get(&page_url).send().await {
                 Ok(page_response) if page_response.status().is_success() => {
                     match page_response.text().await {
@@ -1412,6 +1414,7 @@ async fn scrape_letterboxd_profile(username: String) -> Result<LetterboxdUser, S
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     // Fetch the profile page
+    // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
     let response = client
         .get(&url)
         .send()
@@ -1572,6 +1575,7 @@ async fn scrape_letterboxd_friends(username: String) -> Result<Vec<LetterboxdFri
         println!("Scraping friends page {page}");
 
         // Fetch the friends/following page
+        // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
         let response = client
             .get(&url)
             .send()
@@ -1884,7 +1888,7 @@ async fn compare_watchlists(
     }
 
     // Step 1: Get main user's watchlist (with caching)
-    println!("Getting watchlist for main user: {main_username}");
+    println!("Getting watchlist for main user");
     let main_watchlist = if should_limit {
         // For limited mode, still scrape fresh to ensure we get the latest
         scrape_user_watchlist_with_limit(&main_username, true).await?
@@ -1907,7 +1911,7 @@ async fn compare_watchlists(
         .collect();
 
     if filtered_friends.len() != friend_usernames.len() {
-        println!("DEBUG: Filtered out main user '{main_username}' from friends list");
+        println!("DEBUG: Filtered out main user from friends list");
         println!("DEBUG: Original friends: {friend_usernames:?}");
         println!("DEBUG: Filtered friends: {filtered_friends:?}");
     }
@@ -1918,13 +1922,13 @@ async fn compare_watchlists(
 
     let mut friend_watchlists_with_names = Vec::new();
     for friend_username in &filtered_friends {
-        println!("Getting watchlist for friend: {friend_username}");
+        println!("Getting watchlist for friend");
         let watchlist = if should_limit {
             // For limited mode, still scrape fresh
             match scrape_user_watchlist_with_limit(friend_username, true).await {
                 Ok(watchlist) => watchlist,
                 Err(e) => {
-                    println!("Failed to scrape watchlist for {friend_username}: {e}");
+                    println!("Failed to scrape watchlist for friend: {e}");
                     continue;
                 }
             }
@@ -1933,7 +1937,7 @@ async fn compare_watchlists(
             match get_watchlist_cached_or_scrape(friend_username.clone(), 24).await {
                 Ok(watchlist) => watchlist,
                 Err(e) => {
-                    println!("Failed to get watchlist for {friend_username}: {e}");
+                    println!("Failed to get watchlist for friend: {e}");
                     continue;
                 }
             }
@@ -1989,7 +1993,7 @@ async fn compare_watchlists(
 
     // Show first few movies from main user for debugging
     if !main_watchlist.is_empty() {
-        println!("🔍 DEBUG: First 5 movies from main user ({main_username}):");
+        println!("🔍 DEBUG: First 5 movies from main user:");
         for (i, movie) in main_watchlist.iter().take(5).enumerate() {
             println!("  {}. '{}'", i + 1, movie.title);
         }
@@ -2073,6 +2077,7 @@ async fn scrape_user_watchlist_with_limit(
         println!("Scraping watchlist page {page}");
 
         // Fetch the page
+        // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
         let response = client
             .get(&url)
             .send()
@@ -3604,6 +3609,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
 
     let url = format!("https://letterboxd.com/{username}/watchlist/");
+    // Security Note: Username in URL is public Letterboxd profile identifier, not sensitive data
     let response = client
         .get(&url)
         .send()
