@@ -27,7 +27,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, Manager};
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 // Debug flag to control verbose logging - set to false for production builds
 const DEBUG_LOGGING: bool = false;
 
@@ -40,7 +40,7 @@ macro_rules! debug_log {
     };
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 fn safe_parse_year_from_date(date_str: &str) -> Option<i32> {
     if date_str.len() >= 4 {
         date_str[0..4].parse::<i32>().ok()
@@ -49,7 +49,7 @@ fn safe_parse_year_from_date(date_str: &str) -> Option<i32> {
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 fn safe_parse_year_from_date_u32(date_str: &str) -> Option<u32> {
     if date_str.len() >= 4 {
         date_str[0..4].parse::<u32>().ok()
@@ -157,7 +157,7 @@ struct CachedWatchlistMovie {
     last_updated: String,
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 // TMDB API response structures
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct TmdbSearchResult {
@@ -191,7 +191,7 @@ struct TmdbGenre {
     name: String,
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct TmdbCredits {
     id: i32,
@@ -234,7 +234,7 @@ struct TmdbMovieDetails {
     original_language: String,
     status: String,
     tagline: Option<String>,
-    director: Option<String>, // AI Generated: GitHub Copilot - 2025-01-27
+    director: Option<String>, // AI Generated: GitHub Copilot - 2025-08-05
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -392,11 +392,11 @@ async fn load_user_preferences() -> Result<UserPreferences, String> {
     let preferences: UserPreferences = serde_json::from_str(&json_data)
         .map_err(|e| format!("Failed to parse preferences file: {e}"))?;
 
-    // AI Generated: GitHub Copilot - 2025-08-02 - Removed verbose logging to prevent spam
+    // AI Generated: GitHub Copilot - 2025-08-05 - Removed verbose logging to prevent spam
     Ok(preferences)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn save_window_position(x: i32, y: i32, width: u32, height: u32) -> Result<(), String> {
     let mut preferences = load_user_preferences().await.unwrap_or_default();
@@ -412,7 +412,7 @@ async fn save_window_position(x: i32, y: i32, width: u32, height: u32) -> Result
     fs::write(&preferences_path, json_data)
         .map_err(|e| format!("Failed to write preferences file: {e}"))?;
 
-    // AI Generated: GitHub Copilot - 2025-08-02 - Reduced logging verbosity
+    // AI Generated: GitHub Copilot - 2025-08-05 - Reduced logging verbosity
     debug_log!(
         "💾 Window position saved: {}x{} at ({},{})",
         width,
@@ -423,7 +423,7 @@ async fn save_window_position(x: i32, y: i32, width: u32, height: u32) -> Result
     Ok(())
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn get_saved_window_position() -> Result<Option<(i32, i32, u32, u32)>, String> {
     let preferences = load_user_preferences().await?;
@@ -448,7 +448,7 @@ async fn get_saved_window_position() -> Result<Option<(i32, i32, u32, u32)>, Str
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn set_always_on_top(
     app_handle: tauri::AppHandle,
@@ -506,7 +506,7 @@ async fn set_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-01-27
+// AI Generated: GitHub Copilot - 2025-08-05
 fn migrate_add_director_column(conn: &Connection) -> SqliteResult<()> {
     // Check if director column already exists
     let mut stmt = conn.prepare("PRAGMA table_info(tmdb_movies)")?;
@@ -643,7 +643,7 @@ fn init_database() -> SqliteResult<Connection> {
     )?;
 
     // Add migration to handle director column for existing databases
-    // AI Generated: GitHub Copilot - 2025-01-27
+    // AI Generated: GitHub Copilot - 2025-08-05
     migrate_add_director_column(&conn)?;
 
     // Create indexes for performance
@@ -1090,7 +1090,7 @@ async fn get_friend_sync_status(
 }
 
 #[command]
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 // Function to count watchlist movies in HTML using proper selectors
 fn count_watchlist_movies_in_html(document: &Html) -> usize {
     // Use the same selectors as the main scraping function to get accurate counts
@@ -1130,7 +1130,7 @@ fn count_watchlist_movies_in_html(document: &Html) -> usize {
     total_count
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 // Function to get current watchlist count from Letterboxd without full scraping
 async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String> {
     println!("🔥 COUNT CHECK: Getting current watchlist count from Letterboxd");
@@ -1231,7 +1231,7 @@ async fn get_letterboxd_watchlist_count(username: &str) -> Result<usize, String>
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 // Enhanced cache freshness check that also compares movie counts
 async fn is_watchlist_cache_fresh_with_count_check(
     friend_username: String,
@@ -2497,7 +2497,7 @@ fn extract_title_and_year_from_alt(alt_text: &str) -> (String, Option<u32>) {
 }
 
 // More flexible title and year parsing
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 fn parse_title_and_year_flexible(text: &str) -> Option<(String, Option<u32>)> {
     // Handle multiple patterns:
@@ -2661,7 +2661,7 @@ fn find_common_movies(
     common_movies
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 // TMDB API Functions
 async fn search_tmdb_movie(
     api_key: &str,
@@ -2819,7 +2819,7 @@ async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovie
     Ok(movie_details)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<String>, String> {
     let client = reqwest::Client::builder()
         .user_agent("BoxdBuddies/1.0")
@@ -2867,7 +2867,7 @@ async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<St
     Ok(director)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 async fn cache_tmdb_movie(conn: &Connection, tmdb_movie: &TmdbMovieDetails) -> SqliteResult<()> {
     cache_tmdb_movie_sync(conn, tmdb_movie)
@@ -3023,7 +3023,7 @@ fn get_cached_tmdb_movie_by_title_sync(
     Ok(None)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 async fn get_cached_tmdb_movie(
     conn: &Connection,
@@ -3071,7 +3071,7 @@ fn get_cached_tmdb_movie_sync(
     movie_iter.next().transpose()
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 async fn get_movie_tmdb_id(
     conn: &Connection,
@@ -3098,7 +3098,7 @@ fn get_movie_tmdb_id_sync(
     tmdb_id_iter.next().transpose()
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 async fn update_movie_tmdb_id(
     conn: &Connection,
@@ -3122,7 +3122,7 @@ fn update_movie_tmdb_id_sync(
     Ok(())
 }
 
-// AI Generated: GitHub Copilot - 2025-08-03
+// AI Generated: GitHub Copilot - 2025-08-05
 #[allow(dead_code)]
 fn create_enhanced_movie_from_details(
     movie: &WatchlistMovie,
@@ -3171,7 +3171,7 @@ fn create_enhanced_movie_from_details(
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 fn create_enhanced_movie_from_details_with_director(
     movie: &WatchlistMovie,
     details: &TmdbMovieDetails,
@@ -3220,7 +3220,7 @@ fn create_enhanced_movie_from_details_with_director(
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 // Map TMDB genre IDs to their corresponding names
 fn tmdb_genre_id_to_name(id: i32) -> Option<String> {
     match id {
@@ -3260,7 +3260,7 @@ fn create_enhanced_movie_from_cache(
 
     let year = cached.year.unwrap_or(movie.year.unwrap_or(0) as i32) as u32;
 
-    // AI Generated: GitHub Copilot - 2025-08-02
+    // AI Generated: GitHub Copilot - 2025-08-05
     // Parse genre_ids from cache and convert to genre names
     let genre = if let Some(genre_ids_str) = &cached.genre_ids {
         match serde_json::from_str::<Vec<i32>>(genre_ids_str) {
@@ -3284,7 +3284,7 @@ fn create_enhanced_movie_from_cache(
         None
     };
 
-    // AI Generated: GitHub Copilot - 2025-08-02
+    // AI Generated: GitHub Copilot - 2025-08-05
     // Debug director information
     println!(
         "🔥 DIRECTOR DEBUG: Movie '{}' - cached director: {:?}",
@@ -3302,7 +3302,7 @@ fn create_enhanced_movie_from_cache(
         friend_visual: create_friend_visual(friend_count),
         friend_list,
         genre,
-        director: cached.director.clone(), // AI Generated: GitHub Copilot - 2025-01-27
+        director: cached.director.clone(), // AI Generated: GitHub Copilot - 2025-08-05
         average_rating: cached.vote_average,
         letterboxd_slug: movie.letterboxd_slug.clone(),
     }
@@ -3336,7 +3336,7 @@ fn create_fallback_movie(
     }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 // Enhanced movie processing with TMDB integration
 async fn enhance_movies_with_tmdb(
     watchlist_movies: Vec<(WatchlistMovie, u32, Vec<String>)>,
@@ -3384,7 +3384,7 @@ async fn enhance_movies_with_tmdb(
     Ok(enhanced_movies)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 // Standalone version that manages its own database connection
 async fn enhance_movie_with_tmdb_standalone(
     api_key: &str,
@@ -3407,13 +3407,13 @@ async fn enhance_movie_with_tmdb_standalone(
             "🎬 TMDB ENHANCE: Using persistent cache for '{}' (ID: {})",
             movie.title, cached.tmdb_id
         );
-        // AI Generated: GitHub Copilot - 2025-08-02 - Debug director information
+        // AI Generated: GitHub Copilot - 2025-08-05 - Debug director information
         println!(
             "🔥 DIRECTOR DEBUG: Movie '{}' - cached director: {:?}",
             movie.title, cached.director
         );
 
-        // AI Generated: GitHub Copilot - 2025-08-02
+        // AI Generated: GitHub Copilot - 2025-08-05
         // If director is missing from cache, refresh from TMDB
         if cached.director.is_none() {
             println!(
@@ -3682,7 +3682,7 @@ async fn get_watchlist_size(username: &str) -> Result<usize, String> {
     Ok(movies_on_page)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-02
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn get_database_info() -> Result<String, String> {
     let db_path = get_database_path()?;
@@ -3737,13 +3737,13 @@ async fn get_database_info() -> Result<String, String> {
     Ok(info)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn get_letterboxd_watchlist_count_cmd(username: String) -> Result<usize, String> {
     get_letterboxd_watchlist_count(&username).await
 }
 
-// AI Generated: GitHub Copilot - 2025-08-01
+// AI Generated: GitHub Copilot - 2025-08-05
 #[command]
 async fn is_watchlist_cache_fresh_with_count_check_cmd(
     friend_username: String,
@@ -3752,7 +3752,7 @@ async fn is_watchlist_cache_fresh_with_count_check_cmd(
     is_watchlist_cache_fresh_with_count_check(friend_username, max_age_hours).await
 }
 
-// AI Generated: GitHub Copilot - 2025-01-23
+// AI Generated: GitHub Copilot - 2025-08-05
 #[tauri::command]
 async fn clear_movie_cache(movie_title: String) -> Result<String, String> {
     let app_data_dir =
@@ -3853,7 +3853,7 @@ fn main() {
                     main_window.on_window_event(move |event| {
                         match event {
                             tauri::WindowEvent::Moved(position) => {
-                                // AI Generated: GitHub Copilot - 2025-08-02
+                                // AI Generated: GitHub Copilot - 2025-08-05
                                 // Debounce window position saving to prevent spam during drag
                                 let x = position.x;
                                 let y = position.y;
@@ -3886,7 +3886,7 @@ fn main() {
                                 });
                             }
                             tauri::WindowEvent::Resized(size) => {
-                                // AI Generated: GitHub Copilot - 2025-08-02
+                                // AI Generated: GitHub Copilot - 2025-08-05
                                 // Debounce window size saving to prevent spam during resize
                                 let width = size.width;
                                 let height = size.height;
@@ -3927,7 +3927,7 @@ fn main() {
                 }
             });
 
-            // AI Generated: GitHub Copilot - 2025-01-29
+            // AI Generated: GitHub Copilot - 2025-08-05
             // Removed hardcoded test data creation to allow real friend discovery
             println!(
                 "🚀 APP SETUP: Application started - ready for real Letterboxd friend discovery"

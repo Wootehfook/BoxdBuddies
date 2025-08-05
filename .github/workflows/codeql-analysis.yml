@@ -5,18 +5,18 @@ name: "CodeQL Analysis"
 
 on:
   push:
-    branches: [ main, temp-merge-branch ]
+    branches: [main, temp-merge-branch]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '0 6 * * 1'  # Weekly on Mondays
+    - cron: "0 6 * * 1" # Weekly on Mondays
 
 jobs:
   analyze:
     name: Analyze Code
     runs-on: ubuntu-latest
     if: github.repository == 'Wootehfook/BoxdBuddies'
-    
+
     permissions:
       actions: read
       contents: read
@@ -25,27 +25,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'rust' ]
+        language: ["javascript", "rust"]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        config-file: ./.github/codeql/codeql-config.yml
-      continue-on-error: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+        continue-on-error: false
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
-      continue-on-error: false
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+        continue-on-error: false
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
-        wait-for-processing: true
-        upload: true
-      continue-on-error: false
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          wait-for-processing: true
+          upload: true
+        continue-on-error: false
