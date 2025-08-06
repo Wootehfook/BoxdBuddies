@@ -1,10 +1,10 @@
 [package]
 name = "boxdbuddies"
 version = "0.1.0"
-description = "A Tauri App for managing BoxdBuddies"
-authors = ["you"]
-license = ""
-repository = ""
+description = "Compare Letterboxd watchlists between friends to find movies everyone wants to watch"
+authors = ["Wootehfook"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/Wootehfook/BoxdBuddies"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,7 +13,7 @@ edition = "2021"
 tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
-tauri = { version = "1.6", features = [ "window-close", "window-set-size", "window-set-position", "window-center", "shell-open", "fs-read-file", "fs-write-file", "path-all"] }
+tauri = { version = "1.6", features = [ "window-request-user-attention", "window-show", "window-set-focus", "window-set-always-on-top", "window-close", "window-set-size", "window-set-position", "window-center", "shell-open", "fs-read-file", "fs-write-file", "path-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = { version = "0.11", features = ["json"] }

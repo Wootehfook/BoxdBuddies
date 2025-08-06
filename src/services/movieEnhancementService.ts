@@ -1,4 +1,23 @@
-import { tmdbService, Movie as TMDBMovie } from './tmdbService';
+/*
+ * BoxdBuddies - Movie Watchlist Comparison Tool
+ * Copyright (C) 2025 Wootehfook
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import { tmdbService, Movie as TMDBMovie } from "./tmdbService";
+import { logger } from "../utils/logger";
 
 export interface Movie {
   id: number;
@@ -25,7 +44,7 @@ class MovieEnhancementService {
     this.rateLimiter = {
       requests: [],
       limit: 40, // Stay under the limit
-      window: 1000 // 1 second
+      window: 1000, // 1 second
     };
   }
 
@@ -42,19 +61,19 @@ class MovieEnhancementService {
   // Rate limiting helper
   private async waitForRateLimit(): Promise<void> {
     const now = Date.now();
-    
+
     // Remove requests older than the window
     this.rateLimiter.requests = this.rateLimiter.requests.filter(
-      time => now - time < this.rateLimiter.window
+      (time) => now - time < this.rateLimiter.window
     );
 
     // If we're at the limit, wait
     if (this.rateLimiter.requests.length >= this.rateLimiter.limit) {
       const oldestRequest = Math.min(...this.rateLimiter.requests);
       const waitTime = this.rateLimiter.window - (now - oldestRequest) + 50; // Add 50ms buffer
-      
+
       if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
 
@@ -62,12 +81,15 @@ class MovieEnhancementService {
   }
 
   // Extract year from title if present
-  private extractYearFromTitle(title: string): { cleanTitle: string; year?: number } {
+  private extractYearFromTitle(title: string): {
+    cleanTitle: string;
+    year?: number;
+  } {
     const yearMatch = title.match(/\((\d{4})\)$/);
     if (yearMatch) {
       return {
-        cleanTitle: title.replace(/\s*\(\d{4}\)$/, '').trim(),
-        year: parseInt(yearMatch[1])
+        cleanTitle: title.replace(/\s*\(\d{4}\)$/, "").trim(),
+        year: parseInt(yearMatch[1]),
       };
     }
     return { cleanTitle: title };
@@ -75,13 +97,16 @@ class MovieEnhancementService {
 
   // Create cache key for movie lookup
   private getCacheKey(title: string, year?: number): string {
-    return `${title.toLowerCase()}|${year || 'unknown'}`;
+    return `${title.toLowerCase()}|${year || "unknown"}`;
   }
 
   // Search for movie on TMDB with fuzzy matching
-  private async searchTMDBMovie(title: string, year?: number): Promise<TMDBMovie | null> {
+  private async searchTMDBMovie(
+    title: string,
+    year?: number
+  ): Promise<TMDBMovie | null> {
     const cacheKey = this.getCacheKey(title, year);
-    
+
     // Check cache first
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
@@ -89,25 +114,25 @@ class MovieEnhancementService {
 
     try {
       await this.waitForRateLimit();
-      
+
       const { movies } = await tmdbService.searchMovies(title, 1);
-      
+
       if (movies.length === 0) {
-        this.cache.set(cacheKey, null as any);
+        this.cache.set(cacheKey, null as unknown as Movie);
         return null;
       }
 
       // Find best match considering year if available
       let bestMatch = movies[0];
-      
+
       if (year) {
-        const exactYearMatch = movies.find(movie => movie.year === year);
+        const exactYearMatch = movies.find((movie) => movie.year === year);
         if (exactYearMatch) {
           bestMatch = exactYearMatch;
         } else {
           // Find closest year match within 2 years
-          const closeMatches = movies.filter(movie => 
-            Math.abs(movie.year - year) <= 2
+          const closeMatches = movies.filter(
+            (movie) => Math.abs(movie.year - year) <= 2
           );
           if (closeMatches.length > 0) {
             bestMatch = closeMatches[0];
@@ -117,10 +142,9 @@ class MovieEnhancementService {
 
       this.cache.set(cacheKey, bestMatch);
       return bestMatch;
-      
     } catch (error) {
-      console.error(`Error searching for movie "${title}":`, error);
-      this.cache.set(cacheKey, null as any);
+      logger.error(`Error searching for movie "${title}":`, error);
+      this.cache.set(cacheKey, null as unknown as Movie);
       return null;
     }
   }
@@ -133,18 +157,20 @@ class MovieEnhancementService {
     }
 
     // Extract year from title if not provided
-    const { cleanTitle, year: extractedYear } = this.extractYearFromTitle(letterboxdMovie.title);
+    const { cleanTitle, year: extractedYear } = this.extractYearFromTitle(
+      letterboxdMovie.title
+    );
     const searchYear = letterboxdMovie.year || extractedYear;
 
     try {
       const tmdbMovie = await this.searchTMDBMovie(cleanTitle, searchYear);
-      
+
       if (!tmdbMovie) {
         // Return original movie if no TMDB match found
         return {
           ...letterboxdMovie,
           title: cleanTitle,
-          year: searchYear || letterboxdMovie.year
+          year: searchYear || letterboxdMovie.year,
         };
       }
 
@@ -156,31 +182,30 @@ class MovieEnhancementService {
         year: searchYear || tmdbMovie.year,
         posterPath: tmdbMovie.poster_path,
         overview: tmdbMovie.overview,
-        rating: tmdbMovie.rating
+        rating: tmdbMovie.rating,
       };
-      
     } catch (error) {
-      console.error(`Error enhancing movie "${letterboxdMovie.title}":`, error);
+      logger.error(`Error enhancing movie "${letterboxdMovie.title}":`, error);
       return letterboxdMovie;
     }
   }
 
   // Enhance multiple movies with progress tracking
   async enhanceMovies(
-    movies: Movie[], 
+    movies: Movie[],
     onProgress?: (current: number, total: number) => void
   ): Promise<Movie[]> {
     const enhancedMovies: Movie[] = [];
-    
+
     for (let i = 0; i < movies.length; i++) {
       const enhanced = await this.enhanceMovie(movies[i]);
       enhancedMovies.push(enhanced);
-      
+
       if (onProgress) {
         onProgress(i + 1, movies.length);
       }
     }
-    
+
     return enhancedMovies;
   }
 
@@ -192,7 +217,7 @@ class MovieEnhancementService {
   // Get cache stats
   getCacheStats(): { size: number; hitRate?: number } {
     return {
-      size: this.cache.size
+      size: this.cache.size,
     };
   }
 }

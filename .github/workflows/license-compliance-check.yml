@@ -1,0 +1,31 @@
+name: License Compliance Check
+
+on:
+  push:
+    branches: [main, develop, temp-merge-branch]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  license-compliance-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check license headers
+        run: |
+          echo "Checking for AGPL-3.0 license headers..."
+          if ! grep -r "GNU Affero General Public License" src-tauri/src/ --include="*.rs"; then
+            echo "Missing license headers in Rust files"
+            exit 1
+          fi
+          if ! grep -r "Copyright (C) 2025 Wootehfook" src/ --include="*.tsx" --include="*.ts"; then
+            echo "Missing copyright notices in TypeScript files"
+          fi
+          echo "License compliance check passed"

@@ -2,25 +2,42 @@
 node_modules/
 /.pnp
 .pnp.js
+vendor/
+packages/
+bower_components/
 
 # Production builds
 /dist
 /build
+out/
 
 # Generated files
 .docusaurus
+*.min.js
+*.min.css
 
-# Misc
-.DS_Store
+# Debug logs
+debug.log
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+*.env
 
 # API Keys and sensitive data (IMPORTANT!)
 *.key
 config/api-keys.json
-.env
 
 # Database files (keep local data safe)
 *.db
@@ -28,27 +45,77 @@ config/api-keys.json
 *.sqlite3
 database.db
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Cache directories
+.npm
+.eslintcache
+.parcel-cache
+.next/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
 
 # Tauri
 src-tauri/target
+src-tauri/gen
 
 # Rust
 **/*.rs.bk
 Cargo.lock
+target/
 
-# IDEs
+# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
-Thumbs.db
-
-# Backup files
-*.backup
-*.bak
 *~
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Package files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Application specific
+rustup-init.exe
+
+# MCP Memory Storage (contains AI context and knowledge graph)
+.mcp-memory/
+memory.json
+*.memory.json

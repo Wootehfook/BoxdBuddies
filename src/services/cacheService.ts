@@ -1,7 +1,26 @@
+/*
+ * BoxdBuddies - Movie Watchlist Comparison Tool
+ * Copyright (C) 2025 Wootehfook
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 // Cache Service for BoxdBuddies
 // Handles local database caching operations
 
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from "@tauri-apps/api/tauri";
+import { logger } from "../utils/logger";
 
 export interface CachedWatchlistMovie {
   id?: number;
@@ -33,13 +52,15 @@ class CacheService {
   /**
    * Get cached watchlist for a friend
    */
-  async getCachedWatchlist(friendUsername: string): Promise<CachedWatchlistMovie[]> {
+  async getCachedWatchlist(
+    friendUsername: string
+  ): Promise<CachedWatchlistMovie[]> {
     try {
-      return await invoke<CachedWatchlistMovie[]>('get_cached_watchlist', {
-        friendUsername
+      return await invoke<CachedWatchlistMovie[]>("get_cached_watchlist", {
+        friendUsername,
       });
     } catch (error) {
-      console.error('Failed to get cached watchlist:', error);
+      logger.error("Failed to get cached watchlist:", error);
       throw error;
     }
   }
@@ -47,14 +68,17 @@ class CacheService {
   /**
    * Save watchlist to cache
    */
-  async saveWatchlistToCache(friendUsername: string, movies: WatchlistMovie[]): Promise<void> {
+  async saveWatchlistToCache(
+    friendUsername: string,
+    movies: WatchlistMovie[]
+  ): Promise<void> {
     try {
-      await invoke('save_watchlist_to_cache', {
+      await invoke("save_watchlist_to_cache", {
         friendUsername,
-        movies
+        movies,
       });
     } catch (error) {
-      console.error('Failed to save watchlist to cache:', error);
+      logger.error("Failed to save watchlist to cache:", error);
       throw error;
     }
   }
@@ -62,13 +86,15 @@ class CacheService {
   /**
    * Get sync status for a friend
    */
-  async getFriendSyncStatus(friendUsername: string): Promise<FriendSyncStatus | null> {
+  async getFriendSyncStatus(
+    friendUsername: string
+  ): Promise<FriendSyncStatus | null> {
     try {
-      return await invoke<FriendSyncStatus | null>('get_friend_sync_status', {
-        friendUsername
+      return await invoke<FriendSyncStatus | null>("get_friend_sync_status", {
+        friendUsername,
       });
     } catch (error) {
-      console.error('Failed to get friend sync status:', error);
+      logger.error("Failed to get friend sync status:", error);
       throw error;
     }
   }
@@ -76,14 +102,17 @@ class CacheService {
   /**
    * Check if watchlist cache is fresh
    */
-  async isWatchlistCacheFresh(friendUsername: string, maxAgeHours: number = 24): Promise<boolean> {
+  async isWatchlistCacheFresh(
+    friendUsername: string,
+    maxAgeHours: number = 24
+  ): Promise<boolean> {
     try {
-      return await invoke<boolean>('is_watchlist_cache_fresh', {
+      return await invoke<boolean>("is_watchlist_cache_fresh", {
         friendUsername,
-        maxAgeHours
+        maxAgeHours,
       });
     } catch (error) {
-      console.error('Failed to check cache freshness:', error);
+      logger.error("Failed to check cache freshness:", error);
       return false;
     }
   }
@@ -91,20 +120,22 @@ class CacheService {
   /**
    * Get cache status for multiple friends
    */
-  async getFriendsCacheStatus(friendUsernames: string[]): Promise<Record<string, FriendSyncStatus | null>> {
+  async getFriendsCacheStatus(
+    friendUsernames: string[]
+  ): Promise<Record<string, FriendSyncStatus | null>> {
     const statuses: Record<string, FriendSyncStatus | null> = {};
-    
+
     await Promise.all(
       friendUsernames.map(async (username) => {
         try {
           statuses[username] = await this.getFriendSyncStatus(username);
         } catch (error) {
-          console.error(`Failed to get cache status for ${username}:`, error);
+          logger.error(`Failed to get cache status for ${username}:`, error);
           statuses[username] = null;
         }
       })
     );
-    
+
     return statuses;
   }
 
@@ -121,7 +152,7 @@ class CacheService {
     // For now, return a placeholder
     return {
       totalCachedFriends: 0,
-      totalCachedMovies: 0
+      totalCachedMovies: 0,
     };
   }
 
@@ -135,18 +166,18 @@ class CacheService {
       const diffMs = now.getTime() - lastUpdate.getTime();
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffHours / 24);
-      
+
       if (diffHours < 1) {
-        return 'Just now';
+        return "Just now";
       } else if (diffHours < 24) {
-        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+        return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
       } else if (diffDays < 7) {
-        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+        return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
       } else {
         return lastUpdate.toLocaleDateString();
       }
-    } catch (error) {
-      return 'Unknown';
+    } catch {
+      return "Unknown";
     }
   }
 
@@ -159,9 +190,9 @@ class CacheService {
       const now = new Date();
       const diffMs = now.getTime() - lastUpdate.getTime();
       const diffHours = diffMs / (1000 * 60 * 60);
-      
+
       return diffHours > maxAgeHours;
-    } catch (error) {
+    } catch {
       return true; // If we can't parse the date, assume refresh is needed
     }
   }

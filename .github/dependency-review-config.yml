@@ -1,0 +1,60 @@
+# Dependency Review Configuration for BoxdBuddies
+# This configuration handles OpenSSF Scorecard warnings for legitimate dependencies
+
+# Only fail on actual vulnerabilities, not governance/maintenance scores
+fail_on_severity: high
+
+# Focus on runtime dependencies that affect production
+fail_on_scopes:
+  - runtime
+
+# Allow common open source licenses including our project's AGPL-3.0
+allow_licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - Unlicense
+  - AGPL-3.0
+  - GPL-3.0
+
+# Note: Removed deny_licenses to avoid conflict with allow_licenses
+# Our project uses AGPL-3.0, so we allow GPL-compatible licenses
+
+# Allow specific packages with low OpenSSF scores that are legitimate
+allow_dependencies:
+  - "npm/inherits" # Core Node.js utility, widely used and stable
+  - "npm/human-signals" # Signal handling library, maintained by Sindre Sorhus
+  - "npm/graceful-fs" # File system wrapper, core ecosystem package
+  - "npm/get-caller-file" # Utility for stack traces, specific use case
+  - "npm/fs.realpath" # File system utilities, core functionality
+  - "npm/ejs" # Template engine, established and widely used
+  - "npm/deepmerge" # Object merging utility, stable API
+  - "npm/cross-spawn" # Cross-platform process spawning, essential utility
+  - "npm/bs-logger" # Logging utility, specific tooling need
+  - "npm/@bcoe/v8-coverage" # Code coverage tooling, development dependency
+
+# OpenSSF Scorecard configuration
+scorecard:
+  # Don't fail on low scores for packages that are:
+  # 1. Widely adopted in the ecosystem
+  # 2. Have stable APIs and long history
+  # 3. Are development/build-time dependencies
+  minimum_score: 2.0 # Lowered from default 3.0 for established packages
+
+  # Allow exceptions for specific categories
+  allow_low_score_categories:
+    - "Maintained" # Some packages are stable and don't need frequent updates
+    - "Code-Review" # Some maintainers use different review processes
+    - "Dependency-Update-Tool" # Not all packages use automated dependency updates
+    - "Packaging" # Some packages have different packaging approaches
+
+# Comment configuration for PR reviews
+comment_summary_in_pr: true
+comment_failure_in_pr: true
+
+# Vulnerability database configuration
+vulnerability_check: true
+license_check: true

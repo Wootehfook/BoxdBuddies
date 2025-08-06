@@ -7,8 +7,9 @@ Trigger timestamp: 2025-08-03 15:30:00
 ## Multi-OS Build Automation
 
 The CI/CD pipeline builds BoxdBuddies for:
+
 - ✅ Windows (windows-latest)
-- ✅ macOS (macos-latest) 
+- ✅ macOS (macos-latest)
 - ✅ Linux (ubuntu-latest)
 
 Generated: GitHub Copilot - 2025-08-03

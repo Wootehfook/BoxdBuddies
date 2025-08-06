@@ -21,30 +21,12 @@
         "all": false,
         "center": true,
         "close": true,
-        "create": false,
-        "hide": false,
-        "maximize": false,
-        "minimize": false,
-        "print": false,
-        "requestUserAttention": false,
-        "setAlwaysOnTop": false,
-        "setClosable": false,
-        "setCursorGrab": false,
-        "setDecorations": false,
-        "setFocus": false,
-        "setFullscreen": false,
-        "setIcon": false,
-        "setMaxSize": false,
-        "setMinSize": false,
+        "requestUserAttention": true,
+        "setAlwaysOnTop": true,
+        "setFocus": true,
         "setPosition": true,
-        "setResizable": false,
         "setSize": true,
-        "setSkipTaskbar": false,
-        "setTitle": false,
-        "show": false,
-        "startDragging": false,
-        "unmaximize": false,
-        "unminimize": false
+        "show": true
       },
       "fs": {
         "all": false,
@@ -60,9 +42,7 @@
       "active": true,
       "targets": "all",
       "identifier": "com.boxdbuddies.dev",
-      "icon": [
-        "icons/icon.png"
-      ]
+      "icon": ["icons/icon.png"]
     },
     "security": {
       "csp": null
@@ -72,8 +52,8 @@
         "fullscreen": false,
         "resizable": true,
         "title": "BoxdBuddies",
-        "width": 785,
-        "height": 1040,
+        "width": 890,
+        "height": 1075,
         "minWidth": 785,
         "minHeight": 825
       }
