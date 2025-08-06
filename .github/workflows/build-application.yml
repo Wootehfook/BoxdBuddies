@@ -2,7 +2,7 @@ name: Build Application
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, temp-merge-branch]
   pull_request:
     branches: [main]
   workflow_dispatch:
