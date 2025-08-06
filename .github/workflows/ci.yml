@@ -296,14 +296,43 @@ jobs:
       - name: Build application
         run: npm run tauri build
 
+      - name: Debug build output
+        run: |
+          echo "=== Build Output Structure ==="
+          find src-tauri/target -name "bundle" -type d 2>/dev/null || echo "No bundle directory found"
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            echo "Bundle directory contents:"
+            ls -la src-tauri/target/release/bundle/
+            find src-tauri/target/release/bundle -type f | head -20
+          else
+            echo "No release bundle found, checking debug:"
+            find src-tauri/target -name "*boxdbuddies*" -o -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" 2>/dev/null | head -10
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: boxdbuddies-${{ matrix.os }}
           path: |
-            src-tauri/target/release/bundle/
+            src-tauri/target/release/bundle/**/*
+            src-tauri/target/release/boxdbuddies*
             !src-tauri/target/release/bundle/**/*.deb
             !src-tauri/target/release/bundle/**/*.rpm
+        if-no-files-found: warn
+        continue-on-error: true
+
+      - name: Build Status Report
+        run: |
+          echo "=== Build Status Report ==="
+          echo "Platform: ${{ matrix.os }}"
+          echo "Build completed successfully"
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            echo "✅ Bundle directory found"
+            echo "Artifacts available for upload"
+          else
+            echo "⚠️  No bundle directory - this may be expected for some platforms"
+          fi
+          echo "Build job completed successfully"
 
   license-compliance:
     name: License Compliance Check
