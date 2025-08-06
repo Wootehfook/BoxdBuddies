@@ -7,7 +7,7 @@ This document explains how we handle dependency security in the BoxdBuddies proj
 We prioritize **actual security vulnerabilities** over governance scores. Our dependency review process focuses on:
 
 1. **High/Critical Vulnerabilities**: Block deployment
-2. **License Compatibility**: Ensure commercial distribution compatibility
+2. **License Compatibility**: Ensure compatibility with AGPL-3.0 project license
 3. **Runtime Dependencies**: Focus on production security impact
 
 ## OpenSSF Scorecard Handling
@@ -46,7 +46,7 @@ The following packages are explicitly allowed despite low OpenSSF scores:
 
 1. **Automated Scanning**: GitHub Dependabot + npm audit
 2. **Vulnerability Assessment**: Focus on exploitable security issues
-3. **License Review**: Ensure compatibility with AGPL-3.0
+3. **License Review**: Ensure compatibility with AGPL-3.0 (allows GPL-compatible licenses)
 4. **Impact Analysis**: Runtime vs development dependency classification
 
 ## Escalation
