@@ -14,8 +14,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    name: Check
+  frontend-quality-checks:
     runs-on: ubuntu-latest
     permissions:
       contents: read
