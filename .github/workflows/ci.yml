@@ -198,7 +198,7 @@ jobs:
       - name: Run ESLint Analysis
         run: ./codacy analyze --tool eslint --directory src || echo "ESLint analysis completed"
 
-      - name: Run Trivy Analysis  
+      - name: Run Trivy Analysis
         run: ./codacy analyze --tool trivy --directory . || echo "Trivy analysis completed"
 
       - name: Verify Pre-commit Hooks
