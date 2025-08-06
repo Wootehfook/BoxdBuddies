@@ -16,11 +16,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/shell";
 import "./App.css";
 import logger from "./utils/logger";
+import { calculateProgressPercent } from "./utils/progressUtils";
 
 // AI Generated: GitHub Copilot - 2025-08-05
 
@@ -585,7 +586,6 @@ function App() {
 
         // The results already include TMDB data from backend
         setFilteredMovies(results);
-        setFilteredMovies(results);
         setPage("results");
         return;
       }, 180000); // 3 minutes for comparison
@@ -863,12 +863,10 @@ function FriendSelectionPage({
   tmdbApiKey,
   currentQuoteIndex,
 }: FriendSelectionPageProps) {
-  const progressPercent =
-    enhancementProgress.total > 0
-      ? Math.round(
-          (enhancementProgress.completed / enhancementProgress.total) * 100
-        )
-      : 0;
+  const progressPercent = calculateProgressPercent(
+    enhancementProgress.completed,
+    enhancementProgress.total
+  );
 
   return (
     <section className="page friends-page">
@@ -1129,6 +1127,19 @@ function ResultsPage({
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [showGenreFilter, setShowGenreFilter] = useState<boolean>(false);
 
+  // AI Generated: GitHub Copilot - 2025-08-06
+  // Optimize movie card click handler to prevent re-renders
+  const handleMovieCardClick = useCallback(async (movie: Movie) => {
+    // Open Letterboxd URL in user's default browser for saved cookies/preferences
+    try {
+      await open(generateLetterboxdUrl(movie));
+    } catch (error) {
+      logger.error("Failed to open URL in default browser:", error);
+      // Fallback to window.open if Tauri API fails
+      window.open(generateLetterboxdUrl(movie), "_blank");
+    }
+  }, []);
+
   // AI Generated: GitHub Copilot - 2025-08-05
   // Extract unique genres from all movies
   const availableGenres = React.useMemo(() => {
@@ -1343,20 +1354,7 @@ function ResultsPage({
               <div
                 key={index}
                 className="movie-card fade-in clickable"
-                onClick={async () => {
-                  // AI Generated: GitHub Copilot - 2025-08-05
-                  // Open Letterboxd URL in user's default browser for saved cookies/preferences
-                  try {
-                    await open(generateLetterboxdUrl(movie));
-                  } catch (error) {
-                    logger.error(
-                      "Failed to open URL in default browser:",
-                      error
-                    );
-                    // Fallback to window.open if Tauri API fails
-                    window.open(generateLetterboxdUrl(movie), "_blank");
-                  }
-                }}
+                onClick={() => handleMovieCardClick(movie)}
               >
                 <div
                   className={`movie-poster-section ${movie.posterPath ? "has-poster" : "no-poster"}`}

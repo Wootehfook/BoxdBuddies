@@ -18,7 +18,8 @@
 // AI Generated: GitHub Copilot - 2025-08-03T00:00:00Z
 // Centralized logging utility for production-ready console management
 
-const isDevelopment = process.env.NODE_ENV === "development";
+// Use Vite's import.meta.env.DEV for environment detection
+const isDevelopment = import.meta.env.DEV;
 
 export const logger = {
   debug: (message: string, ...args: unknown[]) => {
