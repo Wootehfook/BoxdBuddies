@@ -12,8 +12,7 @@ permissions:
   security-events: write
 
 jobs:
-  check:
-    name: Check
+  security-audit:
     runs-on: ubuntu-latest
     permissions:
       contents: read
