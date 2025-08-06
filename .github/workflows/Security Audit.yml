@@ -1,0 +1,46 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: NPM Security Audit
+        run: npm audit --audit-level moderate
+        continue-on-error: true
+
+      - name: Cargo Security Audit
+        run: cargo audit
+        working-directory: src-tauri
+        continue-on-error: true
