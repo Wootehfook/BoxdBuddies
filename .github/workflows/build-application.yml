@@ -60,7 +60,25 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build application
+      # AI Generated: GitHub Copilot - 2025-08-07
+      - name: Verify icons and configs (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo Listing icons and config files...
+          dir src-tauri\icons
+          dir src-tauri
+          type src-tauri\tauri.conf.json
+          type src-tauri\tauri.windows.conf.json || echo "Windows override config missing"
+
+      - name: Build application (Windows MSI)
+        if: matrix.os == 'windows-latest'
+        # AI Generated: GitHub Copilot - 2025-08-07
+        # Align path separators with Windows style per PR review guidance
+        run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
+        continue-on-error: true
+
+      - name: Build application (Other Platforms)
+        if: matrix.os != 'windows-latest'
         run: npm run tauri build
         continue-on-error: true
 

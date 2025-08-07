@@ -46,7 +46,9 @@ jobs:
           type src-tauri\tauri.windows.conf.json
 
       - name: Build Windows MSI
-        run: npm run tauri build -- -c src-tauri/tauri.windows.conf.json --bundles msi
+  # AI Generated: GitHub Copilot - 2025-08-07
+  # Use Windows path separators per Copilot review suggestion
+  run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
