@@ -170,8 +170,11 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          npm run tauri build -- --bundles deb
-          npm run tauri build -- --bundles appimage
+          echo "Building Linux bundles (deb, appimage)"
+          # AI Generated: GitHub Copilot - 2025-08-07 (combined bundles build for reliability)
+          npm run tauri build -- --bundles deb,appimage
+          echo "Listing produced bundle files for diagnostics:" 
+          find src-tauri/target/release/bundle -maxdepth 4 -type f -printf "%p\n" || true
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -180,6 +183,7 @@ jobs:
           path: |
             src-tauri/target/release/bundle/deb/*.deb
             src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: warn
 
   # Create GitHub Release
   create-release:
@@ -203,9 +207,11 @@ jobs:
           echo "Generated on $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> CHECKSUMS.txt
           echo "" >> CHECKSUMS.txt
           missing=0
+      found=0
           for f in windows-msi/*.msi macos-dmg/*.dmg linux-packages/*.deb linux-packages/*.AppImage; do
             if [ -f "$f" ]; then
               sha256sum "$f" >> CHECKSUMS.txt
+        found=$((found+1))
             else
               echo "Skipping missing artifact: $f" >&2
               missing=$((missing+1))
@@ -214,6 +220,8 @@ jobs:
           echo "" >> CHECKSUMS.txt
           echo "Integrity: Verify with: sha256sum -c CHECKSUMS.txt (ignore header lines)." >> CHECKSUMS.txt
           echo "Missing artifacts skipped: $missing" >> CHECKSUMS.txt
+      echo "Artifacts hashed: $found" >> CHECKSUMS.txt
+      echo "Done generating checksums (found=$found, missing=$missing)." 
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
