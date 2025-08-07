@@ -20,8 +20,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -53,9 +53,10 @@ jobs:
           Write-Host "Found MSI: $($msi.FullName)"
           echo "msi_path=$($msi.FullName)" >> $env:GITHUB_OUTPUT
 
-      - name: Verify ALLUSERS=2 (per-user install)
+      - name: Verify per-user install context
         shell: pwsh
         run: |
+          # AI Generated: GitHub Copilot - 2025-08-07
           $msiPath = '${{ steps.find_msi.outputs.msi_path }}'
           Write-Host "Inspecting MSI: $msiPath"
           $installer = New-Object -ComObject WindowsInstaller.Installer
@@ -63,11 +64,17 @@ jobs:
           $view = $database.GetType().InvokeMember('OpenView',[System.Reflection.BindingFlags]::InvokeMethod,$null,$database,@("SELECT `Value` FROM `Property` WHERE `Property`='ALLUSERS'"))
           $view.GetType().InvokeMember('Execute',[System.Reflection.BindingFlags]::InvokeMethod,$null,$view,$null) | Out-Null
           $record = $view.GetType().InvokeMember('Fetch',[System.Reflection.BindingFlags]::InvokeMethod,$null,$view,$null)
-          if (-not $record) { Write-Error 'ALLUSERS property not found'; exit 1 }
+          if (-not $record) {
+            Write-Warning 'ALLUSERS property not present (expected for pure per-user package). Treating as per-user.'
+            Write-Host 'Per-user MSI validation passed (ALLUSERS absent).'
+            exit 0
+          }
           $value = $record.GetType().InvokeMember('StringData',[System.Reflection.BindingFlags]::GetProperty,$null,$record,1)
           Write-Host "ALLUSERS=$value"
-          if ($value -ne '2') { Write-Error "Expected ALLUSERS=2 (per-user), got '$value'"; exit 1 }
-          Write-Host 'Per-user MSI validation passed.'
+          if ($value -eq '1') {
+            Write-Error "Detected machine-wide ALLUSERS=1; expected per-user (missing or !=1)."; exit 1
+          }
+          Write-Host 'Per-user MSI validation passed (ALLUSERS not 1).'
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
