@@ -85,12 +85,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build macOS DMG
-        run: npm run tauri build -- --bundles dmg
-
+      # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache per review feedback before build)
       - name: Cache cargo (macOS)
         uses: actions/cache@v4
         with:
@@ -101,6 +96,12 @@ jobs:
           key: macos-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: |
             macos-cargo-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS DMG
+        run: npm run tauri build -- --bundles dmg
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -125,6 +126,18 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
+      - name: Cache cargo (Linux)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: linux-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            linux-cargo-
 
       - name: Install system dependencies
         run: |
@@ -160,17 +173,6 @@ jobs:
           npm run tauri build -- --bundles deb
           npm run tauri build -- --bundles appimage
 
-      - name: Cache cargo (Linux)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: linux-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
-          restore-keys: |
-            linux-cargo-
-
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -195,19 +197,23 @@ jobs:
       - name: Generate checksums
         run: |
           set -e
-          echo "Generating SHA256 checksums for release artifacts"
-          echo "# BoxdBuddies Artifact Checksums (v1.0.0)" > CHECKSUMS.txt
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          echo "Generating SHA256 checksums for release artifacts (version: $VERSION)"
+          echo "# BoxdBuddies Artifact Checksums ($VERSION)" > CHECKSUMS.txt
           echo "Generated on $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> CHECKSUMS.txt
           echo "" >> CHECKSUMS.txt
+          missing=0
           for f in windows-msi/*.msi macos-dmg/*.dmg linux-packages/*.deb linux-packages/*.AppImage; do
             if [ -f "$f" ]; then
               sha256sum "$f" >> CHECKSUMS.txt
             else
-              echo "Skipping missing pattern: $f" >&2 || true
+              echo "Skipping missing artifact: $f" >&2
+              missing=$((missing+1))
             fi
           done
           echo "" >> CHECKSUMS.txt
-          echo "Integrity: Verify with 'sha256sum -c CHECKSUMS.txt' (ignoring header lines)." >> CHECKSUMS.txt
+          echo "Integrity: Verify with: sha256sum -c CHECKSUMS.txt (ignore header lines)." >> CHECKSUMS.txt
+          echo "Missing artifacts skipped: $missing" >> CHECKSUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
