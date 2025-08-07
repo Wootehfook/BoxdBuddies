@@ -115,3 +115,4 @@ jobs:
         if-no-files-found: warn
         continue-on-error: true
   # Removed unexplained magic comment per review; no-op placeholder retained only if future diagnostics required.
+  # Removed unexplained magic comment per review; no-op placeholder retained only if future diagnostics required.

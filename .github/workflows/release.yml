@@ -218,7 +218,7 @@ jobs:
           for f in "${artifact_patterns[@]}"; do
             if [ -f "$f" ]; then
               sha256sum "$f" >> CHECKSUMS.txt
-        found=$((found+1))
+              found=$((found+1))
             else
               echo "Skipping missing artifact: $f" >&2
               missing=$((missing+1))
@@ -227,8 +227,8 @@ jobs:
           echo "" >> CHECKSUMS.txt
           echo "Integrity: Verify with: sha256sum -c CHECKSUMS.txt (ignore header lines)." >> CHECKSUMS.txt
           echo "Missing artifacts skipped: $missing" >> CHECKSUMS.txt
-      echo "Artifacts hashed: $found" >> CHECKSUMS.txt
-      echo "Done generating checksums (found=$found, missing=$missing)." 
+          echo "Artifacts hashed: $found" >> CHECKSUMS.txt
+          echo "Done generating checksums (found=$found, missing=$missing)."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
