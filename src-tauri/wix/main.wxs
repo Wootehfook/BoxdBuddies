@@ -20,5 +20,23 @@
     <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
       <ComponentGroupRef Id="AppFiles" />
     </Feature>
+
+    <!-- AI Generated: GitHub Copilot - 2025-08-07
+         Explicit component group definition. Using heat-like static authoring to collect files.
+         Tauri places release binaries under target\release; bundler copies them into a staging dir.
+         We reference INSTALLFOLDER contents (will be populated by bundler). -->
+    <Fragment>
+      <DirectoryRef Id="INSTALLFOLDER">
+        <!-- Main executable component -->
+        <Component Id="Cmp_BoxdBuddiesExe" Guid="*">
+          <!-- Use ProjectDir to reliably locate the built executable; Tauri builds the Rust binary first -->
+          <File Id="File_BoxdBuddiesExe" KeyPath="yes" Source="$(var.ProjectDir)..\target\release\boxdbuddies.exe" />
+        </Component>
+        <!-- Additional dynamic resources can be added here if needed -->
+      </DirectoryRef>
+      <ComponentGroup Id="AppFiles">
+        <ComponentRef Id="Cmp_BoxdBuddiesExe" />
+      </ComponentGroup>
+    </Fragment>
   </Product>
 </Wix>
