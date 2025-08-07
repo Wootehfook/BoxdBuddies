@@ -2,6 +2,23 @@
 
 ## 🚀 First Public Release - August 2025
 
+## 📥 Downloads
+
+| Platform        | Architecture          | File           | Direct Download                                                                                                                       |
+| --------------- | --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows         | x64                   | MSI Installer  | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
+| macOS           | Apple Silicon (ARM64) | DMG            | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
+| (Planned) Linux | x86_64                | DEB / AppImage | Coming soon (next patch)                                                                                                              |
+| All             | N/A                   | Checksums      | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
+
+### Verify Integrity
+
+```bash
+sha256sum -c CHECKSUMS.txt | grep -i boxdbuddies
+```
+
+Files should report `OK`. If not, re-download or report an issue.
+
 **BoxdBuddies** is now ready for public use! Compare Letterboxd watchlists with friends to find movies you all want to watch.
 
 ### ✨ Key Features

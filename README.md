@@ -16,6 +16,28 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 **BoxdBuddies v1.0.0 is now live and ready for public use!** All core features have been implemented, tested, and polished for production deployment.
 
+## 📥 Downloads (v1.0.0)
+
+| Platform        | Architecture          | File           | Direct Download                                                                                                                       |
+| --------------- | --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows         | x64                   | MSI Installer  | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
+| macOS           | Apple Silicon (ARM64) | DMG            | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
+| (Planned) Linux | x86_64                | DEB / AppImage | Coming in follow-up patch (see below)                                                                                                 |
+| All             | N/A                   | Checksums      | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
+
+### 🔐 Integrity Verification
+
+1. Download the installer and `CHECKSUMS.txt`.
+2. Run:
+   ```bash
+   sha256sum -c CHECKSUMS.txt | grep -i boxdbuddies
+   ```
+3. Ensure reported hashes are `OK`.
+
+If a file is missing from CHECKSUMS, re-download directly from the release page.
+
+> Linux packages were built in CI but not attached in this release artifact set. A follow-up workflow adjustment will ensure `.deb` and `.AppImage` upload in the next patch (tracked as a pending improvement).
+
 ### ✅ Recent Achievements (August 3, 2025)
 
 - **Cross-Platform Excellence**: Working perfectly on Windows and Linux
