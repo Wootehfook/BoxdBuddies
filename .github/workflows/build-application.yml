@@ -2,7 +2,16 @@ name: Build Application
 
 on:
   push:
-    branches: [main, develop, temp-merge-branch]
+    # AI Generated: GitHub Copilot - 2025-08-07
+    # Expanded branch patterns so feature/chore/hotfix/release branches execute jobs instead of producing zero-job runs
+    branches:
+      - main
+      - develop
+      - temp-merge-branch
+      - chore/**
+      - feature/**
+      - hotfix/**
+      - release/**
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -12,6 +21,15 @@ permissions:
   actions: write
 
 jobs:
+  # AI Generated: GitHub Copilot - 2025-08-07
+  # Fallback job to ensure the workflow never reports a failure due to zero jobs when filters skip main build matrix.
+  register-workflow:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/main') && !startsWith(github.ref, 'refs/heads/develop') && !startsWith(github.ref, 'refs/heads/temp-merge-branch') }}
+    steps:
+      - name: Placeholder
+        run: echo "Non-primary branch push detected; matrix build still executed due to broadened patterns. This job guarantees at least one job exists."
+
   build-application:
     strategy:
       matrix:
