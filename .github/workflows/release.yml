@@ -37,8 +37,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify icons and configs
+        run: |
+          echo Listing icons and config files...
+          dir src-tauri\icons
+          dir src-tauri
+          type src-tauri\tauri.conf.json
+          type src-tauri\tauri.windows.conf.json
+
       - name: Build Windows MSI
-        run: npm run tauri build -- --bundles msi
+        run: npm run tauri build -- -c src-tauri/tauri.windows.conf.json --bundles msi
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -152,6 +160,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
           files: |
             windows-msi/*.msi
             macos-dmg/*.dmg

@@ -1,0 +1,8 @@
+{
+  "tauri": {
+    "bundle": {
+      "identifier": "com.boxdbuddies.dev",
+      "icon": ["icons/icon.ico"]
+    }
+  }
+}

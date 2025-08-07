@@ -13,7 +13,7 @@
 
 **Design Philosophy:** Emphasizes security, code quality, accessibility, and responsible AI attribution.
 **Contributors:** Human and AI collaboration.
-**Licensing:** MIT License (ensure compliance).
+**Licensing:** AGPL-3.0 (ensure compliance).
 
 ---
 
