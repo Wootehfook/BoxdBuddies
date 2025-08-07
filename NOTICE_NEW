@@ -7,12 +7,13 @@ This repository for BoxdBuddies includes material from the
 projects listed below. All dependencies are compatible with
 the AGPL-3.0-or-later license under which BoxdBuddies is distributed.
 
---------------------------------------------------------------------------------
+---
 
 BoxdBuddies is a desktop application that compares Letterboxd watchlists
 between friends to find movies everyone wants to watch.
 
 This software:
+
 - Scrapes publicly available data from Letterboxd
 - Uses The Movie Database (TMDB) API for movie metadata
 - Is provided for personal, non-commercial use only
@@ -20,6 +21,7 @@ This software:
 
 For complete licensing information and third-party attributions,
 see the following files in this repository:
+
 - LICENSE (AGPL-3.0-or-later with commercial use prohibition)
 - THIRD_PARTY_LICENSES.md (Complete dependency license information)
 - BRAND_USAGE_POLICY.md (Trademark and service compliance)
@@ -27,7 +29,7 @@ see the following files in this repository:
 For questions about licensing or commercial use, contact:
 GitHub: @Wootehfook
 
---------------------------------------------------------------------------------
+---
 
 The full text of the GNU Affero General Public License v3.0 can be found at:
 https://www.gnu.org/licenses/agpl-3.0.html
