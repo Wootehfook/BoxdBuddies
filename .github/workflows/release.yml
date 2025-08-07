@@ -45,10 +45,21 @@ jobs:
           type src-tauri\tauri.conf.json
           type src-tauri\tauri.windows.conf.json
 
+      - name: Cache cargo (Windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: windows-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            windows-cargo-
+
       - name: Build Windows MSI
-  # AI Generated: GitHub Copilot - 2025-08-07
-  # Use Windows path separators per Copilot review suggestion
-  run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
+        # AI Generated: GitHub Copilot - 2025-08-07
+        # Use Windows path separators per PR review suggestion
+        run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -79,6 +90,17 @@ jobs:
 
       - name: Build macOS DMG
         run: npm run tauri build -- --bundles dmg
+
+      - name: Cache cargo (macOS)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: macos-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            macos-cargo-
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -138,6 +160,17 @@ jobs:
           npm run tauri build -- --bundles deb
           npm run tauri build -- --bundles appimage
 
+      - name: Cache cargo (Linux)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: linux-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            linux-cargo-
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -159,6 +192,23 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: Generate checksums
+        run: |
+          set -e
+          echo "Generating SHA256 checksums for release artifacts"
+          echo "# BoxdBuddies Artifact Checksums (v1.0.0)" > CHECKSUMS.txt
+          echo "Generated on $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> CHECKSUMS.txt
+          echo "" >> CHECKSUMS.txt
+          for f in windows-msi/*.msi macos-dmg/*.dmg linux-packages/*.deb linux-packages/*.AppImage; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" >> CHECKSUMS.txt
+            else
+              echo "Skipping missing pattern: $f" >&2 || true
+            fi
+          done
+          echo "" >> CHECKSUMS.txt
+          echo "Integrity: Verify with 'sha256sum -c CHECKSUMS.txt' (ignoring header lines)." >> CHECKSUMS.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -168,6 +218,7 @@ jobs:
             macos-dmg/*.dmg
             linux-packages/*.deb
             linux-packages/*.AppImage
+            CHECKSUMS.txt
           generate_release_notes: true
           draft: false
           prerelease: false
