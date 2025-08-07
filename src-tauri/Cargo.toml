@@ -1,6 +1,6 @@
 [package]
 name = "boxdbuddies"
-version = "0.1.0"
+version = "1.0.0"
 description = "Compare Letterboxd watchlists between friends to find movies everyone wants to watch"
 authors = ["Wootehfook"]
 license = "AGPL-3.0-or-later"
