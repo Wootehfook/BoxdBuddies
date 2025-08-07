@@ -45,10 +45,21 @@ jobs:
           type src-tauri\tauri.conf.json
           type src-tauri\tauri.windows.conf.json
 
+      - name: Cache cargo (Windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: windows-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            windows-cargo-
+
       - name: Build Windows MSI
-  # AI Generated: GitHub Copilot - 2025-08-07
-  # Use Windows path separators per Copilot review suggestion
-  run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
+        # AI Generated: GitHub Copilot - 2025-08-07
+        # Use Windows path separators per PR review suggestion
+        run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -73,6 +84,18 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache per review feedback before build)
+      - name: Cache cargo (macOS)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: macos-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            macos-cargo-
 
       - name: Install dependencies
         run: npm ci
@@ -103,6 +126,18 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
+      - name: Cache cargo (Linux)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: linux-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            linux-cargo-
 
       - name: Install system dependencies
         run: |
@@ -159,6 +194,27 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: Generate checksums
+        run: |
+          set -e
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          echo "Generating SHA256 checksums for release artifacts (version: $VERSION)"
+          echo "# BoxdBuddies Artifact Checksums ($VERSION)" > CHECKSUMS.txt
+          echo "Generated on $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> CHECKSUMS.txt
+          echo "" >> CHECKSUMS.txt
+          missing=0
+          for f in windows-msi/*.msi macos-dmg/*.dmg linux-packages/*.deb linux-packages/*.AppImage; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" >> CHECKSUMS.txt
+            else
+              echo "Skipping missing artifact: $f" >&2
+              missing=$((missing+1))
+            fi
+          done
+          echo "" >> CHECKSUMS.txt
+          echo "Integrity: Verify with: sha256sum -c CHECKSUMS.txt (ignore header lines)." >> CHECKSUMS.txt
+          echo "Missing artifacts skipped: $missing" >> CHECKSUMS.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -168,6 +224,7 @@ jobs:
             macos-dmg/*.dmg
             linux-packages/*.deb
             linux-packages/*.AppImage
+            CHECKSUMS.txt
           generate_release_notes: true
           draft: false
           prerelease: false
