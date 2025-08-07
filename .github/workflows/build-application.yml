@@ -25,7 +25,10 @@ jobs:
   # Fallback job to ensure the workflow never reports a failure due to zero jobs when filters skip main build matrix.
   register-workflow:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/main') && !startsWith(github.ref, 'refs/heads/develop') && !startsWith(github.ref, 'refs/heads/temp-merge-branch') }}
+    # Simplified condition using PRIMARY_BRANCHES env (defined inline) per review suggestion.
+    env:
+      PRIMARY_BRANCHES: main,develop,temp-merge-branch
+    if: ${{ github.event_name == 'push' && !contains(env.PRIMARY_BRANCHES, github.ref_name) }}
     steps:
       - name: Placeholder
         run: echo "Non-primary branch push detected; matrix build still executed due to broadened patterns. This job guarantees at least one job exists."
@@ -111,4 +114,4 @@ jobs:
             !src-tauri/target/release/bundle/**/*.rpm
         if-no-files-found: warn
         continue-on-error: true
-# touch 1754604127
+  # Removed unexplained magic comment per review; no-op placeholder retained only if future diagnostics required.
