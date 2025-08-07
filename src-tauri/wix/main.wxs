@@ -3,12 +3,13 @@
 <!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
+    <!-- Per-user install: InstallScope=perUser is sufficient; ALLUSERS property & InstallPrivileges can trigger light.exe failures -->
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-    <Property Id="ALLUSERS" Value="2"/>
+  <!-- ALLUSERS intentionally omitted for pure per-user install -->
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
