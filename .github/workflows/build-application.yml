@@ -63,6 +63,23 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Install WiX Toolset (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          # AI Generated: GitHub Copilot - 2025-08-08
+          choco install wixtoolset --no-progress -y
+          # Export WiX bin to PATH for current job
+          if (Test-Path Env:WIX) {
+            "$env:WIX\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+            $wixBin = (Get-ChildItem -Path "C:\\Program Files (x86)\\WiX Toolset*" -Directory |
+              Sort-Object Name -Descending | Select-Object -First 1).FullName + "\\bin"
+            if (Test-Path $wixBin) { $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+          }
+          where.exe candle
+          where.exe light
+
       - name: Build (Windows MSI)
         if: matrix.os == 'windows-latest'
         run: npm run tauri build -- -c src-tauri\tauri.windows.conf.json --bundles msi
