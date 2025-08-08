@@ -6,7 +6,7 @@ BoxdBuddies is currently in active development. Security updates will be provide
 
 | Version | Supported               |
 | ------- | ----------------------- |
-| 0.1.x   | ✅ **Currently Active** |
+| 1.0.x   | ✅ **Currently Active** |
 
 ## 🛡️ Security Features
 
@@ -128,4 +128,4 @@ We appreciate security researchers who help improve BoxdBuddies. With your permi
 
 ---
 
-_Last Updated: August 2, 2025_
+_Last Updated: August 8, 2025_
