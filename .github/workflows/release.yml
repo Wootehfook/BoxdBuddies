@@ -9,7 +9,7 @@ on:
       version:
         description: "Version to release (e.g., v1.0.1)"
         required: true
-        default: "v1.0.1"
+  default: "v1.0.0"
 
 permissions:
   contents: write
@@ -42,6 +42,8 @@ jobs:
       - name: Install sccache (Windows)
         # AI Generated: GitHub Copilot - 2025-08-08
         run: cargo install sccache
+        env:
+          RUSTC_WRAPPER: ""
 
       - name: Cache sccache (Windows)
         uses: actions/cache@v4
@@ -130,6 +132,8 @@ jobs:
       - name: Install sccache (macOS)
         # AI Generated: GitHub Copilot - 2025-08-08
         run: cargo install sccache
+        env:
+          RUSTC_WRAPPER: ""
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache per review feedback before build)
       - name: Cache cargo (macOS)
@@ -194,6 +198,8 @@ jobs:
       - name: Install sccache (Linux)
         # AI Generated: GitHub Copilot - 2025-08-08
         run: cargo install sccache
+        env:
+          RUSTC_WRAPPER: ""
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
       - name: Cache cargo (Linux)
@@ -300,21 +306,25 @@ jobs:
           echo "# BoxdBuddies Artifact Checksums ($VERSION)" > CHECKSUMS.txt
           echo "Generated on $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> CHECKSUMS.txt
           echo "" >> CHECKSUMS.txt
+          shopt -s nullglob
           missing=0
           found=0
-          # Define artifact patterns array for maintainability (review suggestion implemented)
-          artifact_patterns=(
-            "windows-msi/*.msi"
-            "macos-dmg/*.dmg"
-            "linux-packages/*.deb"
-            "linux-packages/*.AppImage"
+          # Expand patterns and hash all matching files (handles 0, 1, or many files per pattern)
+          patterns=(
+            windows-msi/*.msi
+            macos-dmg/*.dmg
+            linux-packages/*.deb
+            linux-packages/*.AppImage
           )
-          for f in "${artifact_patterns[@]}"; do
-            if [ -f "$f" ]; then
-              sha256sum "$f" >> CHECKSUMS.txt
-              found=$((found+1))
+          for pattern in "${patterns[@]}"; do
+            matches=( $pattern )
+            if ((${#matches[@]})); then
+              for file in "${matches[@]}"; do
+                sha256sum "$file" >> CHECKSUMS.txt
+                found=$((found+1))
+              done
             else
-              echo "Skipping missing artifact: $f" >&2
+              echo "Skipping missing artifact(s): $pattern" >&2
               missing=$((missing+1))
             fi
           done
