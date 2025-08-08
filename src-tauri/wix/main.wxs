@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AI Generated: GitHub Copilot - 2025-08-07 -->
+<!-- AI Generated: GitHub Copilot - 2025-08-08 -->
 <!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
-    <!-- Per-user install: InstallScope=perUser is sufficient; ALLUSERS property & InstallPrivileges can trigger light.exe failures -->
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+    <!-- Per-user install: enforce limited privileges to avoid elevation prompts and scope ambiguity -->
+    <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
+
+    <!-- Explicitly indicate per-user context: ALLUSERS=2 is the Windows Installer value for per-user packages -->
+    <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
+    <Property Id="ALLUSERS" Value="2" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
@@ -25,10 +30,11 @@
 
   <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
   <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
-       Tauri passes -dSourceDir=PATH\BoxdBuddies.exe to candle; use that here. -->
+  Tauri passes -dSourceDir=PATH\\BoxdBuddies.exe to candle; use that here. -->
   <Fragment>
     <!-- Install our main executable into INSTALLFOLDER -->
     <DirectoryRef Id="INSTALLFOLDER">
+  <!-- IMPORTANT: Preserve this Component GUID across releases. Changing it breaks upgrades/uninstall. -->
   <Component Id="MainExecutableComponent" Guid="7E0DAB8B-2D40-4D2B-9B3D-2B2C3E5C902F">
         <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
         <!--
