@@ -229,18 +229,31 @@ jobs:
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
-            libsoup2.4-dev
+            libsoup2.4-dev \
+            libsoup-3.0-dev
 
       - name: Create Ubuntu 24.04 compatibility symlinks
         run: |
-          # Create pkg-config compatibility symlinks for Ubuntu 24.04
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
-          # Create library compatibility symlinks
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
+          # Create pkg-config compatibility symlinks for Ubuntu 24.04 naming (4.1 -> 4.0)
+          ARCH_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig"
+          for pc in webkit2gtk javascriptcoregtk; do
+            if [ -f "${ARCH_PATH}/${pc}-4.1.pc" ] && [ ! -f "${ARCH_PATH}/${pc}-4.0.pc" ]; then
+              sudo ln -sf "${ARCH_PATH}/${pc}-4.1.pc" "${ARCH_PATH}/${pc}-4.0.pc"
+            fi
+          done
+          # Create library compatibility symlinks (handle .so and .so.0 targets)
+          LIB_PATH="/usr/lib/x86_64-linux-gnu"
+          for lib in webkit2gtk javascriptcoregtk; do
+            if [ ! -f "${LIB_PATH}/lib${lib}-4.0.so" ]; then
+              if [ -f "${LIB_PATH}/lib${lib}-4.1.so" ]; then
+                sudo ln -sf "${LIB_PATH}/lib${lib}-4.1.so" "${LIB_PATH}/lib${lib}-4.0.so"
+              elif [ -f "${LIB_PATH}/lib${lib}-4.1.so.0" ]; then
+                sudo ln -sf "${LIB_PATH}/lib${lib}-4.1.so.0" "${LIB_PATH}/lib${lib}-4.0.so"
+              fi
+            fi
+          done
           # Set PKG_CONFIG_PATH for build compatibility
-          echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=${ARCH_PATH}:${PKG_CONFIG_PATH:-}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm ci
