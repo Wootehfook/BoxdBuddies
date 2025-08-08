@@ -29,6 +29,7 @@
   <Fragment>
     <!-- Install our main executable into INSTALLFOLDER -->
     <DirectoryRef Id="INSTALLFOLDER">
+  <!-- IMPORTANT: Preserve this Component GUID across releases. Changing it breaks upgrades/uninstall. -->
   <Component Id="MainExecutableComponent" Guid="7E0DAB8B-2D40-4D2B-9B3D-2B2C3E5C902F">
         <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
         <!--

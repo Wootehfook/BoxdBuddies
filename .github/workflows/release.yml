@@ -283,7 +283,7 @@ jobs:
           path: |
             src-tauri/target/release/bundle/deb/*.deb
             src-tauri/target/release/bundle/appimage/*.AppImage
-          if-no-files-found: error
+          if-no-files-found: warn
 
   # Create GitHub Release
   create-release:
@@ -309,6 +309,7 @@ jobs:
           shopt -s nullglob
           missing=0
           found=0
+          missing_patterns=()
           # Expand patterns and hash all matching files (handles 0, 1, or many files per pattern)
           patterns=(
             windows-msi/*.msi
@@ -326,6 +327,7 @@ jobs:
             else
               echo "Skipping missing artifact(s): $pattern" >&2
               missing=$((missing+1))
+              missing_patterns+=("$pattern")
             fi
           done
           echo "" >> CHECKSUMS.txt
@@ -334,7 +336,10 @@ jobs:
           echo "Artifacts hashed: $found" >> CHECKSUMS.txt
           echo "Done generating checksums (found=$found, missing=$missing)."
           if [ "$missing" -gt 0 ]; then
-            echo "ERROR: One or more expected artifacts are missing ($missing). Failing release." >&2
+            echo "ERROR: One or more expected artifacts are missing ($missing):" >&2
+            for p in "${missing_patterns[@]}"; do
+              echo " - $p" >&2
+            done
             exit 1
           fi
 
