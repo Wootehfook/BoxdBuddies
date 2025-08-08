@@ -18,12 +18,11 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 ## 📥 Downloads (v1.0.0)
 
-| Platform | Architecture          | File                                   | Direct Download                                                                                                                       |
-| -------- | --------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows  | x64                   | MSI Installer (Per-user, no admin req) | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
-| macOS    | Apple Silicon (ARM64) | DMG                                    | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
-| Linux    | x86_64                | DEB / AppImage                         | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)                    |
-| All      | N/A                   | Checksums                              | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
+| Platform | Architecture | File                                   | Direct Download                                                                                                                       |
+| -------- | ------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows  | x64          | MSI Installer (Per-user, no admin req) | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
+| Linux    | x86_64       | DEB / AppImage                         | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)                    |
+| All      | N/A          | Checksums                              | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
 
 ### 🔐 Integrity Verification
 
@@ -321,7 +320,7 @@ See the [LICENSE](LICENSE) file for full details.
 **Publishing & Distribution Phase** - BoxdBuddies is now ready for public release:
 
 - ✅ **Core Application Complete** - All features working flawlessly
-- 🔧 **Desktop App Packaging** - Create distributable executables for Windows, macOS, Linux
+- 🔧 **Desktop App Packaging** - Create distributable executables for Windows and Linux
 - 🔧 **GitHub Release Management** - Tag releases, create changelogs, distribute binaries
 - 🔧 **Documentation Enhancement** - User guides, installation instructions, feature documentation
 - 🔧 **Community Preparation** - Contributing guidelines, issue templates, roadmap planning

@@ -7,14 +7,16 @@
     <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
 
-    <!-- Explicitly indicate per-user context: ALLUSERS=2 is the Windows Installer value for per-user packages -->
-    <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-    <Property Id="ALLUSERS" Value="2" />
+  <!-- Explicitly enforce per-user context. CI validates this setting on each build. -->
+  <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
+  <Property Id="ALLUSERS" Value="2" />
+  <!-- Ensure Windows Installer uses per-user context (no elevation prompts) -->
+  <Property Id="MSIINSTALLPERUSER" Value="1" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
-  <!-- ALLUSERS intentionally omitted for pure per-user install -->
+  <!-- Note: ALLUSERS=2 and MSIINSTALLPERUSER=1 are set above to lock per-user installs. -->
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
