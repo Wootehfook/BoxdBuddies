@@ -71,7 +71,11 @@ jobs:
       - name: sccache stats
         shell: pwsh
         run: |
-          sccache --show-stats 2>$null || Write-Host "sccache not available"
+          if (Get-Command sccache -ErrorAction SilentlyContinue) {
+            sccache --show-stats
+          } else {
+            Write-Host "sccache not available"
+          }
 
       - name: Debug WiX artifacts (on failure)
         if: failure()
