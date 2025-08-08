@@ -2,12 +2,16 @@
 
 ## Quick Installation
 
-### Windows
+### Windows (Per-User MSI — No Admin Required)
 
-1. Download `BoxdBuddies_x.x.x_x64_en-US.msi` from [Releases](https://github.com/Wootehfook/BoxdBuddies/releases)
-2. Double-click the MSI file to run the installer
-3. Follow the installation wizard prompts
-4. Launch BoxdBuddies from your Start Menu or Desktop shortcut
+1. Download `BoxdBuddies_1.0.0_x64_en-US.msi` from the [v1.0.0 Release](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)
+2. (Optional) Verify integrity with CHECKSUMS:
+   ```bash
+   # In the folder with the MSI and CHECKSUMS.txt
+   sha256sum -c CHECKSUMS.txt | grep -i boxdbuddies
+   ```
+3. Double-click the MSI to install. It installs to your user profile (no elevation needed).
+4. Launch BoxdBuddies from the Start Menu or Desktop shortcut.
 
 ### macOS
 
@@ -62,7 +66,7 @@ chmod +x BoxdBuddies_x.x.x_x86_64.AppImage
 
 - **"Windows protected your PC"**: Click "More info" → "Run anyway"
 - **Antivirus warning**: Add BoxdBuddies to your antivirus whitelist
-- **Installation fails**: Run as Administrator
+- **Installation fails**: Ensure you’re running the per-user MSI (no admin required)
 
 ### macOS
 
