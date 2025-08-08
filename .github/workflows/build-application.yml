@@ -104,6 +104,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload artifacts
+        # AI Generated: GitHub Copilot - 2025-08-08
         uses: actions/upload-artifact@v4
         with:
           name: boxdbuddies-${{ matrix.os }}
@@ -112,7 +113,7 @@ jobs:
             src-tauri/target/release/boxdbuddies*
             !src-tauri/target/release/bundle/**/*.deb
             !src-tauri/target/release/bundle/**/*.rpm
-        if-no-files-found: warn
+          if-no-files-found: warn
         continue-on-error: true
   # Removed unexplained magic comment per review; no-op placeholder retained only if future diagnostics required.
   # Removed unexplained magic comment per review; no-op placeholder retained only if future diagnostics required.
