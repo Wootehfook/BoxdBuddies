@@ -18,12 +18,12 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 ## 📥 Downloads (v1.0.0)
 
-| Platform        | Architecture          | File           | Direct Download                                                                                                                       |
-| --------------- | --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows         | x64                   | MSI Installer  | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
-| macOS           | Apple Silicon (ARM64) | DMG            | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
-| (Planned) Linux | x86_64                | DEB / AppImage | Coming in follow-up patch (see below)                                                                                                 |
-| All             | N/A                   | Checksums      | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
+| Platform | Architecture          | File           | Direct Download                                                                                                                       |
+| -------- | --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows  | x64                   | MSI Installer  | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
+| macOS    | Apple Silicon (ARM64) | DMG            | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
+| Linux    | x86_64                | DEB / AppImage | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)                    |
+| All      | N/A                   | Checksums      | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
 
 ### 🔐 Integrity Verification
 
@@ -35,8 +35,6 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 3. Ensure reported hashes are `OK`.
 
 If a file is missing from CHECKSUMS, re-download directly from the release page.
-
-> Linux packages were built in CI but not attached in this release artifact set. A follow-up workflow adjustment will ensure `.deb` and `.AppImage` upload in the next patch (tracked as a pending improvement).
 
 ### ✅ Recent Achievements (August 3, 2025)
 
