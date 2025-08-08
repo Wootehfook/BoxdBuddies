@@ -9,6 +9,8 @@ on:
 
 jobs:
   check-security-supported-versions:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,4 +19,4 @@ jobs:
         with:
           node-version: "18"
       - name: Run check script
-        run: node scripts/check-supported-version.js
+  run: node scripts/check-supported-version.cjs
