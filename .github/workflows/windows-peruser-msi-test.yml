@@ -129,10 +129,11 @@ jobs:
           }
           $value = $record.GetType().InvokeMember('StringData',[System.Reflection.BindingFlags]::GetProperty,$null,$record,1)
           Write-Host "ALLUSERS=$value"
-          if ($value -eq '1') {
-            Write-Error "Detected machine-wide ALLUSERS=1; expected per-user (missing or !=1)."; exit 1
+          if ($value -eq '2') {
+            Write-Host 'Per-user MSI validation passed (ALLUSERS=2).'
+            exit 0
           }
-          Write-Host 'Per-user MSI validation passed (ALLUSERS not 1).'
+          Write-Error "Unexpected ALLUSERS value '$value'. Expected '2' (per-user) or property to be absent."; exit 1
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
