@@ -2,7 +2,12 @@
   "tauri": {
     "bundle": {
       "identifier": "com.boxdbuddies.dev",
-      "icon": ["icons/icon.ico"]
+      "icon": ["icons/icon.ico"],
+      "windows": {
+        "wix": {
+          "template": "wix/main.wxs"
+        }
+      }
     }
   }
 }

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AI Generated: GitHub Copilot - 2025-08-07 -->
+<!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
+    <!-- Per-user install: InstallScope=perUser is sufficient; ALLUSERS property & InstallPrivileges can trigger light.exe failures -->
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+  <!-- ALLUSERS intentionally omitted for pure per-user install -->
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="BoxdBuddies" />
+      </Directory>
+    </Directory>
+
+    <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
+      <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
+      <ComponentRef Id="MainExecutableComponent" />
+    </Feature>
+  </Product>
+
+  <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
+  <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
+       Tauri passes -dSourceDir=PATH\BoxdBuddies.exe to candle; use that here. -->
+  <Fragment>
+    <!-- Install our main executable into INSTALLFOLDER -->
+    <DirectoryRef Id="INSTALLFOLDER">
+  <Component Id="MainExecutableComponent" Guid="7E0DAB8B-2D40-4D2B-9B3D-2B2C3E5C902F">
+        <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
+        <!--
+          Per-user install compliance fixes:
+          - ICE38: Use an HKCU registry value as the KeyPath (not a file) for components
+            installing under user profile directories.
+          - ICE64: Ensure the per-user INSTALLFOLDER is cleaned up on uninstall.
+        -->
+
+        <!-- Install the main executable file into the per-user install folder -->
+        <File Id="MainExecutable"
+              Source="$(var.SourceDir)" />
+
+        <!-- Use HKCU registry value as KeyPath to satisfy ICE38 -->
+        <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]">
+          <RegistryValue Id="RegInstallDir"
+                          Name="InstallDir"
+                          Type="string"
+                          Value="[INSTALLFOLDER]"
+                          KeyPath="yes" />
+        </RegistryKey>
+
+        <!-- Uninstall cleanup to satisfy ICE64 (remove files and then folder) -->
+        <RemoveFile Id="CleanInstallFolderFiles"
+                    Name="*"
+                    On="uninstall"
+                    Directory="INSTALLFOLDER" />
+        <RemoveFolder Id="RemoveInstallFolder"
+                      On="uninstall"
+                      Directory="INSTALLFOLDER" />
+      </Component>
+    </DirectoryRef>
+
+  <!-- No ComponentGroup needed; Feature references the component directly. -->
+  </Fragment>
+</Wix>
