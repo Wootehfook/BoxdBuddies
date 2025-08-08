@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - chore/release-checksum
+      - chore/linux-ubuntu-compat-symlinks
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
