@@ -39,11 +39,9 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install sccache (Windows)
-        # AI Generated: GitHub Copilot - 2025-08-08
-        run: cargo install sccache
-        env:
-          RUSTC_WRAPPER: ""
+      - name: Setup sccache (Windows)
+        # AI Generated: GitHub Copilot - 2025-08-08 (use prebuilt action to avoid Windows compile issues)
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Cache sccache (Windows)
         uses: actions/cache@v4
@@ -129,11 +127,9 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install sccache (macOS)
-        # AI Generated: GitHub Copilot - 2025-08-08
-        run: cargo install sccache
-        env:
-          RUSTC_WRAPPER: ""
+      - name: Setup sccache (macOS)
+        # AI Generated: GitHub Copilot - 2025-08-08 (use prebuilt action to avoid toolchain variance)
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache per review feedback before build)
       - name: Cache cargo (macOS)
@@ -195,11 +191,9 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install sccache (Linux)
-        # AI Generated: GitHub Copilot - 2025-08-08
-        run: cargo install sccache
-        env:
-          RUSTC_WRAPPER: ""
+      - name: Setup sccache (Linux)
+        # AI Generated: GitHub Copilot - 2025-08-08 (use prebuilt action to avoid compiling sccache)
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
       - name: Cache cargo (Linux)

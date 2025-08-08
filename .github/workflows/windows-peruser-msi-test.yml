@@ -31,10 +31,8 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install sccache
-        run: cargo install sccache
-        env:
-          RUSTC_WRAPPER: ""
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Cache sccache
         uses: actions/cache@v4
