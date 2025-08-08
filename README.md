@@ -20,7 +20,7 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 | Platform | Architecture          | File                                   | Direct Download                                                                                                                       |
 | -------- | --------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows  | x64                   | MSI Installer (Per-user, no admin req) | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
+| Windows  | x64                   | MSI Installer (Per-user, no admin required) | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
 | macOS    | Apple Silicon (ARM64) | DMG                                    | [BoxdBuddies_1.0.0_aarch64.dmg](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_aarch64.dmg)     |
 | Linux    | x86_64                | DEB / AppImage                         | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)                    |
 | All      | N/A                   | Checksums                              | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
