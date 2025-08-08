@@ -18,7 +18,24 @@
     </Directory>
 
     <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
-      <ComponentGroupRef Id="AppFiles" />
+      <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
+      <ComponentRef Id="MainExecutableComponent" />
     </Feature>
   </Product>
+
+  <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
+  <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
+       Tauri passes -dSourceDir=PATH\BoxdBuddies.exe to candle; use that here. -->
+  <Fragment>
+    <!-- Install our main executable into INSTALLFOLDER -->
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="MainExecutableComponent" Guid="*">
+        <File Id="MainExecutable"
+              KeyPath="yes"
+              Source="$(var.SourceDir)" />
+      </Component>
+    </DirectoryRef>
+
+  <!-- No ComponentGroup needed; Feature references the component directly. -->
+  </Fragment>
 </Wix>
