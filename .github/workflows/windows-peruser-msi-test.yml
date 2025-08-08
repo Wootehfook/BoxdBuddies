@@ -13,6 +13,11 @@ permissions:
 jobs:
   per-user-msi:
     runs-on: windows-latest
+    env:
+      # AI Generated: GitHub Copilot - 2025-08-08 (enable sccache for faster Rust builds)
+      RUSTC_WRAPPER: sccache
+      SCCACHE_CACHE_SIZE: 2G
+      CARGO_INCREMENTAL: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,6 +30,18 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache
+        run: cargo install sccache
+
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Mozilla\sccache
+          key: peruser-win-sccache-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            peruser-win-sccache-
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -50,6 +67,11 @@ jobs:
         run: |
           Write-Host "Starting verbose Tauri MSI build (per-user)"
           npx tauri build --verbose --config src-tauri/tauri.windows.conf.json --bundles msi
+
+      - name: sccache stats
+        shell: pwsh
+        run: |
+          sccache --show-stats 2>$null || Write-Host "sccache not available"
 
       - name: Debug WiX artifacts (on failure)
         if: failure()

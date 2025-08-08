@@ -19,6 +19,11 @@ jobs:
   # Build for Windows
   build-windows:
     runs-on: windows-latest
+    env:
+      # AI Generated: GitHub Copilot - 2025-08-08 (enable sccache for faster Rust builds)
+      RUSTC_WRAPPER: sccache
+      SCCACHE_CACHE_SIZE: 2G
+      CARGO_INCREMENTAL: 0
     permissions:
       contents: read
       actions: write
@@ -33,6 +38,19 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache (Windows)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: cargo install sccache
+
+      - name: Cache sccache (Windows)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Mozilla\sccache
+          key: windows-sccache-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            windows-sccache-
 
       - name: Install dependencies
         run: npm ci
@@ -61,6 +79,10 @@ jobs:
         # Use Windows path separators per PR review suggestion
         run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
 
+      - name: sccache stats (Windows)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: sccache --show-stats || echo "sccache not available"
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -70,6 +92,11 @@ jobs:
   # Build for macOS
   build-macos:
     runs-on: macos-latest
+    env:
+      # AI Generated: GitHub Copilot - 2025-08-08 (enable sccache for faster Rust builds)
+      RUSTC_WRAPPER: sccache
+      SCCACHE_CACHE_SIZE: 2G
+      CARGO_INCREMENTAL: 0
     permissions:
       contents: read
       actions: write
@@ -84,6 +111,10 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache (macOS)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: cargo install sccache
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache per review feedback before build)
       - name: Cache cargo (macOS)
@@ -97,11 +128,24 @@ jobs:
           restore-keys: |
             macos-cargo-
 
+      - name: Cache sccache (macOS)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Mozilla.sccache
+          key: macos-sccache-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            macos-sccache-
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build macOS DMG
         run: npm run tauri build -- --bundles dmg
+
+      - name: sccache stats (macOS)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: sccache --show-stats || echo "sccache not available"
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -112,6 +156,11 @@ jobs:
   # Build for Linux
   build-linux:
     runs-on: ubuntu-latest
+    env:
+      # AI Generated: GitHub Copilot - 2025-08-08 (enable sccache for faster Rust builds)
+      RUSTC_WRAPPER: sccache
+      SCCACHE_CACHE_SIZE: 2G
+      CARGO_INCREMENTAL: 0
     permissions:
       contents: read
       actions: write
@@ -127,6 +176,10 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install sccache (Linux)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: cargo install sccache
+
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
       - name: Cache cargo (Linux)
         uses: actions/cache@v4
@@ -138,6 +191,15 @@ jobs:
           key: linux-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: |
             linux-cargo-
+
+      - name: Cache sccache (Linux)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/sccache
+          key: linux-sccache-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            linux-sccache-
 
       - name: Install system dependencies
         run: |
@@ -175,6 +237,10 @@ jobs:
           npm run tauri build -- --bundles deb,appimage
           echo "Listing produced bundle files for diagnostics:" 
           find src-tauri/target/release/bundle -maxdepth 4 -type f -printf "%p\n" || true
+
+      - name: sccache stats (Linux)
+        # AI Generated: GitHub Copilot - 2025-08-08
+        run: sccache --show-stats || echo "sccache not available"
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
