@@ -12,14 +12,12 @@
 
     <!-- Explicit per-user context (Windows Installer uses ALLUSERS=2 for pure per-user packages) -->
   <Property Id="ALLUSERS" Value="2" />
-  <!-- ARP metadata: icon & About URL (optional enhancement) -->
-  <Property Id="ARPPRODUCTICON" Value="AppExeIcon" />
+  <!-- ARP metadata: About URL (icon temporarily removed pending light.exe issue investigation) -->
   <Property Id="ARPURLINFOABOUT" Value="https://github.com/Wootehfook/BoxdBuddies" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
-  <!-- Icon resource used for ARPPRODUCTICON (must be an .ico file) -->
-  <Icon Id="AppExeIcon" SourceFile="..\\icons\\icon.ico" />
+  <!-- Icon resource removed for now; will restore after diagnosing light.exe failure -->
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
