@@ -9,8 +9,10 @@
 
 Find movies that you and your friends all want to watch! BoxdBuddies connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch.
 
+<!-- Demo screenshot placeholder intentionally retained; update once final UI capture ready -->
+
 ![BoxdBuddies Demo](docs/images/demo-hero.png)
-_Coming Soon: Demo screenshot showing the beautiful interface_
+_Demo image will be updated post public launch_
 
 ## 🎉 Status: Production Ready ✨
 
@@ -35,7 +37,20 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 If a file is missing from CHECKSUMS, re-download directly from the release page.
 
-Note: The Windows installer is a per-user MSI that installs under your user profile (LocalAppData) and does not require administrative privileges.
+Note: The Windows installer is a strict per-user MSI (ALLUSERS=2) that installs under
+`%LOCALAPPDATA%\BoxdBuddies` and does not require elevation. A future enhancement may add an
+optional “Install for all users” variant.
+
+### 🧩 Installer Details (Windows MSI)
+
+- Scope: Per-user only (no UAC prompt)
+- Uninstall: Standard Apps & Features entry or `msiexec /x BoxdBuddies_1.0.0_x64_en-US.msi`
+- Silent install: `msiexec /i BoxdBuddies_1.0.0_x64_en-US.msi /qn /norestart`
+- ARP metadata: Custom icon + project link for About info
+- Install location: `%LOCALAPPDATA%/BoxdBuddies`
+
+The build pipeline automatically validates the MSI sets `ALLUSERS=2` and performs a headless
+install/uninstall cycle to ensure integrity.
 
 ### ✅ Recent Achievements (August 3, 2025)
 
@@ -253,6 +268,25 @@ npm run tauri build
 ```
 
 The built application will be available in `src-tauri/target/release/bundle/`.
+
+### Code Signing (Optional / Recommended)
+
+Windows code signing is supported in CI when the following secrets are configured:
+
+| Secret                | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| `WIN_CERT_PFX_BASE64` | Base64-encoded PFX certificate (Authenticode) |
+| `WIN_CERT_PASSWORD`   | Password for the PFX file                     |
+
+During the release workflow the EXE and MSI are signed if both secrets are present. For local
+signing, export your certificate to a password-protected `.pfx`, then:
+
+```powershell
+signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f codesign.pfx /p $env:WIN_CERT_PASSWORD path\to\BoxdBuddies.exe
+```
+
+macOS notarization & signing will be added in a future milestone. Linux packages typically do not
+require code signing; GPG-signed checksums may be added later.
 
 ### Docker Build
 

@@ -135,6 +135,20 @@ jobs:
           }
           Write-Error "Unexpected ALLUSERS value '$value'. Expected '2' (per-user) or property to be absent."; exit 1
 
+      - name: Silent install & uninstall smoke test
+        shell: pwsh
+        run: |
+          $msiPath = '${{ steps.find_msi.outputs.msi_path }}'
+          Write-Host "Starting silent install: $msiPath"
+          $installLog = Join-Path $env:RUNNER_TEMP 'install.log'
+          Start-Process msiexec.exe -ArgumentList @('/i', '"' + $msiPath + '"', '/qn', '/norestart', '/L*v', '"' + $installLog + '"') -Wait -NoNewWindow
+          if (-not (Test-Path "$env:LOCALAPPDATA\BoxdBuddies")) { Write-Error 'Install directory not found after silent install.'; exit 1 }
+          Write-Host 'Silent install completed. Beginning silent uninstall.'
+          Start-Process msiexec.exe -ArgumentList @('/x', '"' + $msiPath + '"', '/qn', '/norestart') -Wait -NoNewWindow
+          Start-Sleep -Seconds 2
+          if (Test-Path "$env:LOCALAPPDATA\BoxdBuddies") { Write-Error 'Install directory still present after uninstall.'; exit 1 }
+          Write-Host 'Silent install/uninstall smoke test passed.'
+
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:

@@ -145,6 +145,21 @@ jobs:
           $value = $record.GetType().InvokeMember('StringData',[System.Reflection.BindingFlags]::GetProperty,$null,$record,1)
           if ($value -ne '2') { Write-Error "Expected ALLUSERS=2 for per-user MSI, found '$value'"; exit 1 } else { Write-Host 'Per-user verified (ALLUSERS=2).' }
 
+      - name: Silent install/uninstall smoke test (Windows MSI)
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Path src-tauri/target/release/bundle/msi -Filter *.msi -Recurse | Select-Object -First 1
+          if (-not $msi) { Write-Error 'MSI not found for smoke test'; exit 1 }
+          Write-Host "Silent installing $($msi.FullName)"
+          $log = Join-Path $env:RUNNER_TEMP 'msi-install.log'
+          Start-Process msiexec.exe -ArgumentList @('/i', '"' + $msi.FullName + '"', '/qn', '/norestart', '/L*v', '"' + $log + '"') -Wait -NoNewWindow
+          if (-not (Test-Path "$env:LOCALAPPDATA\BoxdBuddies")) { Write-Error 'Install directory missing after silent install.'; exit 1 }
+          Write-Host 'Silent install succeeded; performing uninstall.'
+          Start-Process msiexec.exe -ArgumentList @('/x', '"' + $msi.FullName + '"', '/qn', '/norestart') -Wait -NoNewWindow
+            Start-Sleep -Seconds 2
+          if (Test-Path "$env:LOCALAPPDATA\BoxdBuddies") { Write-Error 'Install directory still exists after uninstall.'; exit 1 }
+          Write-Host 'Silent install/uninstall verification passed.'
+
       - name: sccache stats (Windows)
         # AI Generated: GitHub Copilot - 2025-08-08
         run: sccache --show-stats || echo "sccache not available"
