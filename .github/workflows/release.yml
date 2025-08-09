@@ -338,6 +338,19 @@ jobs:
             exit 1
           fi
 
+      - name: Sign checksums (GPG detached signature)
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' && secrets.GPG_PASSPHRASE != '' }}
+        run: |
+          set -e
+          echo "Importing GPG key for checksum signing";
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --detach-sign --armor -o CHECKSUMS.txt.asc CHECKSUMS.txt
+          echo "Signature generated: CHECKSUMS.txt.asc";
+          gpg --list-keys || true
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -348,6 +361,7 @@ jobs:
             linux-packages/*.deb
             linux-packages/*.AppImage
             CHECKSUMS.txt
+            CHECKSUMS.txt.asc
           generate_release_notes: true
           draft: false
           prerelease: false

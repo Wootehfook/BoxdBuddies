@@ -35,6 +35,16 @@ _Demo image will be updated post public launch_
    ```
 3. Ensure reported hashes are `OK`.
 
+If a `CHECKSUMS.txt.asc` file is present (GPG detached signature) you can verify authenticity:
+
+```bash
+gpg --keyserver keyserver.ubuntu.com --recv-keys <MAINTAINER_KEY_ID>
+gpg --verify CHECKSUMS.txt.asc CHECKSUMS.txt
+```
+
+You should see a valid signature from the BoxdBuddies release key. Treat signature absence as
+expected only for early pre-release artifacts.
+
 If a file is missing from CHECKSUMS, re-download directly from the release page.
 
 Note: The Windows installer is a strict per-user MSI (ALLUSERS=2) that installs under
