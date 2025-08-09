@@ -156,7 +156,7 @@ jobs:
           if (-not (Test-Path "$env:LOCALAPPDATA\BoxdBuddies")) { Write-Error 'Install directory missing after silent install.'; exit 1 }
           Write-Host 'Silent install succeeded; performing uninstall.'
           Start-Process msiexec.exe -ArgumentList @('/x', '"' + $msi.FullName + '"', '/qn', '/norestart') -Wait -NoNewWindow
-            Start-Sleep -Seconds 2
+          Start-Sleep -Seconds 2
           if (Test-Path "$env:LOCALAPPDATA\BoxdBuddies") { Write-Error 'Install directory still exists after uninstall.'; exit 1 }
           Write-Host 'Silent install/uninstall verification passed.'
 
@@ -351,6 +351,14 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
+      - name: Upload checksum signature (optional)
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' && secrets.GPG_PASSPHRASE != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksum-signature
+          path: CHECKSUMS.txt.asc
+          if-no-files-found: error
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -361,7 +369,7 @@ jobs:
             linux-packages/*.deb
             linux-packages/*.AppImage
             CHECKSUMS.txt
-            CHECKSUMS.txt.asc
+            checksum-signature/CHECKSUMS.txt.asc
           generate_release_notes: true
           draft: false
           prerelease: false
