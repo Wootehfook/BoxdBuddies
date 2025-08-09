@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-<!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
+<!-- AI Generated: GitHub Copilot - 2025-08-09 -->
+<!-- Reverted to validated per-user only WiX definition to restore candle.exe success.
+     Multi-scope (per-user/per-machine) attempt removed because Tauri's
+     default bundler invocation does not add required UI extension logic
+     for custom scope dialog without extra configuration. We'll iterate
+     on multi-scope in a follow-up once a passing baseline is re-established. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
-    <!-- Per-user install: enforce limited privileges to avoid elevation prompts and scope ambiguity -->
-    <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
+    <!-- Per-user install: enforce limited privileges to avoid elevation prompts -->
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
 
-  <!-- Explicitly enforce per-user context. CI validates this setting on each build. -->
-  <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-  <Property Id="ALLUSERS" Value="2" />
-  <!-- Ensure Windows Installer uses per-user context (no elevation prompts) -->
-  <Property Id="MSIINSTALLPERUSER" Value="1" />
+    <!-- Explicit per-user context (Windows Installer uses ALLUSERS=2 for pure per-user packages) -->
+    <Property Id="ALLUSERS" Value="2" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
-
-  <!-- Note: ALLUSERS=2 and MSIINSTALLPERUSER=1 are set above to lock per-user installs. -->
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
@@ -25,51 +23,23 @@
     </Directory>
 
     <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
-      <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
       <ComponentRef Id="MainExecutableComponent" />
     </Feature>
   </Product>
 
-  <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
-  <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
-  Tauri passes -dSourceDir=PATH\\BoxdBuddies.exe to candle; use that here. -->
   <Fragment>
-    <!-- Install our main executable into INSTALLFOLDER -->
     <DirectoryRef Id="INSTALLFOLDER">
-  <!-- IMPORTANT: Preserve this Component GUID across releases. Changing it breaks upgrades/uninstall. -->
-  <Component Id="MainExecutableComponent" Guid="7E0DAB8B-2D40-4D2B-9B3D-2B2C3E5C902F">
-        <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-        <!--
-          Per-user install compliance fixes:
-          - ICE38: Use an HKCU registry value as the KeyPath (not a file) for components
-            installing under user profile directories.
-          - ICE64: Ensure the per-user INSTALLFOLDER is cleaned up on uninstall.
-        -->
-
-        <!-- Install the main executable file into the per-user install folder -->
-        <File Id="MainExecutable"
-              Source="$(var.SourceDir)" />
-
-        <!-- Use HKCU registry value as KeyPath to satisfy ICE38 -->
+      <!-- Stable GUID preserved (was previously used for per-user component). -->
+      <Component Id="MainExecutableComponent" Guid="7E0DAB8B-2D40-4D2B-9B3D-2B2C3E5C902F">
+        <File Id="MainExecutable" Source="$(var.SourceDir)" />
+        <!-- HKCU registry key as KeyPath satisfies ICE38 for per-user profile folder install -->
         <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]">
-          <RegistryValue Id="RegInstallDir"
-                          Name="InstallDir"
-                          Type="string"
-                          Value="[INSTALLFOLDER]"
-                          KeyPath="yes" />
+          <RegistryValue Id="RegInstallDir" Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
         </RegistryKey>
-
-        <!-- Uninstall cleanup to satisfy ICE64 (remove files and then folder) -->
-        <RemoveFile Id="CleanInstallFolderFiles"
-                    Name="*"
-                    On="uninstall"
-                    Directory="INSTALLFOLDER" />
-        <RemoveFolder Id="RemoveInstallFolder"
-                      On="uninstall"
-                      Directory="INSTALLFOLDER" />
+        <!-- Cleanup for ICE64 compliance -->
+        <RemoveFile Id="CleanInstallFolderFiles" Name="*" On="uninstall" Directory="INSTALLFOLDER" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" Directory="INSTALLFOLDER" />
       </Component>
     </DirectoryRef>
-
-  <!-- No ComponentGroup needed; Feature references the component directly. -->
   </Fragment>
 </Wix>
