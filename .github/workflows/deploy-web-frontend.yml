@@ -1,0 +1,77 @@
+name: Deploy Web Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'web/frontend/**'
+      - '.github/workflows/deploy-web-frontend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'web/frontend/**'
+      - '.github/workflows/deploy-web-frontend.yml'
+  workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: web/frontend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: web/frontend
+      run: npm ci
+
+    - name: Type check
+      working-directory: web/frontend
+      run: npm run type-check
+
+    - name: Lint code
+      working-directory: web/frontend
+      run: npm run lint
+
+    - name: Build web frontend
+      working-directory: web/frontend
+      run: npm run build
+      env:
+        VITE_API_BASE_URL: https://boxdbuddies-api.wootehfook.workers.dev
+
+    - name: Upload build artifacts
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: web/frontend/dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

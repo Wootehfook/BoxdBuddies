@@ -1,0 +1,18 @@
+name = "boxdbuddies-api"
+main = "src/index.ts"
+compatibility_date = "2024-08-10"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Bind the Worker to custom domains for production
+# routes = [
+#   { pattern = "boxdbuddies-api.your-domain.com/*", zone_name = "your-domain.com" }
+# ]
+
+# CORS settings for GitHub Pages
+[env.production.vars]
+ALLOWED_ORIGINS = "https://wootehfook.github.io,http://localhost:3000"
+
+[env.development.vars]
+ALLOWED_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"

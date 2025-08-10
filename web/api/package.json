@@ -1,0 +1,23 @@
+{
+  "name": "boxdbuddies-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for BoxdBuddies Letterboxd scraping",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20240815.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "eslint": "^9.32.0",
+    "typescript": "^5.0.2",
+    "wrangler": "^3.76.0"
+  }
+}
