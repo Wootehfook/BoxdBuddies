@@ -1,0 +1,21 @@
+name = "boxdbuddies-web"
+main = "web/worker/src/index.ts"
+compatibility_date = "2024-01-15"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# Cloudflare Pages configuration
+# Build command: cd web/frontend && npm install && npm run build
+# Build output directory: web/frontend/dist
+#
+# NOTE: The wrangler.toml configuration doesn't apply to Cloudflare Pages.
+# These are the correct settings for the Cloudflare Pages dashboard:
+#
+# Framework preset: None
+# Build command: cd web/frontend && npm install && npm run build  
+# Build output directory: web/frontend/dist
+# Root directory: (leave blank)
+#
+# Environment variables for production:
+# NODE_ENV = production
