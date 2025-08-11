@@ -44,13 +44,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { context, github } = this;
+            // GitHub Script provides: github, context, core
 
             // Determine which PRs to check
             let prsToCheck = [];
             if (context.eventName === 'schedule' || context.eventName === 'workflow_dispatch') {
-              if (github.event.inputs?.pr_number) {
-                prsToCheck = [parseInt(github.event.inputs.pr_number)];
+              const prInput = context.payload?.inputs?.pr_number;
+              if (prInput) {
+                prsToCheck = [parseInt(prInput)];
               } else {
                 // Get all open PRs
                 const { data: openPRs } = await github.rest.pulls.list({
@@ -180,7 +181,7 @@ jobs:
             }
 
             // Set outputs
-            core.setOutput('has-unresolved', totalUnresolved > 0);
+            core.setOutput('has-unresolved', (totalUnresolved > 0).toString());
             core.setOutput('auto-fixable', JSON.stringify(autoFixable));
             core.setOutput('manual-review', JSON.stringify(manualReview));
 
@@ -224,57 +225,58 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-
       - name: 🔧 Apply Automatic Fixes
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
+            const today = new Date().toISOString().slice(0, 10);
 
             const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
             let filesModified = [];
 
             for (const fix of autoFixable) {
               console.log(`🔧 Applying fix for ${fix.type} in ${fix.file}`);
-              
               try {
                 const filePath = fix.file;
                 let content = fs.readFileSync(filePath, 'utf8');
                 let modified = false;
-                
+
                 switch (fix.type) {
-                  case 'ai-attribution-timestamp':
-                    // Update AI attribution timestamps to current date (2025-08-03)
+                  case 'ai-attribution-timestamp': {
+                    // Update AI attribution timestamps to the current date
                     const aiAttributionRegex = /\/\/ AI Generated: GitHub Copilot - \d{4}-\d{2}-\d{2}/g;
                     if (aiAttributionRegex.test(content)) {
-                      content = content.replace(aiAttributionRegex, '// AI Generated: GitHub Copilot - 2025-08-03');
+                      content = content.replace(aiAttributionRegex, `// AI Generated: GitHub Copilot - ${today}`);
                       modified = true;
                     }
                     break;
-                    
-                  case 'axios-configuration':
+                  }
+                  case 'axios-configuration': {
                     // Add axios configuration if missing
                     if (content.includes('import axios from "axios"') && !content.includes('axios.create')) {
                       const axiosImportRegex = /(import axios from "axios";)/;
-                      const axiosConfig = '$1\n\n// AI Generated: GitHub Copilot - 2025-08-03\n// Create a configured axios instance with timeout and interceptors\nconst axiosInstance = axios.create({\n  timeout: 10000, // 10 seconds timeout\n});\n\n// Request interceptor for logging and headers\naxiosInstance.interceptors.request.use(\n  (config) => {\n    return config;\n  },\n  (error) => {\n    console.error("Request error:", error);\n    return Promise.reject(error);\n  }\n);\n\n// Response interceptor for error handling\naxiosInstance.interceptors.response.use(\n  (response) => response,\n  (error) => {\n    if (error.code === "ECONNABORTED") {\n      console.error("Request timeout:", error.message);\n    } else if (error.response) {\n      console.error("Response error:", error.response.status, error.response.data);\n    } else {\n      console.error("Network or unknown error:", error.message);\n    }\n    return Promise.reject(error);\n  }\n);';
+                      const axiosConfig = '$1\n\n// AI Generated: GitHub Copilot - ' + today + '\n// Create a configured axios instance with timeout and interceptors\nconst axiosInstance = axios.create({\n  timeout: 10000, // 10 seconds timeout\n});\n\n// Request interceptor for logging and headers\naxiosInstance.interceptors.request.use(\n  (config) => {\n    return config;\n  },\n  (error) => {\n    console.error("Request error:", error);\n    return Promise.reject(error);\n  }\n);\n\n// Response interceptor for error handling\naxiosInstance.interceptors.response.use(\n  (response) => response,\n  (error) => {\n    if (error.code === "ECONNABORTED") {\n      console.error("Request timeout:", error.message);\n    } else if (error.response) {\n      console.error("Response error:", error.response.status, error.response.data);\n    } else {\n      console.error("Network or unknown error:", error.message);\n    }\n    return Promise.reject(error);\n  }\n);';
                       content = content.replace(axiosImportRegex, axiosConfig);
                       modified = true;
                     }
                     break;
-                    
-                  case 'error-handling':
+                  }
+                  case 'error-handling': {
                     // Improve basic error handling patterns
                     const basicErrorRegex = /catch \(err\) \{[\s\S]*?setError\(err instanceof Error \? err\.message : ['"](.+?)['"];?\)/g;
+                    const before = content;
                     content = content.replace(basicErrorRegex, (match, fallbackMsg) => {
                       return match.replace(fallbackMsg, 'Failed operation: ' + fallbackMsg + '. Please check your connection and try again.');
                     });
-                    if (basicErrorRegex.test(content)) {
+                    if (before !== content) {
                       modified = true;
                     }
                     break;
+                  }
                 }
-                
+
                 if (modified) {
                   fs.writeFileSync(filePath, content, 'utf8');
                   filesModified.push(filePath);
@@ -330,7 +332,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { context } = this;
+            // GitHub Script provides: github, context, core
             const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
             const manualReview = JSON.parse('${{ needs.check-conversations.outputs.manual-review }}');
 
