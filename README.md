@@ -182,35 +182,41 @@ BoxdBuddies/
 
 ## 🔧 Development
 
-### Adding Tauri Commands
+### Adding Tauri Commands (Refactored Architecture)
 
-1. Add your command in `src-tauri/src/main.rs`:
+Commands now live in `src-tauri/src/commands.rs` (clean separation: `main.rs` only boots the app).
+
+1. Add your command to `commands.rs`:
 
    ```rust
-   #[tauri::command]
-   fn my_custom_command(input: String) -> String {
-       format!("Hello, {}!", input)
+   // src-tauri/src/commands.rs
+   use tauri::command;
+
+   #[command]
+   pub async fn my_custom_command(input: String) -> Result<String, String> {
+       Ok(format!("Hello, {input}!"))
    }
    ```
 
-2. Register the command in the builder:
+2. Ensure it is listed in the `invoke_handler!` macro inside `main.rs`:
 
    ```rust
-   fn main() {
-       tauri::Builder::default()
-           .invoke_handler(tauri::generate_handler![greet, my_custom_command])
-           .run(tauri::generate_context!())
-           .expect("error while running tauri application");
-   }
+   // src-tauri/src/main.rs (excerpt)
+   .invoke_handler(tauri::generate_handler![
+       // ...existing commands...
+       my_custom_command,
+   ])
    ```
 
-3. Call from React:
+3. Call it from React:
 
    ```typescript
-   import { invoke } from "@tauri-apps/api/tauri";
-
-   const result = await invoke("my_custom_command", { input: "World" });
+   import { invoke } from '@tauri-apps/api/tauri';
+   const result = await invoke<string>('my_custom_command', { input: 'World' });
+   console.log(result);
    ```
+
+4. Keep architecture tidy: business logic in dedicated modules, commands stay thin wrappers.
 
 ### Configuration
 

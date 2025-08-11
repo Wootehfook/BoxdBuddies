@@ -1,6 +1,6 @@
 # BoxdBuddies - Current Project Status & Next Steps
 
-_Last Updated: August 8, 2025_
+**Last Updated:** August 10, 2025
 
 ## 🎉 **STATUS: PRODUCTION READY**
 
@@ -166,9 +166,9 @@ Successfully processed:
 
 ### Code Quality Status
 
-- **Rust Backend**: Compiles successfully with minor unused function warnings
-- **TypeScript Frontend**: Clean compilation with strict type checking
-- **Database Schema**: Complete with all tables and proper relationships
+- **Rust Backend**: Clean compile (dead code removed; commands modularized in `commands.rs`)
+- **TypeScript Frontend**: Strict-mode clean
+- **Database Schema**: Stable (5 core tables + indices) and validated
 - **Error Handling**: Comprehensive with meaningful user feedback
 
 ---
@@ -197,11 +197,9 @@ Successfully processed:
 
 ### Minor Cleanup Items (Optional)
 
-- Remove unused functions flagged by Rust compiler warnings
-- Optimize import statements and remove dead code
-- Add more comprehensive unit tests for edge cases
-- Implement automated linting and formatting checks
-- Create performance benchmarking suite
+- Add more comprehensive unit tests for edge cases (scraping edge HTML, pagination caps)
+- Implement automated linting & formatting pre-commit hooks
+- Create performance benchmarking suite (large friend sets / >1000 movies)
 
 ### Enhancement Opportunities (Post-Launch)
 

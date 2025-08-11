@@ -68,6 +68,7 @@ playwright/.cache/
 # Tauri
 src-tauri/target
 src-tauri/gen
+trace_dir/
 
 # Rust
 **/*.rs.bk

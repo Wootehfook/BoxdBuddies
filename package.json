@@ -40,8 +40,11 @@
     "setup:dev": "bash .devcontainer/setup-with-mcp.sh",
     "health:check": "npm run type-check && npm run lint && npm run test && npm run mcp:status",
     "ai:workflow": "npm run mcp:start && npm run health:check && echo '🤖 AI development environment ready!'",
-    "release:prepare": "npm run clean && npm run health:check && npm run build && npm run tauri:build"
+    "release:prepare": "npm run clean && npm run health:check && npm run build && npm run tauri:build",
+    "worker:dev": "wrangler dev web/worker/src/index.ts",
+    "worker:deploy": "wrangler deploy"
   },
+  "workspaces": ["web/frontend", "web/worker"],
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
     "axios": "^1.11.0",
