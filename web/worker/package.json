@@ -1,0 +1,18 @@
+{
+  "name": "boxdbuddies-worker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "description": "Cloudflare Worker for BoxdBuddies demo endpoints",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wootehfook/BoxdBuddies.git"
+  },
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

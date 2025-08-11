@@ -120,3 +120,4 @@ rustup-init.exe
 .mcp-memory/
 memory.json
 *.memory.json
+web/frontend/package-lock.json
