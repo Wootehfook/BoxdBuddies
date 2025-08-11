@@ -127,7 +127,6 @@ function App() {
 
   // Setup state
   const [username, setUsername] = useState("");
-  const [tmdbApiKey, setTmdbApiKey] = useState("");
   const [setupProgress, setSetupProgress] = useState({
     profileSaved: false,
     friendsLoaded: false,
@@ -168,12 +167,11 @@ function App() {
         logger.debug("FRONTEND: Checking for existing user preferences...");
         const userPrefs = await mockBackendAPI.loadUserPreferences();
 
-        if (userPrefs?.username && userPrefs?.tmdb_api_key) {
+        if (userPrefs?.username) {
           logger.debug(
             "FRONTEND: Found existing user preferences, loading user data"
           );
           setUsername(userPrefs.username);
-          setTmdbApiKey(userPrefs.tmdb_api_key);
 
           // Load friends list automatically with watchlist counts
           const friendsResult =
@@ -259,7 +257,6 @@ function App() {
   const handleUserSetup = async () => {
     logger.debug("FRONTEND: handleUserSetup called");
     logger.debug("FRONTEND: username =", username);
-    logger.debug("FRONTEND: tmdbApiKey =", tmdbApiKey);
 
     if (!validateInputs()) return;
 
@@ -275,7 +272,6 @@ function App() {
         logger.debug("FRONTEND: About to save user preferences");
         await mockBackendAPI.saveUserPreferences({
           username: username.trim(),
-          tmdbApiKey: tmdbApiKey.trim(),
           alwaysOnTop: false,
         });
         logger.debug("FRONTEND: save_user_preferences completed successfully");
@@ -428,7 +424,6 @@ function App() {
         const compareResult = await mockBackendAPI.compareWatchlists({
           mainUsername: username,
           friendUsernames: friendUsernames,
-          tmdbApiKey: tmdbApiKey || null,
           limitTo500: false,
         });
         logger.debug(
@@ -502,8 +497,6 @@ function App() {
           <SetupPage
             username={username}
             setUsername={setUsername}
-            tmdbApiKey={tmdbApiKey}
-            setTmdbApiKey={setTmdbApiKey}
             onSetup={handleUserSetup}
             isLoading={isLoading}
             setupProgress={setupProgress}
@@ -521,7 +514,6 @@ function App() {
             isLoading={isLoading}
             isComparing={isComparing}
             enhancementProgress={enhancementProgress}
-            tmdbApiKey={tmdbApiKey}
             currentQuoteIndex={currentQuoteIndex}
           />
         );
@@ -567,8 +559,6 @@ function App() {
 interface SetupPageProps {
   username: string;
   setUsername: (value: string) => void;
-  tmdbApiKey: string;
-  setTmdbApiKey: (value: string) => void;
   onSetup: () => void;
   isLoading: boolean;
   setupProgress: {
@@ -580,8 +570,6 @@ interface SetupPageProps {
 function SetupPage({
   username,
   setUsername,
-  tmdbApiKey,
-  setTmdbApiKey,
   onSetup,
   isLoading,
   setupProgress,
@@ -612,27 +600,6 @@ function SetupPage({
               placeholder="Your Letterboxd Username (demo mode)"
               disabled={isLoading}
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="tmdb-key">TMDB API Key (Optional)</label>
-            <input
-              id="tmdb-key"
-              type="password"
-              value={tmdbApiKey}
-              onChange={(e) => setTmdbApiKey(e.target.value)}
-              placeholder="Your TMDB API key (optional - for enhanced movie data)"
-              disabled={isLoading}
-            />
-            <small>
-              <a
-                href="https://www.themoviedb.org/settings/api"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Get your free TMDB API key here
-              </a>
-            </small>
           </div>
 
           {/* Progress indicators */}
@@ -691,7 +658,6 @@ interface FriendSelectionPageProps {
   isLoading: boolean;
   isComparing: boolean;
   enhancementProgress: EnhancementProgress;
-  tmdbApiKey: string;
   currentQuoteIndex: number;
 }
 
@@ -705,7 +671,6 @@ function FriendSelectionPage({
   isLoading,
   isComparing,
   enhancementProgress,
-  tmdbApiKey,
   currentQuoteIndex,
 }: FriendSelectionPageProps) {
   const progressPercent = calculateProgressPercent(
@@ -882,28 +847,6 @@ function FriendSelectionPage({
                     {selectedFriends.length} friend
                     {selectedFriends.length !== 1 ? "s" : ""} selected
                   </p>
-                  {!tmdbApiKey && (
-                    <div className="tmdb-info-banner">
-                      <div className="tmdb-info-content">
-                        <div className="tmdb-info-icon">🎬</div>
-                        <div className="tmdb-info-text">
-                          <h4>Enhanced with Sample Movie Data!</h4>
-                          <p>
-                            This demo shows movie posters, ratings, and
-                            descriptions. Add your TMDB API key for live data in
-                            the desktop app.{" "}
-                            <a
-                              href="https://www.themoviedb.org/settings/api"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Get one here →
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   <button
                     onClick={onCompareWatchlists}
                     disabled={selectedFriends.length === 0 || isComparing}

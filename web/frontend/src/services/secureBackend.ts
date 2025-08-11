@@ -16,8 +16,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// AI Generated: GitHub Copilot - 2025-01-07
-// Mock backend service for web version demonstration
+// AI Generated: GitHub Copilot - 2025-08-10
+// Secure backend service for web version demonstration
 
 export interface Movie {
   id: number;
@@ -43,7 +43,8 @@ export interface Friend {
 
 export interface UserPreferences {
   username: string;
-  tmdb_api_key?: string; // Optional for web version
+  // Security fix: Never store API keys directly
+  // tmdb_api_key: string; // REMOVED: Security vulnerability
   always_on_top?: boolean;
 }
 
@@ -164,65 +165,83 @@ const sampleCommonMovies: Movie[] = [
   },
 ];
 
-// Mock API functions
-export const mockBackendAPI = {
-  // Save user preferences
+// Secure API functions
+export const secureBackendAPI = {
+  // Save user preferences - SECURITY FIX: Never store API keys
   saveUserPreferences: async (request: {
     username: string;
-    tmdbApiKey?: string; // Optional for web version
     alwaysOnTop?: boolean;
+    // API keys should be handled through secure environment variables
+    // or encrypted storage, never stored as plain text
   }): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
-    // eslint-disable-next-line no-undef
-    localStorage.setItem("boxdbuddies_user_prefs", JSON.stringify(request));
+
+    // Only store non-sensitive preferences
+    const safePrefs = {
+      username: request.username,
+      alwaysOnTop: request.alwaysOnTop || false,
+      // Note: API keys should be managed through environment variables
+      // or secure token-based authentication, not localStorage
+    };
+
+    // Check if we're in a browser environment
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(
+        "boxdbuddies_user_prefs",
+        JSON.stringify(safePrefs)
+      );
+    }
   },
 
-  // Load user preferences
+  // Load user preferences - SECURITY FIX: No sensitive data exposure
   loadUserPreferences: async (): Promise<UserPreferences | null> => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    // eslint-disable-next-line no-undef
-    const stored = localStorage.getItem("boxdbuddies_user_prefs");
-    return stored ? JSON.parse(stored) : null;
-  },
-
-  // Scrape Letterboxd friends (mock)
-  scrapeLetterboxdFriends: async (_username: string): Promise<Friend[]> => {
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate scraping delay
-    return sampleFriends;
-  },
-
-  // Get friends with watchlist counts
-  getFriendsWithWatchlistCounts: async (): Promise<Friend[]> => {
     await new Promise((resolve) => setTimeout(resolve, 300));
-    return sampleFriends;
+
+    // Check if we're in a browser environment
+    if (typeof window !== "undefined" && window.localStorage) {
+      const stored = window.localStorage.getItem("boxdbuddies_user_prefs");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
   },
 
-  // Compare watchlists
-  compareWatchlists: async (request: {
-    mainUsername: string;
-    friendUsernames: string[];
-    tmdbApiKey?: string | null;
-    limitTo500?: boolean;
-  }): Promise<{ commonMovies: Movie[] }> => {
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // Simulate comparison delay
+  // Get available friends for comparison
+  getAvailableFriends: async (): Promise<Friend[]> => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return [...sampleFriends];
+  },
+
+  // Compare watchlists between selected friends
+  compareWatchlists: async (friendUsernames: string[]): Promise<Movie[]> => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // Filter movies based on selected friends
-    const filteredMovies = sampleCommonMovies.filter((movie) =>
-      movie.friendList?.some((friend) =>
-        request.friendUsernames.includes(friend)
-      )
+    return sampleCommonMovies.filter((movie) =>
+      movie.friendList?.some((friend) => friendUsernames.includes(friend))
     );
-
-    return { commonMovies: filteredMovies };
   },
 
-  // Set window focus (no-op for web)
-  setWindowFocus: async (): Promise<void> => {
-    // No-op for web version
+  // Get movie details by ID
+  getMovieDetails: async (movieId: number): Promise<Movie | null> => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return sampleCommonMovies.find((movie) => movie.id === movieId) || null;
   },
 
-  // Set always on top (no-op for web)
-  setAlwaysOnTop: async (_alwaysOnTop: boolean): Promise<void> => {
-    // No-op for web version
+  // Health check endpoint
+  healthCheck: async (): Promise<{ status: string; message: string }> => {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return {
+      status: "healthy",
+      message: "Secure mock backend API is operational",
+    };
   },
 };
+
+// Export default for backwards compatibility
+export default secureBackendAPI;
