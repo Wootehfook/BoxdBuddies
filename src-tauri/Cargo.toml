@@ -10,7 +10,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2.3", features = [] }
 
 [dependencies]
 tauri = { version = "1.6", features = [ "window-request-user-attention", "window-show", "window-set-focus", "window-set-always-on-top", "window-close", "window-set-size", "window-set-position", "window-center", "shell-open", "fs-read-file", "fs-write-file", "path-all"] }
