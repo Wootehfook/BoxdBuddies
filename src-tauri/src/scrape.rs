@@ -375,8 +375,9 @@ pub fn find_common_movies(
                 movie.year.unwrap_or(0)
             );
         }
-        let mut friend_count = 0u32;
-        for (friend_idx, (_friend_name, friend_watchlist)) in
+    let mut friend_count = 0u32;
+    let mut friends_with_movie: Vec<String> = Vec::new();
+    for (friend_idx, (friend_name, friend_watchlist)) in
             friend_watchlists_with_names.iter().enumerate()
         {
             let found = friend_watchlist
@@ -384,10 +385,8 @@ pub fn find_common_movies(
                 .any(|fm| movie.title.to_lowercase() == fm.title.to_lowercase());
             if found {
                 friend_count += 1;
-                // Security: track presence count only; avoid storing names for logs
-                // If names are needed for UI, the caller should supply separately.
-                // Keep an empty placeholder to preserve structure if required.
-                // Here we omit pushing the friend name to reduce PII in logs.
+        // Preserve names in returned data for UI, but avoid printing them in logs.
+        friends_with_movie.push(friend_name.clone());
                 if idx < 3 {
                     println!(
                         "DEBUG: '{}' found in friend #{}'s list",
@@ -403,9 +402,8 @@ pub fn find_common_movies(
                 );
             }
         }
-        if friend_count > 0 {
-            // Preserve the tuple shape but provide an empty list for friend names
-            common_movies.push((movie.clone(), friend_count, Vec::new()));
+    if friend_count > 0 {
+        common_movies.push((movie.clone(), friend_count, friends_with_movie));
             println!(
                 "DEBUG: COMMON MOVIE FOUND! '{}' is in {} friend watchlists",
                 movie.title, friend_count
