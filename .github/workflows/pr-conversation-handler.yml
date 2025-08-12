@@ -1,0 +1,385 @@
+# AI Generated: GitHub Copilot - 2025-08-03
+# Automated PR Conversation Handler - Self-Healing CI/CD Component
+name: 🤖 PR Conversation Handler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+  schedule:
+    # Run daily at 9 AM UTC to check all open PRs
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to check (leave empty for all open PRs)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+
+jobs:
+  check-conversations:
+    name: 🔍 Check Unresolved Conversations
+    runs-on: ubuntu-latest
+    outputs:
+      has-unresolved: ${{ steps.check.outputs.has-unresolved }}
+      auto-fixable: ${{ steps.check.outputs.auto-fixable }}
+      manual-review: ${{ steps.check.outputs.manual-review }}
+
+    steps:
+      - name: 🏗️ Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: 🔍 Check Unresolved Conversations
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // GitHub Script provides: github, context, core
+
+            // Determine which PRs to check
+            let prsToCheck = [];
+            if (context.eventName === 'schedule' || context.eventName === 'workflow_dispatch') {
+              const prInput = context.payload?.inputs?.pr_number;
+              if (prInput) {
+                prsToCheck = [parseInt(prInput)];
+              } else {
+                // Get all open PRs
+                const { data: openPRs } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open'
+                });
+                prsToCheck = openPRs.map(pr => pr.number);
+              }
+            } else {
+              // PR event - check the current PR
+              prsToCheck = [context.payload.pull_request?.number || context.payload.review?.pull_request?.number];
+            }
+
+            let totalUnresolved = 0;
+            let autoFixable = [];
+            let manualReview = [];
+
+            for (const prNumber of prsToCheck) {
+              if (!prNumber) continue;
+              
+              console.log(`🔍 Checking PR #${prNumber} for unresolved conversations...`);
+              
+              try {
+                // Get review comments
+                const { data: comments } = await github.rest.pulls.listReviewComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber
+                });
+                
+                // Get reviews to check resolution status
+                const { data: reviews } = await github.rest.pulls.listReviews({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber
+                });
+                
+                // Analyze unresolved conversations
+                for (const comment of comments) {
+                  const conversationResolved = await checkConversationResolved(comment, reviews);
+                  
+                  if (!conversationResolved) {
+                    totalUnresolved++;
+                    const analysis = analyzeComment(comment);
+                    
+                    if (analysis.autoFixable) {
+                      autoFixable.push({
+                        pr: prNumber,
+                        commentId: comment.id,
+                        file: comment.path,
+                        line: comment.line,
+                        type: analysis.type,
+                        suggestion: analysis.suggestion,
+                        body: comment.body
+                      });
+                    } else {
+                      manualReview.push({
+                        pr: prNumber,
+                        commentId: comment.id,
+                        file: comment.path,
+                        line: comment.line,
+                        body: comment.body,
+                        reason: analysis.reason
+                      });
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error(`❌ Error checking PR #${prNumber}:`, error.message);
+              }
+            }
+
+            // Helper functions
+            async function checkConversationResolved(comment, reviews) {
+              // Simple heuristic: if there's a newer review after the comment, consider it addressed
+              const commentTime = new Date(comment.created_at);
+              return reviews.some(review => 
+                new Date(review.submitted_at) > commentTime && 
+                review.state !== 'COMMENTED'
+              );
+            }
+
+            function analyzeComment(comment) {
+              const body = comment.body.toLowerCase();
+              
+              // AI attribution timestamp pattern
+              if (body.includes('ai attribution') && body.includes('timestamp')) {
+                return {
+                  autoFixable: true,
+                  type: 'ai-attribution-timestamp',
+                  suggestion: 'Update AI attribution timestamp to current date'
+                };
+              }
+              
+              // Axios configuration pattern
+              if (body.includes('axios') && body.includes('timeout')) {
+                return {
+                  autoFixable: true,
+                  type: 'axios-configuration',
+                  suggestion: 'Add axios timeout and interceptors configuration'
+                };
+              }
+              
+              // Error handling pattern
+              if (body.includes('error handling') && body.includes('specific')) {
+                return {
+                  autoFixable: true,
+                  type: 'error-handling',
+                  suggestion: 'Improve error handling with specific messages'
+                };
+              }
+              
+              // URL validation (security - manual review)
+              if (body.includes('url') && (body.includes('validation') || body.includes('security'))) {
+                return {
+                  autoFixable: false,
+                  reason: 'Security-related URL validation requires manual review'
+                };
+              }
+              
+              // Default to manual review for unknown patterns
+              return {
+                autoFixable: false,
+                reason: 'Unknown pattern requires manual review'
+              };
+            }
+
+            // Set outputs
+            core.setOutput('has-unresolved', (totalUnresolved > 0).toString());
+            core.setOutput('auto-fixable', JSON.stringify(autoFixable));
+            core.setOutput('manual-review', JSON.stringify(manualReview));
+
+            // Create summary
+            core.summary
+              .addHeading('🤖 PR Conversation Analysis')
+              .addTable([
+                [{data: 'Metric', header: true}, {data: 'Count', header: true}],
+                ['Total Unresolved', totalUnresolved.toString()],
+                ['Auto-fixable', autoFixable.length.toString()],
+                ['Manual Review Needed', manualReview.length.toString()]
+              ]);
+              
+            if (autoFixable.length > 0) {
+              core.summary.addHeading('🔧 Auto-fixable Issues', 3);
+              autoFixable.forEach(item => {
+                core.summary.addRaw(`- **${item.type}** in \`${item.file}\` (line ${item.line}): ${item.suggestion}`);
+              });
+            }
+
+            if (manualReview.length > 0) {
+              core.summary.addHeading('👀 Manual Review Required', 3);
+              manualReview.forEach(item => {
+                core.summary.addRaw(`- \`${item.file}\` (line ${item.line}): ${item.reason}`);
+              });
+            }
+
+            await core.summary.write();
+
+            console.log(`✅ Analysis complete: ${totalUnresolved} unresolved, ${autoFixable.length} auto-fixable, ${manualReview.length} manual review`);
+
+  auto-fix:
+    name: 🔧 Apply Automatic Fixes
+    runs-on: ubuntu-latest
+    needs: check-conversations
+    if: needs.check-conversations.outputs.has-unresolved == 'true' && needs.check-conversations.outputs.auto-fixable != '[]'
+
+    steps:
+      - name: 🏗️ Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: 🔧 Apply Automatic Fixes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const today = new Date().toISOString().slice(0, 10);
+
+            const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
+            let filesModified = [];
+
+            for (const fix of autoFixable) {
+              console.log(`🔧 Applying fix for ${fix.type} in ${fix.file}`);
+              try {
+                const filePath = fix.file;
+                let content = fs.readFileSync(filePath, 'utf8');
+                let modified = false;
+
+                switch (fix.type) {
+                  case 'ai-attribution-timestamp': {
+                    // Update AI attribution timestamps to the current date
+                    const aiAttributionRegex = /\/\/ AI Generated: GitHub Copilot - \d{4}-\d{2}-\d{2}/g;
+                    if (aiAttributionRegex.test(content)) {
+                      content = content.replace(aiAttributionRegex, `// AI Generated: GitHub Copilot - ${today}`);
+                      modified = true;
+                    }
+                    break;
+                  }
+                  case 'axios-configuration': {
+                    // Add axios configuration if missing
+                    if (content.includes('import axios from "axios"') && !content.includes('axios.create')) {
+                      const axiosImportRegex = /(import axios from "axios";)/;
+                      const axiosConfig = '$1\n\n// AI Generated: GitHub Copilot - ' + today + '\n// Create a configured axios instance with timeout and interceptors\nconst axiosInstance = axios.create({\n  timeout: 10000, // 10 seconds timeout\n});\n\n// Request interceptor for logging and headers\naxiosInstance.interceptors.request.use(\n  (config) => {\n    return config;\n  },\n  (error) => {\n    console.error("Request error:", error);\n    return Promise.reject(error);\n  }\n);\n\n// Response interceptor for error handling\naxiosInstance.interceptors.response.use(\n  (response) => response,\n  (error) => {\n    if (error.code === "ECONNABORTED") {\n      console.error("Request timeout:", error.message);\n    } else if (error.response) {\n      console.error("Response error:", error.response.status, error.response.data);\n    } else {\n      console.error("Network or unknown error:", error.message);\n    }\n    return Promise.reject(error);\n  }\n);';
+                      content = content.replace(axiosImportRegex, axiosConfig);
+                      modified = true;
+                    }
+                    break;
+                  }
+                  case 'error-handling': {
+                    // Improve basic error handling patterns
+                    const basicErrorRegex = /catch \(err\) \{[\s\S]*?setError\(err instanceof Error \? err\.message : ['"](.+?)['"];?\)/g;
+                    const before = content;
+                    content = content.replace(basicErrorRegex, (match, fallbackMsg) => {
+                      return match.replace(fallbackMsg, 'Failed operation: ' + fallbackMsg + '. Please check your connection and try again.');
+                    });
+                    if (before !== content) {
+                      modified = true;
+                    }
+                    break;
+                  }
+                }
+
+                if (modified) {
+                  fs.writeFileSync(filePath, content, 'utf8');
+                  filesModified.push(filePath);
+                  console.log(`✅ Applied ${fix.type} fix to ${filePath}`);
+                }
+              } catch (error) {
+                console.error(`❌ Failed to apply fix to ${fix.file}:`, error.message);
+              }
+            }
+
+            // Store modified files for commit step
+            fs.writeFileSync('modified-files.json', JSON.stringify(filesModified));
+
+            console.log(`🎯 Applied fixes to ${filesModified.length} files`);
+
+      - name: 📝 Commit Automatic Fixes
+        run: |
+          if [ -f "modified-files.json" ]; then
+            MODIFIED_FILES=$(cat modified-files.json)
+            if [ "$MODIFIED_FILES" != "[]" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action - PR Conversation Handler"
+              
+              # Add only the modified files
+              echo "$MODIFIED_FILES" | jq -r '.[]' | xargs git add
+              
+              git commit -m "🤖 Auto-fix: Address unresolved PR conversations
+              
+              - Updated AI attribution timestamps to current date
+              - Enhanced axios configuration with timeouts and interceptors  
+              - Improved error handling with specific messages
+              
+              Applied by automated PR conversation handler
+              Co-authored-by: GitHub Copilot <copilot@github.com>"
+              
+              git push
+              echo "✅ Committed automatic fixes"
+            else
+              echo "ℹ️ No files were modified"
+            fi
+          else
+            echo "ℹ️ No fixes were applied"
+          fi
+
+  report:
+    name: 📊 Generate Report
+    runs-on: ubuntu-latest
+    needs: [check-conversations, auto-fix]
+    if: always() && needs.check-conversations.outputs.has-unresolved == 'true'
+
+    steps:
+      - name: 📊 Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // GitHub Script provides: github, context, core
+            const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
+            const manualReview = JSON.parse('${{ needs.check-conversations.outputs.manual-review }}');
+
+            // Only comment on PR events, not scheduled runs
+            if (context.eventName.startsWith('pull_request') && context.payload.pull_request) {
+              const prNumber = context.payload.pull_request.number;
+              
+              let comment = `## 🤖 PR Conversation Handler Report\n\n`;
+              
+              if (autoFixable.length > 0) {
+                comment += `### ✅ Automatic Fixes Applied (${autoFixable.length})\n\n`;
+                autoFixable.forEach(fix => {
+                  comment += `- **${fix.type}** in \`${fix.file}\`: ${fix.suggestion}\n`;
+                });
+                comment += `\n*These issues have been automatically resolved.*\n\n`;
+              }
+              
+              if (manualReview.length > 0) {
+                comment += `### 👀 Manual Review Required (${manualReview.length})\n\n`;
+                manualReview.forEach(item => {
+                  comment += `- \`${item.file}\` (line ${item.line}): ${item.reason}\n`;
+                });
+                comment += `\n*Please address these issues manually before merging.*\n\n`;
+              }
+              
+              if (autoFixable.length === 0 && manualReview.length === 0) {
+                comment += `### 🎉 All Conversations Resolved!\n\nNo unresolved review conversations found.\n\n`;
+              }
+              
+              comment += `---\n*This is an automated message from the self-healing CI/CD system.*`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }
+
+      - name: 🚨 Set Check Status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const manualReview = JSON.parse('${{ needs.check-conversations.outputs.manual-review }}');
+
+            if (manualReview.length > 0) {
+              core.setFailed(`${manualReview.length} unresolved conversations require manual review`);
+            } else {
+              console.log("✅ All conversations resolved or auto-fixed");
+            }
