@@ -5,7 +5,12 @@
   <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
     <!-- Per-user install: enforce limited privileges to avoid elevation prompts and scope ambiguity -->
     <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
+  <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
+
+  <!-- Set the Add/Remove Programs icon; Tauri embeds icon.ico in the bundle -->
+  <!-- Embed the product icon used in Add/Remove Programs -->
+  <Icon Id="AppIcon" SourceFile="..\..\..\..\icons\icon.ico" />
+  <Property Id="ARPPRODUCTICON" Value="AppIcon" />
 
   <!-- Explicitly enforce per-user context. CI validates this setting on each build. -->
   <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
