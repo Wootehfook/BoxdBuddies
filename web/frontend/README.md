@@ -1,11 +1,11 @@
 # BoxdBuddies Web Frontend
 
-This is the web version of BoxdBuddies, built with React TypeScript and Vite for GitHub Pages deployment.
+This is the web version of BoxdBuddies, built with React TypeScript and Vite for Cloudflare Pages deployment.
 
 ## Features
 
 - Complete React TypeScript frontend structure
-- Vite build system configured for GitHub Pages deployment
+- Vite build system configured for Cloudflare Pages deployment
 - Movie comparison interface that matches the desktop app functionality
 - TypeScript configuration with strict mode
 - Modern React 18 with functional components and hooks
@@ -41,7 +41,7 @@ npm run format:check
 
 ## Build Output
 
-The build process generates a `dist/` folder that is ready for GitHub Pages deployment:
+The build process generates a `dist/` folder that is ready for Cloudflare Pages deployment:
 
 - `dist/index.html` - Main HTML file
 - `dist/assets/` - CSS and JavaScript bundles
@@ -52,11 +52,11 @@ This web version includes a mock backend service that simulates the desktop app'
 
 ## Deployment
 
-The app is configured for GitHub Pages deployment with the base path `/BoxdBuddies/`. The build process creates optimized bundles with:
+The app is configured for Cloudflare Pages deployment. The build process creates optimized bundles with:
 
 - Vendor chunk separation for better caching
 - Minified assets
-- Proper asset handling for GitHub Pages
+- Proper asset handling for Cloudflare Pages
 
 ## Differences from Desktop App
 
