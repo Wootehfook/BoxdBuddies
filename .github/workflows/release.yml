@@ -41,7 +41,7 @@ jobs:
 
       - name: Setup sccache (Windows)
         # AI Generated: GitHub Copilot - 2025-08-08 (use prebuilt action to avoid Windows compile issues)
-        uses: mozilla-actions/sccache-action@v0.0.4
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Cache sccache (Windows)
         uses: actions/cache@v4
@@ -180,7 +180,7 @@ jobs:
 
       - name: Setup sccache (Linux)
         # AI Generated: GitHub Copilot - 2025-08-08 (use prebuilt action to avoid compiling sccache)
-        uses: mozilla-actions/sccache-action@v0.0.4
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       # AI Generated: GitHub Copilot - 2025-08-07 (relocate cache prior to build for consistency)
       - name: Cache cargo (Linux)
@@ -277,7 +277,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
 
       - name: Generate checksums
         run: |
@@ -324,7 +324,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
           overwrite: true
