@@ -17,8 +17,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
-import { open } from "@tauri-apps/api/shell";
+// AI Generated: GitHub Copilot - 2025-08-12
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-shell";
 import "./App.css";
 import logger from "./utils/logger";
 import { calculateProgressPercent } from "./utils/progressUtils";

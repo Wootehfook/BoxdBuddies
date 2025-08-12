@@ -5,6 +5,13 @@
 # MCP Server Status Check Script
 echo "🔍 Checking MCP server status..."
 
+# If VS Code CLI is not available at all, treat as informational-only and exit 0
+if ! command -v code &> /dev/null; then
+    echo -e "  ⚠️  VS Code CLI (code) not found — skipping MCP extension checks (non-fatal)"
+    echo -e "  💡 Tip: Install VS Code or ensure 'code' is on PATH to enable MCP checks"
+    exit 0
+fi
+
 # Primary MCP servers (required for AI development)
 PRIMARY_MCPS=("memory" "github" "sequentialthinking")
 
@@ -22,17 +29,12 @@ check_vscode_extension() {
     local extension_pattern=$1
     local display_name=$2
     
-    if command -v code &> /dev/null; then
-        if code --list-extensions | grep -q "$extension_pattern" 2>/dev/null; then
-            echo -e "  ✅ ${GREEN}${display_name}${NC} - VS Code extension installed"
-            return 0
-        else
-            echo -e "  ❌ ${RED}${display_name}${NC} - VS Code extension not found"
-            return 1
-        fi
+    if code --list-extensions | grep -q "$extension_pattern" 2>/dev/null; then
+        echo -e "  ✅ ${GREEN}${display_name}${NC} - VS Code extension installed"
+        return 0
     else
-        echo -e "  ⚠️  ${YELLOW}${display_name}${NC} - VS Code not available"
-        return 2
+        echo -e "  ❌ ${RED}${display_name}${NC} - VS Code extension not found"
+        return 1
     fi
 }
 

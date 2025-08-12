@@ -19,7 +19,8 @@
 // Cache Service for BoxdBuddies
 // Handles local database caching operations
 
-import { invoke } from "@tauri-apps/api/tauri";
+// AI Generated: GitHub Copilot - 2025-08-12
+import { invoke } from "@tauri-apps/api/core";
 import { logger } from "../utils/logger";
 
 export interface CachedWatchlistMovie {

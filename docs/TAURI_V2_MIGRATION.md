@@ -1,3 +1,11 @@
+## Status update — 2025-08-12
+
+- AI Generated: GitHub Copilot - 2025-08-12
+- Lint/type-check/tests: PASS (`npm run health:check`), with MCP status made non-fatal when VS Code CLI is missing.
+- Rust: `cargo check` PASS, `cargo clippy` PASS (removed an unused import post plugin wiring).
+- Runtime: `tauri dev` launches successfully on Tauri v2; local smoke looks good.
+- Next: validate packaging on CI (WiX), and do a short UI pass for any v2 behavior deltas.
+
 <!-- AI Generated: GitHub Copilot - 2025-08-12 -->
 
 # Tauri v2 Migration Plan (Umbrella PR)

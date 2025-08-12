@@ -27,6 +27,9 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, Manager};
+// AI Generated: GitHub Copilot - 2025-08-12
+// AI Generated: GitHub Copilot - 2025-08-12
+// Note: ShellExt is not needed unless calling extension methods; plugin is initialized below.
 // AI Generated: GitHub Copilot - 2025-08-05
 // Debug flag to control verbose logging - set to false for production builds
 const DEBUG_LOGGING: bool = false;
@@ -456,7 +459,7 @@ async fn set_always_on_top(
 ) -> Result<(), String> {
     debug_log!("🪟 Setting always on top: {}", always_on_top);
 
-    if let Some(window) = app_handle.get_window("main") {
+    if let Some(window) = app_handle.get_webview_window("main") {
         match window.set_always_on_top(always_on_top) {
             Ok(_) => {
                 debug_log!("🪟 Always on top set successfully: {}", always_on_top);
@@ -488,7 +491,7 @@ async fn set_always_on_top(
 async fn set_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
     debug_log!("🪟 Setting window focus");
 
-    if let Some(window) = app_handle.get_window("main") {
+    if let Some(window) = app_handle.get_webview_window("main") {
         // Request focus and bring to front
         window
             .set_focus()
@@ -3781,6 +3784,7 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             scrape_letterboxd_profile,
             scrape_letterboxd_friends,
@@ -3807,11 +3811,11 @@ fn main() {
         ])
         .setup(|app| {
             // Get the main window - first we need to get the handle
-            let app_handle = app.handle();
+            let app_handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
                 // Get the main window after spawn to avoid borrowing issues
-                if let Some(main_window) = app_handle.get_window("main") {
+                if let Some(main_window) = app_handle.get_webview_window("main") {
                     // Restore saved window position
                     if let Ok(Some((x, y, width, height))) = get_saved_window_position().await {
                         debug_log!(
