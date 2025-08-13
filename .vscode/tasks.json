@@ -168,15 +168,6 @@
 			]
 		},
 		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
 			"label": "🏥 Health Check",
 			"type": "shell",
 			"command": "npm",
