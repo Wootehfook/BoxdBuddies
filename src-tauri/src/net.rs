@@ -2,6 +2,7 @@
  * Networking and input safety helpers
  * AI Generated: GitHub Copilot - 2025-08-13
  */
+use once_cell::sync::Lazy; // AI Generated: GitHub Copilot - 2025-08-13
 use regex::Regex;
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
@@ -16,11 +17,11 @@ use url::Url;
 /// - output: Ok(validated username) if it matches ^[A-Za-z0-9_-]{1,32}$, else Err generic message
 /// - error messages must not echo the provided username (avoid PII in logs)
 pub fn sanitize_username(input: &str) -> Result<String, String> {
+    static USERNAME_RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"^[A-Za-z0-9_-]{1,32}$").expect("valid regex"));
     let trimmed = input.trim();
     // Strict allow-list: letters, digits, underscore, hyphen; 1..=32 chars
-    // Cached Regex via lazy static would be ideal; Regex::new is cheap enough here.
-    let re = Regex::new(r"^[A-Za-z0-9_-]{1,32}$").expect("valid regex");
-    if re.is_match(trimmed) {
+    if USERNAME_RE.is_match(trimmed) {
         Ok(trimmed.to_string())
     } else {
         Err("Invalid username format".to_string())
@@ -48,7 +49,7 @@ pub fn build_letterboxd_url(segments: &[&str]) -> String {
         }
     }
     // Ensure trailing slash is not required by callers
-    url.into_string().trim_end_matches('/').to_string()
+    url.as_str().trim_end_matches('/').to_string()
 }
 
 /// AI Generated: GitHub Copilot - 2025-08-13
