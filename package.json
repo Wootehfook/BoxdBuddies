@@ -17,6 +17,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "icons:generate": "tauri icon ./BBud.png -o src-tauri/icons",
+    "icons:favicon": "node scripts/sync-favicon.mjs",
+    "icons:prepare": "npm run icons:generate && npm run icons:favicon",
     "format": "prettier --write src/**/*.{ts,tsx,css,json}",
     "format:check": "prettier --check src/**/*.{ts,tsx,css,json}",
     "lint": "eslint src --ext .ts,.tsx",
@@ -43,7 +46,8 @@
     "release:prepare": "npm run clean && npm run health:check && npm run build && npm run tauri:build"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.5.0",
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-shell": "^2.0.0",
     "axios": "^1.11.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
@@ -51,7 +55,7 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@playwright/test": "^1.54.2",
-    "@tauri-apps/cli": "^1.6.3",
+    "@tauri-apps/cli": "^2.0.0",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

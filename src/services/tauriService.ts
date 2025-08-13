@@ -16,7 +16,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { invoke } from "@tauri-apps/api/tauri";
+// AI Generated: GitHub Copilot - 2025-08-12
+import { invoke } from "@tauri-apps/api/core";
 import { Movie } from "./tmdbService";
 import { logger } from "../utils/logger";
 
