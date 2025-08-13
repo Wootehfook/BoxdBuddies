@@ -1,5 +1,5 @@
 /*
- * BoxdBuddies - Movie Watchlist Comparison Tool
+ * BoxdBuddy - Movie Watchlist Comparison Tool
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Cache Service for BoxdBuddies
+// Cache Service for BoxdBuddy
 // Handles local database caching operations
 
 // AI Generated: GitHub Copilot - 2025-08-12

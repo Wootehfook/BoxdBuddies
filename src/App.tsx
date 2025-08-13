@@ -1,5 +1,5 @@
 ﻿/*
- * BoxdBuddies - Movie Watchlist Comparison Tool
+ * BoxdBuddy - Movie Watchlist Comparison Tool
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify
@@ -677,7 +677,7 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="header-title">
-            <h1>🎬 BoxdBuddies</h1>
+            <h1>🎬 BoxdBuddy</h1>
             <p>Find movies you and your friends want to watch</p>
           </div>
           <div className="pin-container">

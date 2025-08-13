@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-<!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
+<!-- Per-user (AllUsers="no") WiX template for BoxdBuddy to avoid requiring administrative elevation. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
+  <Product Id="*" Name="BoxdBuddy" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddy" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
     <!-- Per-user install: enforce limited privileges to avoid elevation prompts and scope ambiguity -->
     <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
   <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
@@ -25,11 +25,11 @@
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
-        <Directory Id="INSTALLFOLDER" Name="BoxdBuddies" />
+        <Directory Id="INSTALLFOLDER" Name="BoxdBuddy" />
       </Directory>
     </Directory>
 
-    <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
+  <Feature Id="MainFeature" Title="BoxdBuddy" Level="1">
       <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
       <ComponentRef Id="MainExecutableComponent" />
     </Feature>
@@ -51,7 +51,7 @@
 
   <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
   <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
-  Tauri passes -dSourceDir=PATH\\BoxdBuddies.exe to candle; use that here. -->
+  Tauri passes -dSourceDir=PATH\\BoxdBuddy.exe to candle; use that here. -->
   <Fragment>
     <!-- Install our main executable into INSTALLFOLDER -->
     <DirectoryRef Id="INSTALLFOLDER">

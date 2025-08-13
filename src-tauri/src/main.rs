@@ -68,7 +68,7 @@ fn log_debug(message: &str) {
         Ok(dir) => dir.join("debug.log"),
         Err(_) => {
             // Fallback to temp directory if app data dir fails
-            std::env::temp_dir().join("BoxdBuddies_debug.log")
+            std::env::temp_dir().join("BoxdBuddy_debug.log")
         }
     };
 
@@ -305,15 +305,23 @@ struct DatabaseFriend {
 fn get_app_data_dir() -> Result<PathBuf, String> {
     let app_data_dir = dirs::config_dir().ok_or("Could not find config directory")?;
 
-    let boxd_dir = app_data_dir.join("BoxdBuddies");
-
-    // Create directory if it doesn't exist
-    if !boxd_dir.exists() {
-        fs::create_dir_all(&boxd_dir)
-            .map_err(|e| format!("Failed to create config directory: {e}"))?;
+    // New name
+    let new_dir = app_data_dir.join("BoxdBuddy");
+    if !new_dir.exists() {
+        // Back-compat: if old directory exists, use it; otherwise create new
+        let old_dir = app_data_dir.join("BoxdBuddies");
+        let chosen = if old_dir.exists() {
+            old_dir
+        } else {
+            new_dir.clone()
+        };
+        if !chosen.exists() {
+            fs::create_dir_all(&chosen)
+                .map_err(|e| format!("Failed to create config directory: {e}"))?;
+        }
+        return Ok(chosen);
     }
-
-    Ok(boxd_dir)
+    Ok(new_dir)
 }
 
 fn get_preferences_path() -> Result<PathBuf, String> {
@@ -2660,7 +2668,7 @@ async fn search_tmdb_movie(
     year: Option<i32>,
 ) -> Result<Option<TmdbSearchResult>, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddies/1.0")
+        .user_agent("BoxdBuddy/1.0")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
@@ -2777,7 +2785,7 @@ async fn search_tmdb_movie(
 
 async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovieDetails, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddies/1.0")
+        .user_agent("BoxdBuddy/1.0")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
@@ -2813,7 +2821,7 @@ async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovie
 // AI Generated: GitHub Copilot - 2025-08-05
 async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<String>, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddies/1.0")
+        .user_agent("BoxdBuddy/1.0")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
@@ -3774,7 +3782,7 @@ async fn clear_movie_cache(movie_title: String) -> Result<String, String> {
 fn main() {
     // Log application startup and data directory location
     if let Ok(data_dir) = get_app_data_dir() {
-        debug_log!("🚀 BoxdBuddies starting up");
+        debug_log!("🚀 BoxdBuddy starting up");
         debug_log!("📁 App data directory: {:?}", data_dir);
         debug_log!("📊 Database location: {:?}", data_dir.join("friends.db"));
         debug_log!(

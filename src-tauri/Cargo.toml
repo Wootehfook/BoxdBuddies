@@ -1,5 +1,5 @@
 [package]
-name = "boxdbuddies"
+name = "boxdbuddy"
 version = "1.0.0"
 description = "Compare Letterboxd watchlists between friends to find movies everyone wants to watch"
 authors = ["Wootehfook"]

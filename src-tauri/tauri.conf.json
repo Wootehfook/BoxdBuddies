@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BoxdBuddies",
+  "productName": "BoxdBuddy",
   "version": "1.0.0",
   "identifier": "com.boxdbuddies.dev",
   "build": {
@@ -14,7 +14,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "BoxdBuddies",
+        "title": "BoxdBuddy",
         "width": 890,
         "height": 1075,
         "minWidth": 785,

@@ -7,9 +7,9 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Letterboxd Scraping Tests", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to BoxdBuddies app
+    // Navigate to BoxdBuddy app
     await page.goto("http://localhost:1420");
-    await expect(page.locator("h1")).toContainText("BoxdBuddies");
+    await expect(page.locator("h1")).toContainText("BoxdBuddy");
   });
 
   test("should handle user setup with valid Letterboxd username", async ({

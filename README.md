@@ -1,4 +1,4 @@
-# 🎬 BoxdBuddies
+# 🎬 BoxdBuddy
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)](https://tauri.app/)
@@ -7,7 +7,7 @@
 
 > **A modern desktop application for comparing Letterboxd watchlists between friends**
 
-Find movies that you and your friends all want to watch! BoxdBuddies connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch.
+Find movies that you and your friends all want to watch! BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch.
 
 ![BoxdBuddies Demo](docs/images/demo-hero.png)
 _Coming Soon: Demo screenshot showing the beautiful interface_
