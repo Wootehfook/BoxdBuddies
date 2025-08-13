@@ -27,17 +27,14 @@
       <Directory Id="LocalAppDataFolder">
         <Directory Id="INSTALLFOLDER" Name="BoxdBuddy" />
       </Directory>
-      <!-- Start Menu folder for application shortcuts -->
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="BoxdBuddy" />
-      </Directory>
+  <!-- Start Menu root for application shortcut (no subfolder) -->
+  <Directory Id="ProgramMenuFolder"/>
     </Directory>
 
     <Feature Id="MainFeature" Title="BoxdBuddy" Level="1">
       <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
       <ComponentRef Id="MainExecutableComponent" />
-      <!-- Ensure Start Menu folder cleanup component is included -->
-      <ComponentRef Id="ApplicationProgramsFolderCleanup" />
+  <!-- No additional components needed for top-level shortcut -->
     </Feature>
 
     <!-- AI Generated: GitHub Copilot - 2025-08-12 -->
@@ -75,8 +72,8 @@
     <File Id="MainExecutable"
         Source="$(var.SourceDir)">
       <!-- Create a Start Menu shortcut to the installed application (targets this File) -->
-      <Shortcut Id="StartMenuShortcut"
-          Directory="ApplicationProgramsFolder"
+    <Shortcut Id="StartMenuShortcut"
+      Directory="ProgramMenuFolder"
           Name="BoxdBuddy"
           WorkingDirectory="INSTALLFOLDER"
           Icon="AppIcon"
@@ -103,20 +100,7 @@
       </Component>
     </DirectoryRef>
 
-    <!-- Component to manage Start Menu folder lifecycle (removal on uninstall) -->
-    <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationProgramsFolderCleanup" Guid="6F8E1A1E-9C3C-4C8F-9B0A-8D7E5BE3D9B1">
-        <RemoveFolder Id="RemoveAppStartMenuFolder" On="uninstall" Directory="ApplicationProgramsFolder" />
-        <!-- KeyPath ensures component install/uninstall runs; use HKCU to stay in per-user scope -->
-        <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]">
-          <RegistryValue Id="RegStartMenuFolder"
-                         Name="StartMenuFolder"
-                         Type="integer"
-                         Value="1"
-                         KeyPath="yes" />
-        </RegistryKey>
-      </Component>
-    </DirectoryRef>
+  <!-- No Start Menu subfolder component required for top-level shortcut -->
 
   <!-- No ComponentGroup needed; Feature references the component directly. -->
   </Fragment>
