@@ -2,6 +2,7 @@
  * Networking and input safety helpers
  * AI Generated: GitHub Copilot - 2025-08-13
  */
+use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
@@ -15,12 +16,15 @@ use url::Url;
 /// - input: raw username string from UI
 /// - output: Ok(validated username) if it matches ^[A-Za-z0-9_-]{1,32}$, else Err generic message
 /// - error messages must not echo the provided username (avoid PII in logs)
+// AI Generated: GitHub Copilot - 2025-08-13
+// Compile-once username allowlist regex
+static USERNAME_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^[A-Za-z0-9_-]{1,32}$").expect("valid username regex"));
+
 pub fn sanitize_username(input: &str) -> Result<String, String> {
     let trimmed = input.trim();
     // Strict allow-list: letters, digits, underscore, hyphen; 1..=32 chars
-    // Cached Regex via lazy static would be ideal; Regex::new is cheap enough here.
-    let re = Regex::new(r"^[A-Za-z0-9_-]{1,32}$").expect("valid regex");
-    if re.is_match(trimmed) {
+    if USERNAME_RE.is_match(trimmed) {
         Ok(trimmed.to_string())
     } else {
         Err("Invalid username format".to_string())
@@ -48,7 +52,8 @@ pub fn build_letterboxd_url(segments: &[&str]) -> String {
         }
     }
     // Ensure trailing slash is not required by callers
-    url.into_string().trim_end_matches('/').to_string()
+    let url_str: String = url.into();
+    url_str.trim_end_matches('/').to_string()
 }
 
 /// AI Generated: GitHub Copilot - 2025-08-13
@@ -70,6 +75,11 @@ pub async fn get_with_retries(
     url: &str,
     max_retries: u32,
 ) -> Result<Response, reqwest::Error> {
+    // AI Generated: GitHub Copilot - 2025-08-13
+    // Backoff parameters
+    const BASE_BACKOFF_MS: u64 = 200; // starting backoff before exponent
+    const MAX_BACKOFF_SHIFT: u32 = 5; // cap exponential at 2^5
+    const RETRY_JITTER_MAX_MS: u64 = 150; // add up to 150ms jitter to reduce thundering herd
     let mut attempt: u32 = 0;
     loop {
         let res = client.get(url).send().await;
@@ -91,8 +101,8 @@ pub async fn get_with_retries(
                         .and_then(|s| s.parse::<u64>().ok())
                         .unwrap_or(0);
                     // compute backoff with jitter
-                    let base_ms = 200u64 * (1u64 << attempt.min(5));
-                    let jitter = fastrand::u64(..150);
+                    let base_ms = BASE_BACKOFF_MS * (1u64 << attempt.min(MAX_BACKOFF_SHIFT));
+                    let jitter = fastrand::u64(..RETRY_JITTER_MAX_MS);
                     let wait_ms = if retry_after_secs > 0 {
                         retry_after_secs * 1000
                     } else {
@@ -110,8 +120,8 @@ pub async fn get_with_retries(
                 let should_retry =
                     err.is_timeout() || err.is_connect() || err.is_request() || err.is_body();
                 if should_retry && attempt < max_retries {
-                    let base_ms = 200u64 * (1u64 << attempt.min(5));
-                    let jitter = fastrand::u64(..150);
+                    let base_ms = BASE_BACKOFF_MS * (1u64 << attempt.min(MAX_BACKOFF_SHIFT));
+                    let jitter = fastrand::u64(..RETRY_JITTER_MAX_MS);
                     tokio::time::sleep(Duration::from_millis(base_ms + jitter)).await;
                     attempt += 1;
                     continue;
