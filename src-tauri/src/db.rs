@@ -8,18 +8,36 @@ use std::path::PathBuf;
 
 pub fn get_database_path() -> Result<PathBuf, String> {
     let mut dir = tauri::api::path::data_dir().ok_or("Failed to get data dir")?;
-    dir.push("BoxdBuddies");
-    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create data dir: {e}"))?;
-    dir.push("boxdbuddies.db");
-    Ok(dir)
+    // Back-compat: prefer new folder, fall back to old if it already exists
+    let mut new_dir = dir.clone();
+    new_dir.push("BoxdBuddy");
+    let mut old_dir = dir.clone();
+    old_dir.push("BoxdBuddies");
+    let target_dir = if old_dir.exists() && !new_dir.exists() {
+        old_dir
+    } else {
+        new_dir
+    };
+    fs::create_dir_all(&target_dir).map_err(|e| format!("Failed to create data dir: {e}"))?;
+    let mut db_path = target_dir.clone();
+    db_path.push("boxdbuddies.db"); // keep filename for continuity
+    Ok(db_path)
 }
 
 // AI Generated: GitHub Copilot - 2025-08-11
 pub fn get_app_data_dir() -> Result<PathBuf, String> {
-    let mut dir = tauri::api::path::data_dir().ok_or("Failed to get data dir")?;
-    dir.push("BoxdBuddies");
-    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create data dir: {e}"))?;
-    Ok(dir)
+    let mut base = tauri::api::path::data_dir().ok_or("Failed to get data dir")?;
+    let mut new_dir = base.clone();
+    new_dir.push("BoxdBuddy");
+    let mut old_dir = base.clone();
+    old_dir.push("BoxdBuddies");
+    let target = if old_dir.exists() && !new_dir.exists() {
+        old_dir
+    } else {
+        new_dir
+    };
+    fs::create_dir_all(&target).map_err(|e| format!("Failed to create data dir: {e}"))?;
+    Ok(target)
 }
 
 pub fn init_database() -> SqliteResult<Connection> {

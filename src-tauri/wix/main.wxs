@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
-<!-- Per-user (AllUsers="no") WiX template for BoxdBuddies to avoid requiring administrative elevation. -->
+<!-- Per-user (AllUsers="no") WiX template for BoxdBuddy to avoid requiring administrative elevation. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="BoxdBuddies" Language="1033" Version="1.0.0" Manufacturer="BoxdBuddies" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
+  <Product Id="*" Name="BoxdBuddy" Language="1033" Version="1.1.0" Manufacturer="BoxdBuddy" UpgradeCode="d4d205ab-f2d3-4e2d-9d50-1d6e3b2a8c01">
     <!-- Per-user install: enforce limited privileges to avoid elevation prompts and scope ambiguity -->
     <!-- AI Generated: GitHub Copilot - 2025-08-08 -->
   <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" />
@@ -25,19 +25,36 @@
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
-        <Directory Id="INSTALLFOLDER" Name="BoxdBuddies" />
+        <Directory Id="INSTALLFOLDER" Name="BoxdBuddy" />
       </Directory>
+  <!-- Start Menu root for application shortcut (no subfolder) -->
+  <Directory Id="ProgramMenuFolder"/>
     </Directory>
 
-    <Feature Id="MainFeature" Title="BoxdBuddies" Level="1">
+    <Feature Id="MainFeature" Title="BoxdBuddy" Level="1">
       <!-- Reference the main executable component directly to avoid unresolved AppFiles group. -->
       <ComponentRef Id="MainExecutableComponent" />
+  <!-- No additional components needed for top-level shortcut -->
     </Feature>
+
+    <!-- AI Generated: GitHub Copilot - 2025-08-12 -->
+    <!-- Launch the application automatically when installation finishes (interactive installs only). -->
+    <!-- Use the installed file reference to start the app without blocking the installer exit. -->
+    <CustomAction Id="LaunchApplication"
+                  FileKey="MainExecutable"
+                  ExeCommand=""
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
+
+    <InstallExecuteSequence>
+      <!-- Launch after fresh install and major upgrades (interactive UI only). Not on repair/uninstall/silent. -->
+      <Custom Action="LaunchApplication" After="InstallFinalize">NOT Installed AND UILevel &gt;= 3</Custom>
+    </InstallExecuteSequence>
   </Product>
 
   <!-- AI Generated: GitHub Copilot - 2025-08-07 -->
   <!-- Provide the missing AppFiles ComponentGroup and include the built executable.
-  Tauri passes -dSourceDir=PATH\\BoxdBuddies.exe to candle; use that here. -->
+  Tauri passes -dSourceDir=PATH\\BoxdBuddy.exe to candle; use that here. -->
   <Fragment>
     <!-- Install our main executable into INSTALLFOLDER -->
     <DirectoryRef Id="INSTALLFOLDER">
@@ -52,8 +69,16 @@
         -->
 
         <!-- Install the main executable file into the per-user install folder -->
-        <File Id="MainExecutable"
-              Source="$(var.SourceDir)" />
+    <File Id="MainExecutable"
+        Source="$(var.SourceDir)">
+      <!-- Create a Start Menu shortcut to the installed application (targets this File) -->
+    <Shortcut Id="StartMenuShortcut"
+      Directory="ProgramMenuFolder"
+          Name="BoxdBuddy"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="AppIcon"
+          IconIndex="0" />
+    </File>
 
         <!-- Use HKCU registry value as KeyPath to satisfy ICE38 -->
         <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]">
@@ -74,6 +99,8 @@
                       Directory="INSTALLFOLDER" />
       </Component>
     </DirectoryRef>
+
+  <!-- No Start Menu subfolder component required for top-level shortcut -->
 
   <!-- No ComponentGroup needed; Feature references the component directly. -->
   </Fragment>

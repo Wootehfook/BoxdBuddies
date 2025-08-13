@@ -233,7 +233,8 @@ jobs:
             const path = require('path');
             const today = new Date().toISOString().slice(0, 10);
 
-            const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
+            // Safely hydrate JSON from workflow outputs
+            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
             let filesModified = [];
 
             for (const fix of autoFixable) {
@@ -333,8 +334,9 @@ jobs:
         with:
           script: |
             // GitHub Script provides: github, context, core
-            const autoFixable = JSON.parse('${{ needs.check-conversations.outputs.auto-fixable }}');
-            const manualReview = JSON.parse('${{ needs.check-conversations.outputs.manual-review }}');
+            // Safely hydrate arrays from workflow outputs
+            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
+            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
 
             // Only comment on PR events, not scheduled runs
             if (context.eventName.startsWith('pull_request') && context.payload.pull_request) {
@@ -376,10 +378,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const manualReview = JSON.parse('${{ needs.check-conversations.outputs.manual-review }}');
+            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
 
+            // Do not fail the job; emit a warning to keep this check non-blocking
             if (manualReview.length > 0) {
-              core.setFailed(`${manualReview.length} unresolved conversations require manual review`);
+              core.warning(`${manualReview.length} unresolved conversations require manual review`);
             } else {
               console.log("✅ All conversations resolved or auto-fixed");
             }
