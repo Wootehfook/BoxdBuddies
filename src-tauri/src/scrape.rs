@@ -32,32 +32,26 @@ pub async fn scrape_user_watchlist_with_limit(
     username: &str,
     limit_to_500: bool,
 ) -> Result<Vec<WatchlistMovie>, String> {
-    if username.trim().is_empty() || username.contains('/') || username.contains('\\') {
-        return Err("Invalid username format".into());
-    }
-    let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        .timeout(std::time::Duration::from_secs(30))
-        .https_only(true)
-        .build()
+    // Security: strict username validation
+    let username = crate::net::sanitize_username(username)?;
+    let client = crate::net::hardened_client()
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
     let mut all = Vec::new();
     let mut page = 1;
     loop {
         let url = if page == 1 {
-            crate::build_letterboxd_url(vec![username, "watchlist"])
+            crate::net::build_letterboxd_url(&[&username, "watchlist"])
         } else {
-            crate::build_letterboxd_url(vec![username, "watchlist", "page", &page.to_string()])
+            crate::net::build_letterboxd_url(&[&username, "watchlist", "page", &page.to_string()])
         };
-        let resp =
-            client.get(&url).send().await.map_err(|e| {
-                format!("Failed to fetch watchlist page {page} for {username}: {e}")
-            })?;
+        // AI Generated: GitHub Copilot - 2025-08-13
+        // Security: Avoid including usernames (PII) in error strings.
+        // Only report page index and the error itself.
+        let resp = crate::net::get_with_retries(&client, &url, 3)
+            .await
+            .map_err(|e| format!("Failed to fetch watchlist page {page}: {e}"))?;
         if !resp.status().is_success() {
-            return Err(format!(
-                "HTTP error on page {page} for {username}: {}",
-                resp.status()
-            ));
+            return Err(format!("HTTP error on page {page}: {}", resp.status()));
         }
         let html = resp
             .text()
@@ -243,19 +237,12 @@ pub fn extract_friends_from_html(document: &Html) -> Result<Vec<LetterboxdFriend
 
 // AI Generated: GitHub Copilot - 2025-08-11
 pub async fn scrape_letterboxd_profile_internal(username: &str) -> Result<LetterboxdUser, String> {
-    if username.trim().is_empty() || username.contains('/') || username.contains('\\') {
-        return Err("Invalid username format".into());
-    }
-    let url = crate::build_letterboxd_url(vec![username]);
-    let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        .timeout(std::time::Duration::from_secs(30))
-        .https_only(true)
-        .build()
+    // Security: strict username validation
+    let username = crate::net::sanitize_username(username)?;
+    let url = crate::net::build_letterboxd_url(&[&username]);
+    let client = crate::net::hardened_client()
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
-    let resp = client
-        .get(&url)
-        .send()
+    let resp = crate::net::get_with_retries(&client, &url, 3)
         .await
         .map_err(|e| format!("Failed to fetch profile page: {e}"))?;
     if resp.status() == 404 {
