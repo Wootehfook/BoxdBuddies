@@ -44,8 +44,8 @@
                   Impersonate="yes" />
 
     <InstallExecuteSequence>
-      <!-- Do not launch on repair/uninstall/silent or upgrade; only after a fresh install with UI. -->
-      <Custom Action="LaunchApplication" After="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED AND UILevel &gt;= 3</Custom>
+      <!-- Launch after fresh install and major upgrades (interactive UI only). Not on repair/uninstall/silent. -->
+      <Custom Action="LaunchApplication" After="InstallFinalize">NOT Installed AND UILevel &gt;= 3</Custom>
     </InstallExecuteSequence>
   </Product>
 
