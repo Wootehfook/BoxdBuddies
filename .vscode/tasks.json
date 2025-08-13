@@ -177,67 +177,14 @@
 			"group": "build"
 		},
 		{
-			"label": "🦀 Rust Check",
+			"label": "🏥 Health Check",
 			"type": "shell",
-			"command": "cargo",
+			"command": "npm",
 			"args": [
-				"check"
+				"run",
+				"health:check"
 			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"group": "build"
+			"group": "test"
 		}
 	]
 }

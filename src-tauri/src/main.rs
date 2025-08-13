@@ -28,8 +28,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, Manager};
 // AI Generated: GitHub Copilot - 2025-08-12
-// AI Generated: GitHub Copilot - 2025-08-12
-// Note: ShellExt is not needed unless calling extension methods; plugin is initialized below.
 // AI Generated: GitHub Copilot - 2025-08-05
 // Debug flag to control verbose logging - set to false for production builds
 const DEBUG_LOGGING: bool = false;
