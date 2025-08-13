@@ -307,23 +307,23 @@ struct DatabaseFriend {
 fn get_app_data_dir() -> Result<PathBuf, String> {
     let app_data_dir = dirs::config_dir().ok_or("Could not find config directory")?;
 
-    // New name
+    // New name and back-compat with legacy folder
     let new_dir = app_data_dir.join("BoxdBuddy");
-    if !new_dir.exists() {
-        // Back-compat: if old directory exists, use it; otherwise create new
-        let old_dir = app_data_dir.join("BoxdBuddies");
-        let chosen = if old_dir.exists() {
-            old_dir
-        } else {
-            new_dir.clone()
-        };
-        if !chosen.exists() {
-            fs::create_dir_all(&chosen)
-                .map_err(|e| format!("Failed to create config directory: {e}"))?;
-        }
-        return Ok(chosen);
+    let old_dir = app_data_dir.join("BoxdBuddies");
+
+    // Choose existing legacy dir if present; otherwise prefer new dir
+    let chosen = if old_dir.exists() && !new_dir.exists() {
+        old_dir
+    } else {
+        new_dir
+    };
+
+    if !chosen.exists() {
+        fs::create_dir_all(&chosen)
+            .map_err(|e| format!("Failed to create config directory: {e}"))?;
     }
-    Ok(new_dir)
+
+    Ok(chosen)
 }
 
 fn get_preferences_path() -> Result<PathBuf, String> {

@@ -2,7 +2,7 @@
  * Networking and input safety helpers
  * AI Generated: GitHub Copilot - 2025-08-13
  */
-use once_cell::sync::Lazy;
+use once_cell::sync::Lazy; // AI Generated: GitHub Copilot - 2025-08-13
 use regex::Regex;
 use reqwest::redirect::Policy;
 use reqwest::{Client, Response, StatusCode};
@@ -52,8 +52,7 @@ pub fn build_letterboxd_url(segments: &[&str]) -> String {
         }
     }
     // Ensure trailing slash is not required by callers
-    let url_str: String = url.into();
-    url_str.trim_end_matches('/').to_string()
+    url.as_str().trim_end_matches('/').to_string()
 }
 
 /// AI Generated: GitHub Copilot - 2025-08-13
