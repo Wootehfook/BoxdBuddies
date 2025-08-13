@@ -2668,7 +2668,7 @@ async fn search_tmdb_movie(
     year: Option<i32>,
 ) -> Result<Option<TmdbSearchResult>, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddy/1.0")
+        .user_agent("BoxdBuddy/1.1")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
@@ -2785,7 +2785,7 @@ async fn search_tmdb_movie(
 
 async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovieDetails, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddy/1.0")
+        .user_agent("BoxdBuddy/1.1")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
@@ -2821,7 +2821,7 @@ async fn get_tmdb_movie_details(api_key: &str, tmdb_id: i32) -> Result<TmdbMovie
 // AI Generated: GitHub Copilot - 2025-08-05
 async fn get_tmdb_movie_credits(api_key: &str, tmdb_id: i32) -> Result<Option<String>, String> {
     let client = reqwest::Client::builder()
-        .user_agent("BoxdBuddy/1.0")
+        .user_agent("BoxdBuddy/1.1")
         .timeout(std::time::Duration::from_secs(30))
         .https_only(true) // Enforce HTTPS-only connections
         .build()
