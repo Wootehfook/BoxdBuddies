@@ -1,5 +1,5 @@
 /*
- * BoxdBuddies - Compare Letterboxd watchlists with friends
+ * BoxdBuddy - Compare Letterboxd watchlists with friends
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify

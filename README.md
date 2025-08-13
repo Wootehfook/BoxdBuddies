@@ -14,23 +14,25 @@ _Coming Soon: Demo screenshot showing the beautiful interface_
 
 ## 🎉 Status: Production Ready ✨
 
-**BoxdBuddies v1.0.0 is now live and ready for public use!** All core features have been implemented, tested, and polished for production deployment.
+**BoxdBuddy v1.1.0 is ready for public use!** All core features have been implemented, tested, and polished for production deployment.
 
-## 📥 Downloads (v1.0.0)
+## 📥 Downloads (v1.1.0)
 
-| Platform | Architecture | File                                        | Direct Download                                                                                                                       |
-| -------- | ------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows  | x64          | MSI Installer (Per-user, no admin required) | [BoxdBuddies_1.0.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/BoxdBuddies_1.0.0_x64_en-US.msi) |
-| Linux    | x86_64       | DEB / AppImage                              | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.0.0)                    |
-| All      | N/A          | Checksums                                   | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.0.0/CHECKSUMS.txt)                                     |
+| Platform | Architecture | File                                        | Direct Download                                                                                                                   |
+| -------- | ------------ | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Windows  | x64          | MSI Installer (Per-user, no admin required) | [BoxdBuddy_1.1.0_x64_en-US.msi](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.1.0/BoxdBuddy_1.1.0_x64_en-US.msi) |
+| Linux    | x86_64       | DEB / AppImage                              | [See release page for .deb and .AppImage downloads](https://github.com/Wootehfook/BoxdBuddies/releases/tag/v1.1.0)                |
+| All      | N/A          | Checksums                                   | [CHECKSUMS.txt](https://github.com/Wootehfook/BoxdBuddies/releases/download/v1.1.0/CHECKSUMS.txt)                                 |
 
 ### 🔐 Integrity Verification
 
 1. Download the installer and `CHECKSUMS.txt`.
 2. Run:
+
    ```bash
-   sha256sum -c CHECKSUMS.txt | grep -i boxdbuddies
+   sha256sum -c CHECKSUMS.txt | grep -i boxdbuddy
    ```
+
 3. Ensure reported hashes are `OK`.
 
 If a file is missing from CHECKSUMS, re-download directly from the release page.
@@ -123,6 +125,7 @@ For enhanced movie data with posters, ratings, and descriptions:
    ```
 
 4. **Run the development server**:
+
    ```powershell
    npm run tauri dev
    ```
@@ -136,11 +139,11 @@ For enhanced movie data with posters, ratings, and descriptions:
    ```
 
 2. **Access the application**:
-   - Frontend dev server: http://localhost:1420
+   - Frontend dev server: <http://localhost:1420>
 
 ## 📁 Project Structure
 
-```
+```text
 BoxdBuddies/
 ├── src/                    # React frontend source
 │   ├── App.tsx            # Main React component
@@ -317,7 +320,7 @@ See the [LICENSE](LICENSE) file for full details.
 
 ## 🎉 What's Next?
 
-**Publishing & Distribution Phase** - BoxdBuddies is now ready for public release:
+**Publishing & Distribution Phase** - BoxdBuddy is now ready for public release:
 
 - ✅ **Core Application Complete** - All features working flawlessly
 - 🔧 **Desktop App Packaging** - Create distributable executables for Windows and Linux
