@@ -27,14 +27,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js (for JavaScript/TypeScript analysis)
+        if: matrix.language == 'javascript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JS deps (no scripts)
+        if: matrix.language == 'javascript'
+        run: |
+          npm ci --ignore-scripts
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: autobuild
+          build-mode: ${{ matrix.language == 'rust' && 'manual' || 'autobuild' }}
 
-      - name: Autobuild
+      - name: Autobuild (non-Rust)
+        if: matrix.language != 'rust'
         uses: github/codeql-action/autobuild@v3
+
+      - name: Build Rust workspace (src-tauri)
+        if: matrix.language == 'rust'
+        working-directory: src-tauri
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          cargo fetch
+          cargo build --locked --release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
