@@ -30,7 +30,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["msi", "appimage", "deb", "rpm"],
     "windows": {
       "wix": {
         "template": "wix/main.wxs"

@@ -1,3 +1,11 @@
+# Tauri v2 Migration
+
+## Install artifacts matrix
+
+- Windows: MSI (per-user, LocalAppData, ARPPRODUCTICON set)
+- Linux: AppImage, Deb, RPM (via tauri.linux.conf.json)
+- macOS: unchanged (can enable in a follow-up if needed)
+
 ## Status update — 2025-08-12
 
 - AI Generated: GitHub Copilot - 2025-08-12
@@ -8,7 +16,7 @@
 
 <!-- AI Generated: GitHub Copilot - 2025-08-12 -->
 
-# Tauri v2 Migration Plan (Umbrella PR)
+## Tauri v2 Migration Plan (Umbrella PR)
 
 This document tracks the end-to-end migration from Tauri v1.x to v2.x. The work
 will be implemented on a dedicated feature branch and merged via a single
