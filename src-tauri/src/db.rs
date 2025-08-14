@@ -6,27 +6,58 @@ use rusqlite::{Connection, Result as SqliteResult};
 use std::fs;
 use std::path::PathBuf;
 
+// AI Generated: GitHub Copilot - 2025-08-14
 pub fn get_app_data_dir() -> Result<PathBuf, String> {
-    let app_data_dir = dirs::config_dir().ok_or("Could not find config directory")?;
-
-    // New name and back-compat with legacy folder
-    let new_dir = app_data_dir.join("BoxdBuddy");
-    let old_dir = app_data_dir.join("BoxdBuddies");
-    let chosen = if old_dir.exists() && !new_dir.exists() {
-        old_dir
-    } else {
-        new_dir
-    };
-
-    if !chosen.exists() {
-        fs::create_dir_all(&chosen)
-            .map_err(|e| format!("Failed to create config directory: {e}"))?;
+    // Determine candidate base directories (config then data) to maximize compatibility
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(cfg) = dirs::config_dir() {
+        candidates.push(cfg);
     }
-    Ok(chosen)
+    if let Some(dat) = dirs::data_dir() {
+        candidates.push(dat);
+    }
+
+    // Build folder candidates in priority order
+    // 1) Legacy name under config (BoxdBuddies)
+    // 2) New name under config (BoxdBuddy)
+    // 3) Legacy name under data
+    // 4) New name under data
+    let mut folder_candidates: Vec<PathBuf> = Vec::new();
+    for base in &candidates {
+        folder_candidates.push(base.join("BoxdBuddies"));
+        folder_candidates.push(base.join("BoxdBuddy"));
+    }
+
+    // Choose first existing folder; otherwise create the first preferred new path (config/BoxdBuddy)
+    if let Some(existing) = folder_candidates.iter().find(|p| p.exists()) {
+        return Ok(existing.clone());
+    }
+
+    // Fall back to config/BoxdBuddy (or first available base)
+    let base = candidates
+        .into_iter()
+        .next()
+        .ok_or("Could not find a suitable base directory")?;
+    let target = base.join("BoxdBuddy");
+    if !target.exists() {
+        fs::create_dir_all(&target).map_err(|e| format!("Failed to create data dir: {e}"))?;
+    }
+    Ok(target)
 }
 
+// AI Generated: GitHub Copilot - 2025-08-14
 pub fn get_database_path() -> Result<PathBuf, String> {
-    Ok(get_app_data_dir()?.join("friends.db"))
+    // Keep legacy filename to avoid breaking existing installs.
+    // If a newer friends.db exists, migrate it back to the legacy name.
+    let dir = get_app_data_dir()?;
+    let legacy = dir.join("boxdbuddies.db");
+    let newer = dir.join("friends.db");
+    if newer.exists() && !legacy.exists() {
+        if let Err(e) = fs::rename(&newer, &legacy) {
+            return Err(format!("Failed to migrate database filename: {e}"));
+        }
+    }
+    Ok(legacy)
 }
 
 fn migrate_add_director_column(conn: &Connection) -> SqliteResult<()> {
