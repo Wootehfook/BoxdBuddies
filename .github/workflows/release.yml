@@ -94,38 +94,9 @@ jobs:
         # Use Windows path separators per PR review suggestion
         run: npm run tauri build -- -c src-tauri\\tauri.windows.conf.json --bundles msi
 
-      - name: Optionally sign Windows binaries (EXE)
-        if: ${{ secrets.WIN_CERT_PFX_BASE64 != '' && secrets.WIN_CERT_PASSWORD != '' }}
-        shell: pwsh
-        run: |
-          Write-Host 'Decoding PFX from secret and preparing for signing...'
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
-          [System.Convert]::FromBase64String($env:WIN_CERT_PFX_BASE64) | Set-Content -Path $pfxPath -Encoding Byte
-          $exe = Get-ChildItem -Path src-tauri/target/release -Filter BoxdBuddies.exe -Recurse | Select-Object -First 1
-          if ($exe) {
-            Write-Host "Signing EXE: $($exe.FullName)"
-            & signtool.exe sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:WIN_CERT_PASSWORD $exe.FullName
-          } else {
-            Write-Host 'No EXE found to sign (this is optional).'
-          }
-        env:
-          WIN_CERT_PFX_BASE64: ${{ secrets.WIN_CERT_PFX_BASE64 }}
-          WIN_CERT_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
-
-      - name: Optionally sign Windows installer (MSI)
-        if: ${{ secrets.WIN_CERT_PFX_BASE64 != '' && secrets.WIN_CERT_PASSWORD != '' }}
-        shell: pwsh
-        run: |
-          Write-Host 'Decoding PFX from secret and signing MSI...'
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
-          [System.Convert]::FromBase64String($env:WIN_CERT_PFX_BASE64) | Set-Content -Path $pfxPath -Encoding Byte
-          $msi = Get-ChildItem -Path src-tauri/target/release/bundle/msi -Filter *.msi -Recurse | Select-Object -First 1
-          if (-not $msi) { Write-Error 'MSI not found for signing'; exit 1 }
-          Write-Host "Signing MSI: $($msi.FullName)"
-          & signtool.exe sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:WIN_CERT_PASSWORD $msi.FullName
-        env:
-          WIN_CERT_PFX_BASE64: ${{ secrets.WIN_CERT_PFX_BASE64 }}
-          WIN_CERT_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+  # Note: Optional Windows code signing steps were deliberately omitted in this workflow
+  # to keep CI portable across forks and avoid linting issues around secrets usage.
+  # Signing can be added in a follow-up, guarded inside shell scripts.
 
       - name: Verify Windows MSI is per-user (ALLUSERS=2)
         shell: pwsh
@@ -327,7 +298,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          overwrite: true
           files: |
             windows-msi/*.msi
             linux-packages/*.deb
@@ -337,5 +307,6 @@ jobs:
           draft: false
           prerelease: false
           body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
