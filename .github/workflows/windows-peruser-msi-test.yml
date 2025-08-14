@@ -1,14 +1,9 @@
 name: Windows Per-User MSI Test
 
+# AI Generated: GitHub Copilot - 2025-08-13
+# Manual-only per-user MSI verification to keep main release CI lean
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - chore/release-checksum
-      - chore/linux-ubuntu-compat-symlinks
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
