@@ -307,6 +307,6 @@ jobs:
           draft: false
           prerelease: false
           body_path: RELEASE_NOTES.md
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
