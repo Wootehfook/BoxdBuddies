@@ -13,3 +13,13 @@ GPG setup, and local diagnostics. They are optional and not required for normal 
 If a script becomes unused, we’ll either remove it or move it to an attic folder.
 
 AI Generated: GitHub Copilot - 2025-08-14
+
+## Testing helpers
+
+- Primary test runner (Jest): `npm run test`
+  - Runs tests under `src/**/__tests__` and `src/**/*.{test,spec}.ts(x)`
+  - Import.meta is not supported in Jest; such specs are skipped or migrated
+- Vitest (optional, import.meta-friendly): `npm run test:vitest`
+  - Runs suites under `tests/vitest/**/*.vitest.test.ts`
+  - Useful for Vite-specific code paths (e.g., `import.meta.env`)
+  - If the command isn’t found, run `npm install` to install dev deps

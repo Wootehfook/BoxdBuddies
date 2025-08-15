@@ -1,0 +1,10 @@
+# AI Generated: GitHub Copilot - 2025-08-15
+# Align Codacy analysis scope with local ESLint by excluding generated and vendor paths
+exclude:
+  - path: "dist/**"
+  - path: "web/**/dist/**"
+  - path: "coverage/**"
+  - path: "node_modules/**"
+  - path: "src-tauri/target/**"
+  - path: "src-tauri/gen/**"
+  - path: "**/*.min.js"

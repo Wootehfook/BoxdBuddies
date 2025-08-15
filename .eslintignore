@@ -1,0 +1,9 @@
+# AI Generated: GitHub Copilot - 2025-08-15
+# Keep ESLint focused on source code only; ignore generated outputs and vendor dirs
+dist/
+web/**/dist/
+coverage/
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+**/*.min.js

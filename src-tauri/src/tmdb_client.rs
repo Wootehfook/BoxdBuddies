@@ -121,11 +121,14 @@ pub async fn tmdb_lookup_minimal(
     if let Some(movie) = found {
         // Compute borrow-dependent fields before moving owned fields
         let year_norm = coerce_year(&movie);
-        let tmdb_id_val = movie.tmdb_id;
+        // Move out owned fields to avoid unnecessary clones
+        let TmdbMovie {
+            tmdb_id: tmdb_id_val,
+            title: title_val,
+            poster_path: poster_val,
+            ..
+        } = movie;
         let director = tmdb_fetch_director(&api_key, tmdb_id_val).await?;
-        // Clone the strings to avoid move-after-borrow issues; these are tiny fields
-        let title_val = movie.title.clone();
-        let poster_val = movie.poster_path.clone();
         Ok(MinimalTmdbInfo {
             tmdb_id: Some(tmdb_id_val),
             title: Some(title_val),

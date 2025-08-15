@@ -13,3 +13,4 @@ tools:
     - revive@1.7.0
     - semgrep@1.78.0
     - trivy@0.59.1
+exclusions: ./.codacy/exclusions.yaml

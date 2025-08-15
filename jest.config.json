@@ -8,14 +8,13 @@
   "transform": {
     "^.+\\.(ts|tsx)$": "ts-jest"
   },
-  "testMatch": [
-    "**/__tests__/**/*.(ts|tsx)",
-    "**/*.(test|spec).(ts|tsx)"
-  ],
+  "testMatch": ["**/__tests__/**/*.(ts|tsx)", "**/*.(test|spec).(ts|tsx)"],
   "testPathIgnorePatterns": [
     "/node_modules/",
     "/tests/e2e/",
-    "/tests/smoke/"
+    "/tests/smoke/",
+    "tests[/\\\\]vitest[/\\\\]",
+    ".*\\.vitest\\.test\\.(ts|tsx)$"
   ],
   "collectCoverageFrom": [
     "src/**/*.(ts|tsx)",
