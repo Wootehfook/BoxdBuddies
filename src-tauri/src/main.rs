@@ -8,6 +8,7 @@ mod models;
 mod net;
 mod scrape;
 mod tmdb;
+mod tmdb_client; // AI Generated: GitHub Copilot - 2025-08-15
 
 fn main() {
     tauri::Builder::default()
@@ -23,6 +24,9 @@ fn main() {
             commands::get_saved_window_position,
             commands::set_always_on_top,
             commands::set_window_focus,
+            // TMDB minimal lookup command (no UI change by default)
+            // AI Generated: GitHub Copilot - 2025-08-15
+            tmdb_client::tmdb_lookup_minimal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

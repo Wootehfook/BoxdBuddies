@@ -18,6 +18,7 @@
 
 import axios from "axios";
 import { logger } from "../utils/logger";
+import { invoke } from "@tauri-apps/api/core"; // AI Generated: GitHub Copilot - 2025-08-15
 
 // TMDB API configuration
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -25,6 +26,9 @@ const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
 // API key will be set dynamically from user input
 let TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || "";
+const USE_TAURI_MINIMAL_LOOKUP =
+  (import.meta.env.VITE_TMDB_BACKEND as string | undefined)?.toLowerCase() ===
+  "true"; // AI Generated: GitHub Copilot - 2025-08-15
 
 export interface TMDBMovie {
   id: number;
@@ -94,6 +98,43 @@ class TMDBService {
     page: number = 1
   ): Promise<{ movies: Movie[]; totalPages: number }> {
     try {
+      // If feature flag is enabled, prefer backend minimal lookup for the first page
+      if (USE_TAURI_MINIMAL_LOOKUP && page === 1 && this.hasApiKey()) {
+        try {
+          const minimal = await invoke<{
+            tmdb_id: number | null;
+            title: string | null;
+            year: number | null;
+            director: string | null;
+            poster_path: string | null;
+          }>("tmdb_lookup_minimal", {
+            apiKey: this.apiKey,
+            title: query,
+            year: undefined,
+          });
+          if (minimal && minimal.tmdb_id && minimal.title) {
+            // Return a single-item result constructed from minimal data
+            const movies: Movie[] = [
+              {
+                id: minimal.tmdb_id,
+                title: minimal.title,
+                year: minimal.year ?? 0,
+                poster_path: minimal.poster_path ?? undefined,
+                overview: undefined,
+                rating: undefined,
+              },
+            ];
+            return { movies, totalPages: 1 };
+          }
+        } catch (e) {
+          // Fall back to direct TMDB if backend minimal lookup fails; avoid noisy logs
+          logger.warn?.(
+            `tmdb_lookup_minimal failed; falling back to axios path: ${
+              (e as Error)?.message ?? "unknown error"
+            }`
+          );
+        }
+      }
       const response = await axios.get<TMDBSearchResponse>(
         `${TMDB_BASE_URL}/search/movie`,
         {

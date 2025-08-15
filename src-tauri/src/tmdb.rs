@@ -16,7 +16,6 @@
  * License along with this program. If not, see:
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
-#![allow(dead_code)]
 /*
  * TMDB client module (foundation for PR B)
  * AI Generated: GitHub Copilot - 2025-08-14
@@ -114,6 +113,7 @@ pub fn build_tmdb_search_url(
     Ok(url.to_string())
 }
 
+#[allow(dead_code)]
 pub fn build_tmdb_details_url(api_key: &str, tmdb_id: i64) -> Result<String, url::ParseError> {
     let base = Url::parse(TMDB_BASE)?;
     let path = format!("{TMDB_MOVIE_PATH}/{tmdb_id}");
