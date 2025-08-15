@@ -7,6 +7,7 @@ mod db;
 mod models;
 mod net;
 mod scrape;
+mod tmdb;
 
 fn main() {
     tauri::Builder::default()

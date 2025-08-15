@@ -280,7 +280,8 @@ pub async fn scrape_letterboxd_profile_internal(username: &str) -> Result<Letter
         .await
         .map_err(|e| format!("Failed to read response: {e}"))?;
     let doc = Html::parse_document(&html);
-    let display_name = extract_display_name(&doc, username.as_str());
+    // AI Generated: GitHub Copilot - 2025-08-15
+    let display_name = extract_display_name(&doc, &username);
     let followers_count = extract_followers_count(&doc);
     let following_count = extract_following_count(&doc);
     let films_count = extract_films_count(&doc);
@@ -429,14 +430,14 @@ pub fn find_common_movies(
 }
 
 // Extract title and year from alt text like "Movie Title (2020)"
-pub fn extract_title_and_year_from_alt(alt_text: &str) -> (String, Option<u32>) {
+pub fn extract_title_and_year_from_alt(alt_text: &str) -> (String, Option<i32>) {
     let cleaned = alt_text.trim();
     let title = cleaned.to_string();
     let year = if let Some(year_start) = cleaned.rfind('(') {
         if let Some(year_end_rel) = cleaned[year_start..].find(')') {
             let year_str = &cleaned[year_start + 1..year_start + year_end_rel];
             year_str
-                .parse::<u32>()
+                .parse::<i32>()
                 .ok()
                 .filter(|&y| (1900..=2030).contains(&y))
         } else {
