@@ -187,6 +187,17 @@
 			],
 			"isBackground": false,
 			"group": "test"
+		},
+		{
+			"label": "🏥 Health Check",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"health:check"
+			],
+			"isBackground": false,
+			"group": "test"
 		}
 	]
 }
