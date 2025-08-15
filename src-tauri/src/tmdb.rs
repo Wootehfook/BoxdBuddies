@@ -16,6 +16,7 @@
  * License along with this program. If not, see:
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
+#![allow(dead_code)]
 /*
  * TMDB client module (foundation for PR B)
  * AI Generated: GitHub Copilot - 2025-08-14
