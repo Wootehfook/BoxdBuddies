@@ -64,6 +64,12 @@ jobs:
         working-directory: src-tauri
         continue-on-error: true
 
+      - name: Clippy (deny dead code)
+        run: cargo clippy --all-targets --all-features -- -D dead_code
+        working-directory: src-tauri
+        # AI Generated: GitHub Copilot - 2025-08-15
+        # Enforce no dead code across the crate to keep things efficient
+
       - name: Test
         run: cargo test
         working-directory: src-tauri
