@@ -198,6 +198,16 @@
 			],
 			"isBackground": false,
 			"group": "test"
+		},
+		{
+			"label": "🦀 Rust Check",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"check"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

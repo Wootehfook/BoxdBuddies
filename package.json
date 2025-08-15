@@ -43,6 +43,7 @@
     "tauri:dev:mcp": "npm run mcp:start && npm run tauri:dev",
     "setup:dev": "bash .devcontainer/setup-with-mcp.sh",
     "health:check": "npm run type-check && npm run lint && npm run test && npm run mcp:status",
+    "scan:dead-code": "pwsh -NoProfile -File ./scripts/dead-code-scan.ps1",
     "ai:workflow": "npm run mcp:start && npm run health:check && echo '🤖 AI development environment ready!'",
     "release:prepare": "npm run clean && npm run health:check && npm run build && npm run tauri:build"
   },
