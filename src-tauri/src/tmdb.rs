@@ -19,7 +19,7 @@
 #![allow(dead_code)]
 /*
  * TMDB client module (foundation for PR B)
- * AI Generated: GitHub Copilot - 2025-08-15
+ * AI Generated: GitHub Copilot - 2025-08-14
  *
  * Scope (non-invasive):
  * - Define response models we already persist in DB (ids, title, year, overview, poster_path, etc.)
@@ -104,11 +104,23 @@ pub fn build_tmdb_search_url(api_key: &str, title: &str, year: Option<i32>) -> S
 }
 
 pub fn build_tmdb_details_url(api_key: &str, tmdb_id: i64) -> String {
-    format!("https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={api_key}")
+    let base = format!("https://api.themoviedb.org/3/movie/{tmdb_id}");
+    let mut url = Url::parse(&base).expect("valid base URL");
+    {
+        let mut qp = url.query_pairs_mut();
+        qp.append_pair("api_key", api_key);
+    }
+    url.to_string()
 }
 
 pub fn build_tmdb_credits_url(api_key: &str, tmdb_id: i64) -> String {
-    format!("https://api.themoviedb.org/3/movie/{tmdb_id}/credits?api_key={api_key}")
+    let base = format!("https://api.themoviedb.org/3/movie/{tmdb_id}/credits");
+    let mut url = Url::parse(&base).expect("valid base URL");
+    {
+        let mut qp = url.query_pairs_mut();
+        qp.append_pair("api_key", api_key);
+    }
+    url.to_string()
 }
 
 // Pure JSON parse helpers — intentionally narrow surface area

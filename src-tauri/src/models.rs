@@ -42,7 +42,7 @@ pub struct LetterboxdFriend {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct WatchlistMovie {
     pub title: String,
-    pub year: Option<u32>,
+    pub year: Option<i32>,
     #[serde(rename = "letterboxdSlug")]
     pub letterboxd_slug: Option<String>,
     #[serde(rename = "posterUrl")]
