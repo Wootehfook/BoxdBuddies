@@ -31,6 +31,12 @@
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+// AI Generated: GitHub Copilot - 2025-08-15
+// Base URL constants to avoid hardcoded strings throughout
+pub const TMDB_BASE: &str = "https://api.themoviedb.org";
+pub const TMDB_SEARCH_PATH: &str = "/3/search/movie";
+pub const TMDB_MOVIE_PATH: &str = "/3/movie";
+
 // Minimal TMDB movie representation aligned with existing DB schema
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TmdbMovie {
@@ -90,8 +96,13 @@ pub struct TmdbCreditsResponse {
 }
 
 // URL helpers (pure) — caller provides sanitized inputs and API key
-pub fn build_tmdb_search_url(api_key: &str, title: &str, year: Option<i32>) -> String {
-    let mut url = Url::parse("https://api.themoviedb.org/3/search/movie").expect("valid base URL");
+pub fn build_tmdb_search_url(
+    api_key: &str,
+    title: &str,
+    year: Option<i32>,
+) -> Result<String, url::ParseError> {
+    let base = Url::parse(TMDB_BASE)?;
+    let mut url = base.join(TMDB_SEARCH_PATH)?;
     {
         let mut qp = url.query_pairs_mut();
         qp.append_pair("api_key", api_key);
@@ -100,27 +111,29 @@ pub fn build_tmdb_search_url(api_key: &str, title: &str, year: Option<i32>) -> S
             qp.append_pair("year", &y.to_string());
         }
     }
-    url.to_string()
+    Ok(url.to_string())
 }
 
-pub fn build_tmdb_details_url(api_key: &str, tmdb_id: i64) -> String {
-    let base = format!("https://api.themoviedb.org/3/movie/{tmdb_id}");
-    let mut url = Url::parse(&base).expect("valid base URL");
+pub fn build_tmdb_details_url(api_key: &str, tmdb_id: i64) -> Result<String, url::ParseError> {
+    let base = Url::parse(TMDB_BASE)?;
+    let path = format!("{TMDB_MOVIE_PATH}/{tmdb_id}");
+    let mut url = base.join(&path)?;
     {
         let mut qp = url.query_pairs_mut();
         qp.append_pair("api_key", api_key);
     }
-    url.to_string()
+    Ok(url.to_string())
 }
 
-pub fn build_tmdb_credits_url(api_key: &str, tmdb_id: i64) -> String {
-    let base = format!("https://api.themoviedb.org/3/movie/{tmdb_id}/credits");
-    let mut url = Url::parse(&base).expect("valid base URL");
+pub fn build_tmdb_credits_url(api_key: &str, tmdb_id: i64) -> Result<String, url::ParseError> {
+    let base = Url::parse(TMDB_BASE)?;
+    let path = format!("{TMDB_MOVIE_PATH}/{tmdb_id}/credits");
+    let mut url = base.join(&path)?;
     {
         let mut qp = url.query_pairs_mut();
         qp.append_pair("api_key", api_key);
     }
-    url.to_string()
+    Ok(url.to_string())
 }
 
 // Pure JSON parse helpers — intentionally narrow surface area
@@ -154,13 +167,31 @@ mod tests {
 
     #[test]
     fn test_build_tmdb_search_url_basic() {
-        let url_s = build_tmdb_search_url("ABC", "The Matrix", Some(1999));
+        let url_s = build_tmdb_search_url("ABC", "The Matrix", Some(1999)).unwrap();
         let parsed = Url::parse(&url_s).unwrap();
         assert_eq!(parsed.path(), "/3/search/movie");
         let params: std::collections::HashMap<_, _> = parsed.query_pairs().into_owned().collect();
         assert_eq!(params.get("api_key").map(|s| s.as_str()), Some("ABC"));
         assert_eq!(params.get("query").map(|s| s.as_str()), Some("The Matrix"));
         assert_eq!(params.get("year").map(|s| s.as_str()), Some("1999"));
+    }
+
+    #[test]
+    fn test_build_tmdb_details_url_basic() {
+        let url_s = build_tmdb_details_url("KEY", 42).unwrap();
+        let parsed = Url::parse(&url_s).unwrap();
+        assert_eq!(parsed.path(), "/3/movie/42");
+        let params: std::collections::HashMap<_, _> = parsed.query_pairs().into_owned().collect();
+        assert_eq!(params.get("api_key").map(|s| s.as_str()), Some("KEY"));
+    }
+
+    #[test]
+    fn test_build_tmdb_credits_url_basic() {
+        let url_s = build_tmdb_credits_url("KEY", 42).unwrap();
+        let parsed = Url::parse(&url_s).unwrap();
+        assert_eq!(parsed.path(), "/3/movie/42/credits");
+        let params: std::collections::HashMap<_, _> = parsed.query_pairs().into_owned().collect();
+        assert_eq!(params.get("api_key").map(|s| s.as_str()), Some("KEY"));
     }
 
     #[test]
