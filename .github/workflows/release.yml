@@ -252,7 +252,7 @@ jobs:
           )
           for pattern in "${patterns[@]}"; do
             matches=( $pattern )
-            if ((${#matches[@]})); then
+            if (( ${#matches[@]} )); then
               for file in "${matches[@]}"; do
                 sha256sum "$file" >> CHECKSUMS.txt
                 found=$((found+1))

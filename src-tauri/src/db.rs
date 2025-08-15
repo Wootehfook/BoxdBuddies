@@ -1,71 +1,127 @@
 /*
- * Database helpers extracted from main.rs
- * AI Generated: GitHub Copilot - 2025-08-11
+ * Database helpers - unified with main.rs schema
+ * AI Generated: GitHub Copilot - 2025-08-13
  */
 use rusqlite::{Connection, Result as SqliteResult};
 use std::fs;
 use std::path::PathBuf;
 
-pub fn get_database_path() -> Result<PathBuf, String> {
-    let mut dir = tauri::api::path::data_dir().ok_or("Failed to get data dir")?;
-    // Back-compat: prefer new folder, fall back to old if it already exists
-    let mut new_dir = dir.clone();
-    new_dir.push("BoxdBuddy");
-    let mut old_dir = dir.clone();
-    old_dir.push("BoxdBuddies");
-    let target_dir = if old_dir.exists() && !new_dir.exists() {
-        old_dir
-    } else {
-        new_dir
-    };
-    fs::create_dir_all(&target_dir).map_err(|e| format!("Failed to create data dir: {e}"))?;
-    let mut db_path = target_dir.clone();
-    db_path.push("boxdbuddies.db"); // keep filename for continuity
-    Ok(db_path)
+// AI Generated: GitHub Copilot - 2025-08-14
+pub fn get_app_data_dir() -> Result<PathBuf, String> {
+    // Determine candidate base directories (config then data) to maximize compatibility
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(cfg) = dirs::config_dir() {
+        candidates.push(cfg);
+    }
+    if let Some(dat) = dirs::data_dir() {
+        candidates.push(dat);
+    }
+
+    // Build folder candidates in priority order
+    // 1) Legacy name under config (BoxdBuddies)
+    // 2) New name under config (BoxdBuddy)
+    // 3) Legacy name under data
+    // 4) New name under data
+    let mut folder_candidates: Vec<PathBuf> = Vec::new();
+    for base in &candidates {
+        folder_candidates.push(base.join("BoxdBuddies"));
+        folder_candidates.push(base.join("BoxdBuddy"));
+    }
+
+    // Choose first existing folder; otherwise create the first preferred new path (config/BoxdBuddy)
+    if let Some(existing) = folder_candidates.iter().find(|p| p.exists()) {
+        return Ok(existing.clone());
+    }
+
+    // Fall back to config/BoxdBuddy (or first available base)
+    let base = candidates
+        .into_iter()
+        .next()
+        .ok_or("Could not find a suitable base directory")?;
+    let target = base.join("BoxdBuddy");
+    if !target.exists() {
+        fs::create_dir_all(&target).map_err(|e| format!("Failed to create data dir: {e}"))?;
+    }
+    Ok(target)
 }
 
-// AI Generated: GitHub Copilot - 2025-08-11
-pub fn get_app_data_dir() -> Result<PathBuf, String> {
-    let mut base = tauri::api::path::data_dir().ok_or("Failed to get data dir")?;
-    let mut new_dir = base.clone();
-    new_dir.push("BoxdBuddy");
-    let mut old_dir = base.clone();
-    old_dir.push("BoxdBuddies");
-    let target = if old_dir.exists() && !new_dir.exists() {
-        old_dir
-    } else {
-        new_dir
-    };
-    fs::create_dir_all(&target).map_err(|e| format!("Failed to create data dir: {e}"))?;
-    Ok(target)
+// AI Generated: GitHub Copilot - 2025-08-14
+pub fn get_database_path() -> Result<PathBuf, String> {
+    // Keep legacy filename to avoid breaking existing installs.
+    // If a newer friends.db exists, migrate it back to the legacy name.
+    let dir = get_app_data_dir()?;
+    let legacy = dir.join("boxdbuddies.db");
+    let newer = dir.join("friends.db");
+    if newer.exists() && !legacy.exists() {
+        if let Err(e) = fs::rename(&newer, &legacy) {
+            return Err(format!("Failed to migrate database filename: {e}"));
+        }
+    }
+    Ok(legacy)
+}
+
+fn migrate_add_director_column(conn: &Connection) -> SqliteResult<()> {
+    let mut has_director = false;
+    let mut stmt = conn.prepare("PRAGMA table_info(tmdb_movies)")?;
+    let columns = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+    })?;
+    for col in columns {
+        let (name, _ty) = col?;
+        if name == "director" {
+            has_director = true;
+            break;
+        }
+    }
+    if !has_director {
+        conn.execute("ALTER TABLE tmdb_movies ADD COLUMN director TEXT", [])?;
+    }
+    Ok(())
 }
 
 pub fn init_database() -> SqliteResult<Connection> {
     let db_path = get_database_path().map_err(|e| rusqlite::Error::InvalidPath(e.into()))?;
     let conn = Connection::open(&db_path)?;
-    // AI Generated: GitHub Copilot - 2025-08-11
-    // Clippy: remove needless borrow for generic args
     conn.pragma_update(None, "journal_mode", "WAL")?;
-    conn.execute_batch(
-        r#"
-        CREATE TABLE IF NOT EXISTS friends (
+
+    // Schema aligned with main.rs
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS friends (
             username TEXT PRIMARY KEY,
             display_name TEXT,
             avatar_url TEXT,
-            last_updated TEXT
-        );
-        CREATE TABLE IF NOT EXISTS friend_watchlists (
+            last_updated TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_info (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_sync_date TEXT,
+            friends_count INTEGER DEFAULT 0
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS friend_watchlists (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             friend_username TEXT NOT NULL,
             movie_title TEXT NOT NULL,
-            movie_year TEXT,
+            movie_year INTEGER,
             letterboxd_slug TEXT,
             tmdb_id INTEGER,
             date_added TEXT,
-            last_updated TEXT,
-            FOREIGN KEY(friend_username) REFERENCES friends(username)
-        );
-        CREATE TABLE IF NOT EXISTS tmdb_movies (
+            last_updated TEXT NOT NULL,
+            FOREIGN KEY (friend_username) REFERENCES friends(username),
+            UNIQUE(friend_username, letterboxd_slug)
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tmdb_movies (
             tmdb_id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
             original_title TEXT,
@@ -83,42 +139,85 @@ pub fn init_database() -> SqliteResult<Connection> {
             revenue INTEGER,
             original_language TEXT,
             director TEXT,
-            last_updated TEXT,
-            created_at TEXT
-        );
-        CREATE TABLE IF NOT EXISTS letterboxd_tmdb_mapping (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            last_updated TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS letterboxd_tmdb_mapping (
+            letterboxd_slug TEXT PRIMARY KEY,
+            tmdb_id INTEGER,
             title TEXT NOT NULL,
             year INTEGER,
-            tmdb_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS sync_info (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            last_sync_date TEXT,
-            friends_count INTEGER DEFAULT 0
-        );
-        CREATE TABLE IF NOT EXISTS comparison_cache (
+            confidence_score REAL,
+            last_verified TEXT NOT NULL,
+            FOREIGN KEY (tmdb_id) REFERENCES tmdb_movies(tmdb_id)
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS friend_sync_status (
+            friend_username TEXT PRIMARY KEY,
+            last_watchlist_sync TEXT,
+            watchlist_count INTEGER DEFAULT 0,
+            sync_status TEXT DEFAULT 'pending',
+            last_error TEXT,
+            FOREIGN KEY (friend_username) REFERENCES friends(username)
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS comparison_cache (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             main_username TEXT NOT NULL,
             friend_usernames TEXT NOT NULL,
-            result_json TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            accessed_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_friend_watchlists_username ON friend_watchlists(friend_username);
-        CREATE INDEX IF NOT EXISTS idx_friend_watchlists_tmdb ON friend_watchlists(tmdb_id);
-        CREATE INDEX IF NOT EXISTS idx_tmdb_movies_title_year ON tmdb_movies(title, year);
-        CREATE INDEX IF NOT EXISTS idx_letterboxd_mapping_title_year ON letterboxd_tmdb_mapping(title, year);
-        CREATE INDEX IF NOT EXISTS idx_comparison_cache_main_user ON comparison_cache(main_username);
-        CREATE INDEX IF NOT EXISTS idx_comparison_cache_accessed ON comparison_cache(accessed_at);
-        "#,
+            result_data TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            accessed_at TEXT NOT NULL,
+            UNIQUE(main_username, friend_usernames)
+        )",
+        [],
     )?;
+
+    // Indexes
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_friend_watchlists_username ON friend_watchlists(friend_username)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_friend_watchlists_tmdb ON friend_watchlists(tmdb_id)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tmdb_movies_title_year ON tmdb_movies(title, year)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_letterboxd_mapping_title_year ON letterboxd_tmdb_mapping(title, year)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_comparison_cache_main_user ON comparison_cache(main_username)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_comparison_cache_accessed ON comparison_cache(accessed_at)",
+        [],
+    )?;
+
     conn.execute(
         "INSERT OR IGNORE INTO sync_info (id, friends_count) VALUES (1, 0)",
         [],
     )?;
+
+    // Migration for older DBs missing director column
+    migrate_add_director_column(&conn)?;
+
     Ok(conn)
 }
 
-// (Removed unused touch_sync_info function)
+// (End unified DB helpers)
