@@ -280,8 +280,8 @@ pub async fn scrape_letterboxd_profile_internal(username: &str) -> Result<Letter
         .await
         .map_err(|e| format!("Failed to read response: {e}"))?;
     let doc = Html::parse_document(&html);
+    let display_name = extract_display_name(&doc, username.as_str());
     // AI Generated: GitHub Copilot - 2025-08-15
-    let display_name = extract_display_name(&doc, &username);
     let followers_count = extract_followers_count(&doc);
     let following_count = extract_following_count(&doc);
     let films_count = extract_films_count(&doc);

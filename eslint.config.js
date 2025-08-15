@@ -5,6 +5,19 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default [
+  // AI Generated: GitHub Copilot - 2025-08-15
+  // Ignore generated/build artifacts and vendor directories to keep lint signal clean
+  {
+    ignores: [
+      "dist/**",
+      "web/**/dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "src-tauri/target/**",
+      "src-tauri/gen/**",
+      "**/*.min.js",
+    ],
+  },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],

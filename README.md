@@ -98,6 +98,12 @@ For enhanced movie data with posters, ratings, and descriptions:
 3. Add your API key: `VITE_TMDB_API_KEY=your_api_key_here`
 4. Or enter it directly in the app interface
 
+Optional backend lookup (experimental):
+
+- To route initial title lookups through the Rust backend’s minimal TMDB command, set: - `VITE_TMDB_BACKEND=true` - Keep this off by default; the app will fall back to the frontend TMDB path automatically if disabled or on any backend error.
+
+Note: AI Generated: GitHub Copilot - 2025-08-15
+
 ## 🛠️ Installation & Setup
 
 ### Option 1: Local Development
