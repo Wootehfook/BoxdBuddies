@@ -1,0 +1,52 @@
+name: PR Title/Body Number Sync
+
+# AI Generated: GitHub Copilot - 2025-08-16
+# Ensures PR titles/bodies use the actual GitHub PR number in bracket form, e.g., [#58].
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  sync-number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync title/body to PR number
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+
+            const number = pr.number;
+            const tag = `[#${number}]`;
+
+            const replaceTag = (text) => {
+              if (!text) return text;
+              const re = /\[#\d+\]/g;
+              if (re.test(text)) {
+                return text.replace(re, tag);
+              }
+              // Append tag if not present
+              return `${text.trim()} ${tag}`.trim();
+            };
+
+            const newTitle = replaceTag(pr.title || "");
+            const newBody = replaceTag(pr.body || "");
+
+            if (newTitle !== pr.title || newBody !== pr.body) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: number,
+                title: newTitle,
+                body: newBody,
+              });
+              core.info(`Updated PR #${number} title/body to include ${tag}`);
+            } else {
+              core.info(`PR #${number} already includes ${tag}`);
+            }
