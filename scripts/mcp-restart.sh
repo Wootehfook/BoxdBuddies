@@ -12,7 +12,14 @@ sleep 2
 
 # Start MCP servers
 echo "🚀 Starting MCP servers..."
-bash "/workspaces/BoxdBuddies/.devcontainer/start-mcp-servers.sh"
+SCRIPT_DIR="$(dirname "$0")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [ -f "$PROJECT_ROOT/.devcontainer/start-mcp-servers.sh" ]; then
+    bash "$PROJECT_ROOT/.devcontainer/start-mcp-servers.sh"
+else
+    echo "⚠️  MCP start script not found at $PROJECT_ROOT/.devcontainer/start-mcp-servers.sh"
+    echo "    Please consult the project documentation for instructions on starting MCP servers."
+fi
 
 # Wait for startup
 sleep 3
