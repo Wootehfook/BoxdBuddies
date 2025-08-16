@@ -18,7 +18,7 @@ if [ -f "$PROJECT_ROOT/.devcontainer/start-mcp-servers.sh" ]; then
     bash "$PROJECT_ROOT/.devcontainer/start-mcp-servers.sh"
 else
     echo "⚠️  MCP start script not found at $PROJECT_ROOT/.devcontainer/start-mcp-servers.sh"
-    echo "    Run 'npm run mcp:start' instead for reliable MCP startup."
+    echo "    Please consult the project documentation for instructions on starting MCP servers."
 fi
 
 # Wait for startup
