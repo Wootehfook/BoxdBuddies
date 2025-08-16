@@ -1943,7 +1943,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 450px; /* Increased height to accommodate larger poster section */
+  height: 750px; /* Increased height for better visual proportions */
   position: relative;
   display: flex;
   flex-direction: column;
