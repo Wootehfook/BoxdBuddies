@@ -2130,11 +2130,6 @@ body {
   background: #1a1f24; /* Ensure consistent background */
 }
 
-/* Movie Friend Count Visual */
-.movie-friends {
-  margin-top: 0.5rem;
-}
-
 .friend-count-visual {
   display: flex;
   align-items: center;
@@ -2153,15 +2148,23 @@ body {
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .friend-tag {
-  font-size: 0.6rem;
-  padding: 0.125rem 0.25rem;
-  border-radius: 4px;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin: 0.1rem;
+  border-radius: 8px;
   border: 1px solid;
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: inline-block;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   white-space: nowrap;
-  line-height: 1;
 }
 
 .friend-count-visual.friend-count-clickable {
@@ -2192,29 +2195,6 @@ body {
   color: #9ab;
   font-size: 0.8rem;
   margin-left: 0.25rem;
-}
-
-.friend-list-expanded {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  align-items: center;
-}
-
-.friend-tag {
-  color: #fff;
-  padding: 0.25rem 0.5rem; /* Slightly reduced padding for better fit */
-  font-size: 0.7rem; /* Slightly smaller font for better fit */
-  font-weight: 600;
-  margin: 0.1rem; /* Reduced margin for tighter spacing */
-  border-radius: 8px; /* Slightly smaller border radius */
-  border: 1px solid;
-  background: rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  display: inline-block;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .letterboxd-link {
