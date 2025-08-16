@@ -17,11 +17,21 @@ If a script becomes unused, we’ll either remove it or move it to an attic fold
 
 AI Generated: GitHub Copilot - 2025-08-14
 
-Note: npm scripts prefer Bash with Windows fallbacks:
+## Cross-Platform Script Behavior
+
+npm scripts use Bash-first with Windows PowerShell fallbacks for maximum compatibility:
 
 - `npm run mcp:status` → `bash scripts/mcp-status.sh` || `pwsh -NoProfile -File scripts/mcp-status.ps1`
 - `npm run mcp:restart` → `bash scripts/mcp-restart.sh` || `pwsh -NoProfile -File scripts/mcp-restart.ps1`
 - `npm run mcp:stop` → `bash scripts/mcp-stop.sh` || `pwsh -NoProfile -File scripts/mcp-stop.ps1`
+
+**How it works:**
+
+- **Linux/macOS/WSL**: Uses Bash implementations (full functionality)
+- **Windows (no Bash)**: Falls back to PowerShell wrappers (graceful degradation)
+- **Windows (with Git Bash/WSL)**: Uses Bash for full MCP capabilities
+
+PowerShell wrappers provide soft-success behavior on Windows systems without Bash, ensuring scripts don't fail but log helpful guidance about enabling full functionality with Git Bash or WSL.
 
 ## Testing helpers
 
