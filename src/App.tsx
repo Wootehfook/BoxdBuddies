@@ -148,7 +148,8 @@ interface Friend {
 // AI Generated: GitHub Copilot - 2025-08-05
 interface UserPreferences {
   username: string;
-  tmdb_api_key: string;
+  // AI Generated: GitHub Copilot - 2025-08-15
+  // tmdb_api_key removed from UI flow; backend centralizes TMDB data
   always_on_top?: boolean;
 }
 
@@ -174,7 +175,8 @@ function App() {
 
   // Setup state
   const [username, setUsername] = useState("");
-  const [tmdbApiKey, setTmdbApiKey] = useState("");
+  // AI Generated: GitHub Copilot - 2025-08-15
+  // TMDB API key removed from UI; backend enriches via centralized service
   const [setupProgress, setSetupProgress] = useState({
     profileSaved: false,
     friendsLoaded: false,
@@ -219,17 +221,18 @@ function App() {
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
-        logger.debug("FRONTEND: Checking for existing user preferences...");
+        logger.debug(
+          "FRONTEND: Checking for existing user preferences (no PII)"
+        );
         const userPrefs = (await invoke(
           "load_user_preferences"
         )) as UserPreferences;
 
-        if (userPrefs.username && userPrefs.tmdb_api_key) {
+        if (userPrefs.username) {
           logger.debug(
-            "FRONTEND: Found existing user preferences, loading user data"
+            "FRONTEND: Found existing preferences; loading user data (no PII)"
           );
           setUsername(userPrefs.username);
-          setTmdbApiKey(userPrefs.tmdb_api_key);
 
           // Restore pin setting if available
           if (userPrefs.always_on_top !== undefined) {
@@ -262,11 +265,14 @@ function App() {
           logger.debug("FRONTEND: Skipped setup, going to friend selection");
         } else {
           logger.debug(
-            "FRONTEND: No existing user preferences found, staying on setup page"
+            "FRONTEND: No existing user preferences found; staying on setup"
           );
         }
       } catch (err) {
-        logger.error("🔧 FRONTEND: Error checking existing user:", err);
+        logger.error(
+          "🔧 FRONTEND: Error checking existing user (redacted)",
+          err
+        );
         // Stay on setup page if there's an error
       }
     };
@@ -312,12 +318,12 @@ function App() {
       setIsAlwaysOnTop(newState);
 
       // Save the preference if we have user data
-      if (username && tmdbApiKey) {
+      if (username) {
         try {
           await invoke("save_user_preferences", {
             request: {
               username: username.trim(),
-              tmdbApiKey: tmdbApiKey.trim(),
+              tmdbApiKey: null,
               alwaysOnTop: newState,
             },
           });
@@ -364,9 +370,7 @@ function App() {
   };
 
   const handleUserSetup = async () => {
-    logger.debug("FRONTEND: handleUserSetup called");
-    logger.debug("FRONTEND: username =", username);
-    logger.debug("FRONTEND: tmdbApiKey =", tmdbApiKey);
+    logger.debug("FRONTEND: handleUserSetup called (no PII)");
 
     if (!validateInputs()) return;
 
@@ -383,7 +387,7 @@ function App() {
         await invoke("save_user_preferences", {
           request: {
             username: username.trim(),
-            tmdbApiKey: tmdbApiKey.trim(),
+            tmdbApiKey: null,
             alwaysOnTop: isAlwaysOnTop,
           },
         });
@@ -540,8 +544,8 @@ function App() {
       await backendCallWithTimeout(async () => {
         const friendUsernames = selectedFriends.map((f) => f.username);
         logger.debug(
-          "FRONTEND: Calling compare_watchlists with friends:",
-          friendUsernames
+          "FRONTEND: Calling compare_watchlists; friend count:",
+          friendUsernames.length
         );
 
         logger.debug("FRONTEND: About to invoke compare_watchlists...");
@@ -550,7 +554,7 @@ function App() {
           {
             mainUsername: username,
             friendUsernames: friendUsernames,
-            tmdbApiKey: tmdbApiKey || null,
+            tmdbApiKey: null,
             limitTo500: false,
           }
         );
@@ -635,8 +639,6 @@ function App() {
           <SetupPage
             username={username}
             setUsername={setUsername}
-            tmdbApiKey={tmdbApiKey}
-            setTmdbApiKey={setTmdbApiKey}
             onSetup={handleUserSetup}
             isLoading={isLoading}
             setupProgress={setupProgress}
@@ -654,7 +656,6 @@ function App() {
             isLoading={isLoading}
             isComparing={isComparing}
             enhancementProgress={enhancementProgress}
-            tmdbApiKey={tmdbApiKey}
             currentQuoteIndex={currentQuoteIndex}
           />
         );
@@ -730,8 +731,6 @@ function App() {
 interface SetupPageProps {
   username: string;
   setUsername: (value: string) => void;
-  tmdbApiKey: string;
-  setTmdbApiKey: (value: string) => void;
   onSetup: () => void;
   isLoading: boolean;
   setupProgress: {
@@ -743,8 +742,6 @@ interface SetupPageProps {
 function SetupPage({
   username,
   setUsername,
-  tmdbApiKey,
-  setTmdbApiKey,
   onSetup,
   isLoading,
   setupProgress,
@@ -770,26 +767,7 @@ function SetupPage({
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="tmdb-key">TMDB API Key (Optional)</label>
-            <input
-              id="tmdb-key"
-              type="password"
-              value={tmdbApiKey}
-              onChange={(e) => setTmdbApiKey(e.target.value)}
-              placeholder="Your TMDB API key (optional - for enhanced movie data)"
-              disabled={isLoading}
-            />
-            <small>
-              <a
-                href="https://www.themoviedb.org/settings/api"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Get your free TMDB API key here
-              </a>
-            </small>
-          </div>
+          {/* TMDB API Key input removed - centralized backend data source */}
 
           {/* Progress indicators */}
           {isLoading && (
@@ -847,7 +825,6 @@ interface FriendSelectionPageProps {
   isLoading: boolean;
   isComparing: boolean;
   enhancementProgress: EnhancementProgress;
-  tmdbApiKey: string;
   currentQuoteIndex: number;
 }
 
@@ -861,7 +838,6 @@ function FriendSelectionPage({
   isLoading,
   isComparing,
   enhancementProgress,
-  tmdbApiKey,
   currentQuoteIndex,
 }: FriendSelectionPageProps) {
   const progressPercent = calculateProgressPercent(
@@ -1007,7 +983,7 @@ function FriendSelectionPage({
                             : enhancementProgress.completed < 85
                               ? "Comparing watchlists..."
                               : enhancementProgress.completed < 100
-                                ? "Adding TMDB movie details..."
+                                ? "Adding movie details..."
                                 : "Complete!"}
                         </p>
                       )}
@@ -1038,27 +1014,7 @@ function FriendSelectionPage({
                     {selectedFriends.length} friend
                     {selectedFriends.length !== 1 ? "s" : ""} selected
                   </p>
-                  {!tmdbApiKey && (
-                    <div className="tmdb-info-banner">
-                      <div className="tmdb-info-content">
-                        <div className="tmdb-info-icon">🎬</div>
-                        <div className="tmdb-info-text">
-                          <h4>Get Movie Posters & Details!</h4>
-                          <p>
-                            Add your free TMDB API key to see movie posters,
-                            ratings, and descriptions.{" "}
-                            <a
-                              href="https://www.themoviedb.org/settings/api"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Get one here →
-                            </a>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* TMDB banner removed - centralized backend data source */}
                   <button
                     onClick={onCompareWatchlists}
                     disabled={selectedFriends.length === 0 || isComparing}

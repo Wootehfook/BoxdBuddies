@@ -105,6 +105,7 @@ class MovieEnhancementService {
     title: string,
     year?: number
   ): Promise<TMDBMovie | null> {
+    // Prefer batch CF path for better performance when available via enhanceMovies
     const cacheKey = this.getCacheKey(title, year);
 
     // Check cache first
@@ -151,10 +152,7 @@ class MovieEnhancementService {
 
   // Enhance a single movie with TMDB data
   async enhanceMovie(letterboxdMovie: Movie): Promise<Movie> {
-    // If no API key, return original movie
-    if (!this.hasApiKey()) {
-      return letterboxdMovie;
-    }
+    // Always attempt enhancement via centralized backend (CF) or fallback TMDB path
 
     // Extract year from title if not provided
     const { cleanTitle, year: extractedYear } = this.extractYearFromTitle(
@@ -196,6 +194,64 @@ class MovieEnhancementService {
     onProgress?: (current: number, total: number) => void
   ): Promise<Movie[]> {
     const enhancedMovies: Movie[] = [];
+
+    // If Cloudflare API base is configured, use the batch endpoint
+    const CF_API_BASE =
+      (import.meta.env.VITE_CF_API_BASE as string | undefined) || "";
+    if (CF_API_BASE && movies.length > 0) {
+      try {
+        const payload = {
+          movies: movies.map((m) => ({ title: m.title, year: m.year })),
+        };
+        const res = await globalThis.fetch(
+          `${CF_API_BASE.replace(/\/$/, "")}/enhance`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as {
+            movies: Array<{
+              id: number;
+              title: string;
+              year: number;
+              poster_path?: string;
+              overview?: string;
+              rating?: number;
+            }>;
+          };
+          const byTitleYear = new Map(
+            data.movies.map((m) => [this.getCacheKey(m.title, m.year), m])
+          );
+          for (let i = 0; i < movies.length; i++) {
+            const src = movies[i];
+            const key = this.getCacheKey(src.title, src.year);
+            const em = byTitleYear.get(key);
+            if (em) {
+              const merged: Movie = {
+                ...src,
+                id: em.id || src.id,
+                year: em.year || src.year,
+                posterPath: em.poster_path || src.posterPath,
+                overview: em.overview || src.overview,
+                rating: em.rating ?? src.rating,
+              };
+              enhancedMovies.push(merged);
+            } else {
+              enhancedMovies.push(src);
+            }
+            if (onProgress) onProgress(i + 1, movies.length);
+          }
+          return enhancedMovies;
+        }
+      } catch (e) {
+        logger.warn?.(
+          `CF /enhance failed; falling back per-movie: ${(e as Error)?.message ?? "unknown"}`
+        );
+      }
+    }
 
     for (let i = 0; i < movies.length; i++) {
       const enhanced = await this.enhanceMovie(movies[i]);

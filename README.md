@@ -89,20 +89,87 @@ Before you begin, ensure you have the following installed:
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Optional: TMDB API Integration
+### Centralized TMDB via Cloudflare Worker (Recommended)
 
-For enhanced movie data with posters, ratings, and descriptions:
+BoxdBuddy is designed to enrich movie metadata via your Cloudflare Worker so users do not need to enter their own TMDB API key.
 
-1. Get a free API key from [TMDB](https://www.themoviedb.org/settings/api)
-2. Copy `.env.example` to `.env.local`
-3. Add your API key: `VITE_TMDB_API_KEY=your_api_key_here`
-4. Or enter it directly in the app interface
+1. Deploy the Worker defined at `web/worker/src/index.ts` using Wrangler
 
-Optional backend lookup (experimental):
+2. Configure environment variables
 
-- To route initial title lookups through the Rust backend’s minimal TMDB command, set: - `VITE_TMDB_BACKEND=true` - Keep this off by default; the app will fall back to the frontend TMDB path automatically if disabled or on any backend error.
+- Frontend (Vite): set `VITE_CF_API_BASE` to your Worker URL, for example:
 
-Note: AI Generated: GitHub Copilot - 2025-08-15
+  ```bash
+  # .env.local
+  VITE_CF_API_BASE=https://boxdbuddies-web.youraccount.workers.dev
+  ```
+
+- Backend (Rust/Tauri): set `CF_API_BASE` to the same Worker URL so the minimal lookup path also uses Cloudflare:
+
+  ```powershell
+  $env:CF_API_BASE = "https://boxdbuddies-web.youraccount.workers.dev"
+  npm run tauri dev
+  ```
+
+1. Bind your TMDB API key on the server only
+
+- In your Worker environment, add `TMDB_API_KEY` via the Cloudflare dashboard or secrets.
+- The desktop app never sees this key.
+
+1. Optional: Durable caching with KV
+
+- Add a KV namespace and bind it in `wrangler.toml` (commented example included). The Worker will persist search/popular/details and simple title/year mappings when `MOVIES_KV` is available.
+
+Legacy compatibility:
+
+- The app still supports direct TMDB calls via `VITE_TMDB_API_KEY` as a fallback if no Worker base is configured. You can disable this by simply not setting the key.
+
+### Cloudflare Pages Functions (Alternative to Worker)
+
+You can run the same API on Cloudflare Pages using Functions under the `functions/` directory.
+
+Endpoints (identical to Worker):
+
+- `GET /health` – service and bindings status
+- `GET /search?q=string&page=1`
+- `GET /popular?page=1`
+- `GET /movies/:id`
+- `POST /enhance` – batch enrich with `{ "movies": [{ "title": string, "year"?: number }] }`
+
+Setup on Pages:
+
+1. In your Cloudflare dashboard, create or open a Pages project pointing to this repo (root)
+
+2. Enable Functions (Settings → Functions)
+
+3. Add secrets/bindings (Settings → Environment variables)
+
+- Secret: `TMDB_API_KEY` (required)
+- KV binding (optional): `MOVIES_KV` for durable caches and title/year → TMDB id mappings
+
+1. Deploy and note the Pages URL, e.g. `https://boxdbud.pages.dev`
+
+1. Point the app to Pages by setting:
+
+```powershell
+$env:VITE_CF_API_BASE = 'https://boxdbud.pages.dev'
+npm run dev
+
+# Optional: have the Rust minimal lookup prefer the same API
+$env:CF_API_BASE = 'https://boxdbud.pages.dev'
+cargo check --manifest-path .\src-tauri\Cargo.toml
+```
+
+Quick verification:
+
+```bash
+curl -s https://boxdbud.pages.dev/health
+curl -s "https://boxdbud.pages.dev/search?q=alien&page=1"
+curl -s "https://boxdbud.pages.dev/movies/603"
+curl -s -X POST -H 'content-type: application/json' \
+   --data '{"movies":[{"title":"The Matrix","year":1999}]}' \
+   https://boxdbud.pages.dev/enhance
+```
 
 ## 🛠️ Installation & Setup
 

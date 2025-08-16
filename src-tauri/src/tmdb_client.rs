@@ -22,6 +22,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use url::Url; // AI Generated: GitHub Copilot - 2025-08-16
 
 use crate::net::{get_with_retries, hardened_client};
 use crate::tmdb::{
@@ -113,7 +114,16 @@ pub async fn tmdb_lookup_minimal(
     title: String,
     year: Option<i32>,
 ) -> Result<MinimalTmdbInfo, String> {
-    // If key appears empty, short-circuit with a friendly error.
+    // AI Generated: GitHub Copilot - 2025-08-16
+    // Prefer centralized Cloudflare API if configured (no client API key required)
+    if let Some(cf_base) = cf_api_base() {
+        if let Ok(info) = cf_search_minimal(&cf_base, &title, year).await {
+            return Ok(info);
+        }
+        // If CF path fails, continue to legacy TMDB path below without logging PII
+    }
+
+    // Legacy path: require TMDB API key from caller to perform direct TMDB lookup
     if api_key.trim().is_empty() {
         return Err("TMDB API key is required".into());
     }
@@ -145,4 +155,99 @@ pub async fn tmdb_lookup_minimal(
             poster_path: None,
         })
     }
+}
+
+// AI Generated: GitHub Copilot - 2025-08-16
+// Cloudflare Worker integration for minimal search; avoids exposing TMDB key to client
+fn cf_api_base() -> Option<String> {
+    match std::env::var("CF_API_BASE") {
+        Ok(val) => {
+            let trimmed = val.trim();
+            if trimmed.is_empty() {
+                None
+            } else if let Ok(url) = Url::parse(trimmed) {
+                // Enforce HTTPS
+                if url.scheme() == "https" {
+                    Some(trimmed.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct CfMovieItem {
+    id: i64,
+    title: String,
+    #[serde(default)]
+    year: Option<i32>,
+    #[serde(default)]
+    poster_path: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CfSearchResponse {
+    #[serde(default)]
+    movies: Vec<CfMovieItem>,
+}
+
+async fn cf_search_minimal(
+    cf_base: &str,
+    title: &str,
+    year: Option<i32>,
+) -> Result<MinimalTmdbInfo, String> {
+    let base = Url::parse(cf_base).map_err(|_| "Invalid CF base URL".to_string())?;
+    let mut url = base
+        .join("/search")
+        .map_err(|_| "Failed to build CF URL".to_string())?;
+    {
+        let mut qp = url.query_pairs_mut();
+        qp.append_pair("q", title);
+        qp.append_pair("page", "1");
+    }
+    let client = hardened_client().map_err(|e| format!("HTTP client error: {e}"))?;
+    let resp = get_with_retries(&client, url.as_str(), 2)
+        .await
+        .map_err(|e| format!("Network error: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("CF search HTTP error: {}", resp.status()));
+    }
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read CF response: {e}"))?;
+    let parsed: CfSearchResponse =
+        serde_json::from_str(&body).map_err(|e| format!("Failed to parse CF response: {e}"))?;
+    if parsed.movies.is_empty() {
+        return Ok(MinimalTmdbInfo {
+            tmdb_id: None,
+            title: None,
+            year: None,
+            director: None,
+            poster_path: None,
+        });
+    }
+    // Pick best match — exact year preferred when available
+    let pick = if let Some(y) = year {
+        parsed
+            .movies
+            .iter()
+            .find(|m| m.year == Some(y))
+            .cloned()
+            .unwrap_or_else(|| parsed.movies[0].clone())
+    } else {
+        parsed.movies[0].clone()
+    };
+    Ok(MinimalTmdbInfo {
+        tmdb_id: Some(pick.id),
+        title: Some(pick.title),
+        year: pick.year,
+        director: None, // Director not provided by CF /search; can be added via another endpoint later
+        poster_path: pick.poster_path,
+    })
 }

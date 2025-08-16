@@ -5,6 +5,12 @@ compatibility_date = "2024-01-15"
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
+# Optional: KV namespace for durable caching/mapping
+# Uncomment and configure to enable KV in the Worker (see README for details)
+# [[kv_namespaces]]
+# binding = "MOVIES_KV"
+# id = "<your_kv_namespace_id>"
+
 # Cloudflare Pages configuration
 # Build command: cd web/frontend && npm install && npm run build
 # Build output directory: web/frontend/dist

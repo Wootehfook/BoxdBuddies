@@ -22,6 +22,9 @@ import { invoke } from "@tauri-apps/api/core"; // AI Generated: GitHub Copilot -
 
 // TMDB API configuration
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+// Prefer centralized Cloudflare Worker if configured (no API key on client)
+const CF_API_BASE =
+  (import.meta.env.VITE_CF_API_BASE as string | undefined) || "";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
 // API key will be set dynamically from user input
@@ -98,6 +101,25 @@ class TMDBService {
     page: number = 1
   ): Promise<{ movies: Movie[]; totalPages: number }> {
     try {
+      // Attempt Cloudflare Worker first if configured
+      if (CF_API_BASE) {
+        try {
+          const res = await globalThis.fetch(
+            `${CF_API_BASE.replace(/\/$/, "")}/search?q=${encodeURIComponent(query)}&page=${page}`
+          );
+          if (res.ok) {
+            const data = (await res.json()) as {
+              movies: Movie[];
+              totalPages: number;
+            };
+            return data;
+          }
+        } catch (e) {
+          logger.warn?.(
+            `CF /search failed; falling back to TMDB axios: ${(e as Error)?.message ?? "unknown"}`
+          );
+        }
+      }
       // If feature flag is enabled, prefer backend minimal lookup for the first page
       if (USE_TAURI_MINIMAL_LOOKUP && page === 1 && this.hasApiKey()) {
         try {
@@ -166,6 +188,24 @@ class TMDBService {
     page: number = 1
   ): Promise<{ movies: Movie[]; totalPages: number }> {
     try {
+      if (CF_API_BASE) {
+        try {
+          const res = await globalThis.fetch(
+            `${CF_API_BASE.replace(/\/$/, "")}/popular?page=${page}`
+          );
+          if (res.ok) {
+            const data = (await res.json()) as {
+              movies: Movie[];
+              totalPages: number;
+            };
+            return data;
+          }
+        } catch (e) {
+          logger.warn?.(
+            `CF /popular failed; falling back to TMDB axios: ${(e as Error)?.message ?? "unknown"}`
+          );
+        }
+      }
       const response = await axios.get<TMDBSearchResponse>(
         `${TMDB_BASE_URL}/movie/popular`,
         {
@@ -193,6 +233,21 @@ class TMDBService {
   // Get movie details by ID
   async getMovieDetails(movieId: number): Promise<Movie> {
     try {
+      if (CF_API_BASE) {
+        try {
+          const res = await globalThis.fetch(
+            `${CF_API_BASE.replace(/\/$/, "")}/movies/${movieId}`
+          );
+          if (res.ok) {
+            const data = (await res.json()) as Movie;
+            return data;
+          }
+        } catch (e) {
+          logger.warn?.(
+            `CF /movies/:id failed; falling back to TMDB axios: ${(e as Error)?.message ?? "unknown"}`
+          );
+        }
+      }
       const response = await axios.get<TMDBMovie>(
         `${TMDB_BASE_URL}/movie/${movieId}`,
         {
