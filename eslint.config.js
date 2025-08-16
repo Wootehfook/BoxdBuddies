@@ -70,6 +70,36 @@ export default [
       },
     },
   },
+  // AI Generated: GitHub Copilot - 2025-08-16
+  // Cloudflare Workers functions configuration
+  {
+    files: ["functions/**/*.{js,ts}"],
+    languageOptions: {
+      globals: {
+        Response: "readonly",
+        Request: "readonly",
+        URL: "readonly",
+        fetch: "readonly",
+        console: "readonly",
+        globalThis: "readonly",
+        setTimeout: "readonly",
+        Promise: "readonly",
+        JSON: "readonly",
+        Date: "readonly",
+        Number: "readonly",
+        Array: "readonly",
+        Object: "readonly",
+        Math: "readonly",
+        parseInt: "readonly",
+        encodeURIComponent: "readonly"
+      },
+    },
+    rules: {
+      "no-useless-escape": "off",
+      "no-console": ["warn", { allow: ["error", "warn", "log"] }],
+      "@typescript-eslint/no-explicit-any": "off"
+    },
+  },
   // AI Generated: GitHub Copilot - 2025-08-03
   // Allow console statements in logger utility
   {

@@ -678,7 +678,7 @@ function App() {
         <div className="header-content">
           <div className="header-title">
             <h1>🎬 BoxdBuddy</h1>
-            <p>Find movies you and your friends want to watch</p>
+            <p>Find movies all your friends want to watch</p>
           </div>
           <div className="pin-container">
             <button

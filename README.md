@@ -4,19 +4,31 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-orange)](https://tauri.app/)
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
 [![Rust](https://img.shields.io/badge/Rust-Latest-red)](https://www.rust-lang.org/)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com/)
 
-> **A modern desktop application for comparing Letterboxd watchlists between friends**
+> **Find movies all your friends want to watch - Available as Desktop App & Web App**
 
-Find movies that you and your friends all want to watch! BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch.
+BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. Now available both as a native desktop application and a modern web application powered by Cloudflare.
 
 ![BoxdBuddies Demo](docs/images/demo-hero.png)
 _Coming Soon: Demo screenshot showing the beautiful interface_
 
-## 🎉 Status: Production Ready ✨
+## 🚀 Try BoxdBuddy Now
 
-**BoxdBuddy v1.1.0 is ready for public use!** All core features have been implemented, tested, and polished for production deployment.
+### 🌐 Web App (New!)
 
-## 📥 Downloads (v1.1.0)
+**[Launch BoxdBuddy Web App →](https://boxdbuddy.pages.dev)**
+
+- No download required
+- Works on any device
+- Automatic updates
+- Persistent local cache
+
+### 💻 Desktop App (v1.1.0)
+
+Native desktop application with enhanced features and offline capabilities.
+
+## 📥 Desktop Downloads (v1.1.0)
 
 | Platform | Architecture | File                                        | Direct Download                                                                                                                   |
 | -------- | ------------ | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,15 +51,26 @@ If a file is missing from CHECKSUMS, re-download directly from the release page.
 
 Note: The Windows installer is a per-user MSI that installs under your user profile (LocalAppData) and does not require administrative privileges.
 
-### ✅ Recent Achievements (August 3, 2025)
+### ✅ Recent Achievements (August 16, 2025)
 
-- **Cross-Platform Excellence**: Working perfectly on Windows and Linux
-- **Real Friend Integration**: Successfully resolved Test_User issue - now shows actual Letterboxd friends
-- **Cache Optimization**: Lightning-fast loading with 280+ movies processed in <1 second
-- **MCP Integration**: 6 Model Context Protocol servers configured for enhanced AI development workflow
-- **Hybrid Development**: Windows CMD for builds, WSL for all other development tasks
+- **🌐 Web App Launch**: Full Cloudflare deployment with serverless architecture
+- **🔒 Enhanced Security**: No API keys required for users - secure server-side TMDB integration
+- **⚡ Smart Caching**: Multi-layer caching (Edge + KV + D1 + LocalStorage) for optimal performance
+- **🤖 AI Development**: Advanced MCP integration with 6 specialized servers for enhanced development workflow
+- **📊 Database Migration**: Complete TMDB movie catalog stored in Cloudflare D1 database
+- **🔄 Auto-Updates**: Daily scheduled TMDB delta sync for fresh movie data
 
 ## ✨ Features
+
+### 🌐 Web App Features
+
+- **No Downloads**: Access directly from your browser
+- **No API Keys**: TMDB integration handled securely on the server
+- **Smart Caching**: Persistent local storage with intelligent cache invalidation
+- **Auto-Updates**: Always up-to-date with the latest features
+- **Cross-Device**: Works seamlessly across desktop, tablet, and mobile
+
+### 💻 Desktop App Features
 
 - 🎬 **Letterboxd Integration**: Import watchlists from Letterboxd profiles with accurate URL handling
 - 👥 **Friend Comparison**: Compare watchlists across multiple friends simultaneously
@@ -63,29 +86,46 @@ Note: The Windows installer is a per-user MSI that installs under your user prof
 - **Performance**: Processes 300+ movies in seconds with intelligent caching
 - **Accuracy**: 100% accurate Letterboxd movie links using scraped slugs
 - **Reliability**: Robust error handling with timeout mechanisms and fallback strategies
+- **Security**: No user API keys required, server-side TMDB integration, rate limiting
+- **Scalability**: Cloudflare edge computing with global CDN distribution
 - **Quality**: Professional-grade code with comprehensive testing and security measures
 - **User Experience**: Smooth progress tracking, responsive design, and intuitive interface
 
 ## 🚀 Tech Stack
 
+### Web App (Cloudflare)
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Cloudflare Workers + D1 Database + KV Storage
+- **APIs**: Secure server-side TMDB integration
+- **Caching**: Multi-layer edge caching + local storage
+- **Deployment**: Cloudflare Pages with automated CI/CD
+
+### Desktop App (Tauri)
+
 - **Frontend**: React 18 + TypeScript + Vite
 - **Backend**: Rust + Tauri
 - **APIs**: TMDB (The Movie Database) for movie data
-- **Containerization**: Docker + Docker Compose
-- **Build Tool**: Vite
-- **Package Manager**: npm
+- **Database**: SQLite for local data persistence
+- **Build Tool**: Vite + Tauri CLI
 
 ## 📋 Prerequisites
 
+### Web App
+
+No prerequisites! Simply visit [boxdbuddy.pages.dev](https://boxdbuddy.pages.dev)
+
+### Desktop Development
+
 Before you begin, ensure you have the following installed:
 
-### Local Development
+#### Local Development
 
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [Rust](https://rustup.rs/) (latest stable)
 - [Tauri Prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites)
 
-### Docker Development
+#### Docker Development
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
