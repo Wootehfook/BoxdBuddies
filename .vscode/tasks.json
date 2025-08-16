@@ -1,3 +1,5 @@
+// AI Generated: GitHub Copilot - 2025-08-16
+// Removed duplicate "🏥 Health Check" task to avoid confusion (fixes issue #55)
 {
 	"version": "2.0.0",
 	"tasks": [
@@ -166,51 +168,6 @@
 			"problemMatcher": [
 				"$rustc"
 			]
-		},
-		{
-			"label": "🏥 Health Check",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"health:check"
-			],
-			"group": "test"
-		},
-		{
-			"label": "🏥 Health Check",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"health:check"
-			],
-			"isBackground": false,
-			"group": "test"
-		},
-		{
-			"label": "🏥 Health Check",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"health:check"
-			],
-			"isBackground": false,
-			"group": "test"
-<<<<<<< HEAD
-		},
-		{
-			"label": "🦀 Rust Check",
-			"type": "shell",
-			"command": "cargo",
-			"args": [
-				"check"
-			],
-			"isBackground": false,
-			"group": "build"
-=======
->>>>>>> 889abe5aff96a490418e5231599e485e7c382eb7
 		}
 	]
 }

@@ -2,11 +2,11 @@ name: CodeQL
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '20 1 * * 6'
+    - cron: "20 1 * * 6"
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'rust', 'javascript' ]
+        language: ["rust", "javascript"]
 
     steps:
       - name: Checkout repository
@@ -31,18 +31,28 @@ jobs:
         if: matrix.language == 'javascript'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install JS deps (no scripts)
         if: matrix.language == 'javascript'
         run: |
           npm ci --ignore-scripts
 
-      - name: Initialize CodeQL
+      # AI Generated: GitHub Copilot - 2025-08-16
+      # Use explicit conditional steps instead of non-standard &&/|| expression
+      - name: Initialize CodeQL (Rust)
+        if: matrix.language == 'rust'
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.language == 'rust' && 'manual' || 'autobuild' }}
+          build-mode: manual
+
+      - name: Initialize CodeQL (JS/TS)
+        if: matrix.language != 'rust'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: autobuild
 
       - name: Autobuild (non-Rust)
         if: matrix.language != 'rust'

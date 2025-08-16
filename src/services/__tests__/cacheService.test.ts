@@ -1,5 +1,5 @@
-// AI Generated: GitHub Copilot - 2025-08-05
-import { describe, it, expect } from "@jest/globals";
+// AI Generated: GitHub Copilot - 2025-08-16
+import { describe, it, expect } from "vitest";
 
 /**
  * Unit tests for cache service functionality

@@ -1,9 +1,10 @@
-// AI Generated: GitHub Copilot - 2025-08-15
-// Temporarily skipping backend minimal lookup tests due to import.meta limitations in Jest.
-// Follow-up: migrate tests to Vite + Vitest or add a Jest transform/polyfill for import.meta.
-import { describe, it, expect } from "@jest/globals";
-describe.skip("tmdbService minimal backend path (skipped)", () => {
-  it("placeholder", () => {
+// AI Generated: GitHub Copilot - 2025-08-16
+// Archived: Legacy Jest placeholder. Marked as skipped to keep Vitest happy
+// during migration while ensuring it never executes. Safe to delete later.
+import { describe, it, expect } from "vitest";
+
+describe.skip("tmdbService.minimal placeholder (skipped)", () => {
+  it("noop", () => {
     expect(true).toBe(true);
   });
 });
