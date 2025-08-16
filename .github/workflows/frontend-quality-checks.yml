@@ -46,6 +46,14 @@ jobs:
         run: npm run build
         continue-on-error: true
 
+      - name: Report unused exports (ts-prune)
+        run: |
+          npm i -D ts-prune
+          npx ts-prune || true
+        continue-on-error: true
+        # AI Generated: GitHub Copilot - 2025-08-15
+        # Report-only: surfaces unused exports without failing CI
+
       - name: Upload frontend build artifacts
         uses: actions/upload-artifact@v4
         with:

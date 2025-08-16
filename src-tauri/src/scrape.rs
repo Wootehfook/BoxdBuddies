@@ -259,8 +259,8 @@ pub fn extract_friends_from_html(document: &Html) -> Result<Vec<LetterboxdFriend
 // AI Generated: GitHub Copilot - 2025-08-11
 pub async fn scrape_letterboxd_profile_internal(username: &str) -> Result<LetterboxdUser, String> {
     // Security: strict username validation
-    let username = crate::net::sanitize_username(username)?;
-    let url = crate::net::build_letterboxd_url(&[&username]);
+    let sanitized_username = crate::net::sanitize_username(username)?;
+    let url = crate::net::build_letterboxd_url(&[&sanitized_username]);
     let client = crate::net::hardened_client()
         .map_err(|e| format!("Failed to create secure HTTP client: {e}"))?;
     let resp = crate::net::get_with_retries(&client, &url, 3)
@@ -280,13 +280,13 @@ pub async fn scrape_letterboxd_profile_internal(username: &str) -> Result<Letter
         .await
         .map_err(|e| format!("Failed to read response: {e}"))?;
     let doc = Html::parse_document(&html);
-    let display_name = extract_display_name(&doc, username.as_str());
+    let display_name = extract_display_name(&doc, &sanitized_username);
     // AI Generated: GitHub Copilot - 2025-08-15
     let followers_count = extract_followers_count(&doc);
     let following_count = extract_following_count(&doc);
     let films_count = extract_films_count(&doc);
     Ok(LetterboxdUser {
-        username: username.to_string(),
+        username: sanitized_username.to_string(),
         display_name,
         avatar_url: None,
         followers_count,
