@@ -90,10 +90,10 @@ async function syncPopularMovies(env: Env) {
 
   for (let page = 1; page <= pages; page++) {
     const response = await fetch(
-      `https://api.themoviedb.org/3/movie/popular?page=${page}`,
+      `https://api.themoviedb.org/3/movie/popular?page=${page}&api_key=${env.TMDB_API_KEY}`,
       {
         headers: {
-          Authorization: `Bearer ${env.TMDB_API_KEY}`,
+          "User-Agent": "BoxdBuddy/1.1.0",
           "Content-Type": "application/json",
         },
       }
@@ -156,10 +156,10 @@ async function upsertMovie(db: D1Database, movie: TMDBMovie) {
 
 async function syncSingleMovie(env: Env, movieId: number) {
   const response = await fetch(
-    `https://api.themoviedb.org/3/movie/${movieId}?append_to_response=credits`,
+    `https://api.themoviedb.org/3/movie/${movieId}?append_to_response=credits&api_key=${env.TMDB_API_KEY}`,
     {
       headers: {
-        Authorization: `Bearer ${env.TMDB_API_KEY}`,
+        "User-Agent": "BoxdBuddy/1.1.0",
         "Content-Type": "application/json",
       },
     }
@@ -200,10 +200,10 @@ async function syncDeltaUpdates(env: Env) {
 
   // Fetch changes from TMDB
   const response = await fetch(
-    `https://api.themoviedb.org/3/movie/changes?start_date=${sinceDate}`,
+    `https://api.themoviedb.org/3/movie/changes?start_date=${sinceDate}&api_key=${env.TMDB_API_KEY}`,
     {
       headers: {
-        Authorization: `Bearer ${env.TMDB_API_KEY}`,
+        "User-Agent": "BoxdBuddy/1.1.0",
         "Content-Type": "application/json",
       },
     }
