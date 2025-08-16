@@ -1,21 +1,14 @@
 # AI Generated: GitHub Copilot - 2025-08-16
 name = "boxdbuddy"
-main = "functions/_worker.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
 [[d1_databases]]
 binding = "MOVIES_DB"
 database_name = "boxdbuddy-movies"
-database_id = "your-database-id"
+database_id = "466c5909-8a9a-418c-927b-2d36c118e270"
 
 [[kv_namespaces]]
 binding = "MOVIES_KV"
-id = "your-kv-id"
-
-[env.production.vars]
-# TMDB_API_KEY set via wrangler secret
-# ADMIN_SECRET set via wrangler secret
-
-[[env.production.triggers.crons]]
-crons = ["0 3 * * *"] # Daily at 3 AM UTC for delta sync
+id = "40b6505549fe45289fb872db9df32546"

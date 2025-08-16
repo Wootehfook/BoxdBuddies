@@ -91,7 +91,8 @@ export default [
         Object: "readonly",
         Math: "readonly",
         parseInt: "readonly",
-        encodeURIComponent: "readonly"
+        encodeURIComponent: "readonly",
+        caches: "readonly"
       },
     },
     rules: {
