@@ -21,7 +21,8 @@ if ([string]::IsNullOrEmpty($AdminSecret)) {
         Write-Host "💡 Tip: Set environment variable BOXDBUDDY_ADMIN_SECRET to avoid prompts" -ForegroundColor Cyan
         $adminSecretSecure = Read-Host "Enter your admin secret" -AsSecureString
         $AdminSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminSecretSecure))
-    } else {
+    }
+    else {
         Write-Host "🔐 Using admin secret from environment variable" -ForegroundColor Green
     }
 }
