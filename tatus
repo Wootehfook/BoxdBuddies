@@ -1,0 +1,27 @@
+  chore/msi-launch-app[m
+  dead-code-cleanup-release-prep[m
+  feature/migrate-tauri-v2[m
+  improvements/security-and-quality-enhancements[m
+* [32mmain[m
+  security/hardening-v1[m
+  updates/post-cloudflare-improvements[m
+  [31mremotes/origin/HEAD[m -> origin/main
+  [31mremotes/origin/chore/cloudflare-pages-api[m
+  [31mremotes/origin/chore/fix-pr-conv-handler-json[m
+  [31mremotes/origin/chore/msi-launch-app[m
+  [31mremotes/origin/chore/remove-pages-workflow[m
+  [31mremotes/origin/chore/rename-boxdbuddy[m
+  [31mremotes/origin/chore/scripts-tests-cleanup-54[m
+  [31mremotes/origin/cloudflare-web-app[m
+  [31mremotes/origin/cloudflare-web-complete[m
+  [31mremotes/origin/copilot/fix-9020de81-6ddb-47c0-b4c2-84ee42929138[m
+  [31mremotes/origin/copilot/fix-ad53f698-977d-4657-951e-4cd9643ff0f1[m
+  [31mremotes/origin/copilot/fix-afaa1407-d81e-424b-a624-d4e3819fc4b5[m
+  [31mremotes/origin/copilot/fix-c3c6b78b-3adf-4d37-b6bf-08262d1e0f78[m
+  [31mremotes/origin/dead-code-cleanup-release-prep[m
+  [31mremotes/origin/fix/cloudflare-vite-base-path[m
+  [31mremotes/origin/fix/pages-setup-configure[m
+  [31mremotes/origin/improvements/security-and-quality-enhancements[m
+  [31mremotes/origin/main[m
+  [31mremotes/origin/security/hardening-v1[m
+  [31mremotes/origin/updates/post-cloudflare-improvements[m
