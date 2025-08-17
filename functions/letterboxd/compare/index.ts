@@ -42,6 +42,27 @@ interface Movie {
   friendList: string[];
 }
 
+// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+// Safe HTML entity decoding function to prevent double-escaping issues
+function decodeHTMLEntities(text: string): string {
+  // Use a more robust approach that handles nested encoding properly
+  const entityMap: Record<string, string> = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#039;": "'",
+    "&#x27;": "'",
+    "&#x2F;": "/",
+    "&#x60;": "`",
+    "&#x3D;": "=",
+  };
+
+  return text.replace(/&[#\w]+;/g, (entity) => {
+    return entityMap[entity] || entity;
+  });
+}
+
 // Enhanced Letterboxd scraper with pagination
 async function scrapeLetterboxdWatchlist(
   username: string
@@ -218,13 +239,9 @@ async function enhanceWithTMDBData(
 
   for (const movie of movies) {
     try {
-      // Decode HTML entities in title for better matching
-      const decodedTitle = movie.title
-        .replace(/&#039;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">");
+      // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+      // Decode HTML entities using a more robust approach to prevent double-escaping
+      const decodedTitle = decodeHTMLEntities(movie.title);
 
       // Extract a cleaner title from the Letterboxd slug if available
       let searchTitle = decodedTitle;

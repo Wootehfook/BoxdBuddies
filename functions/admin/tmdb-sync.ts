@@ -75,6 +75,12 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   switch (action) {
     case "sync_popular":
       return syncPopularMovies(env);
+    case "sync_top_rated":
+      return syncTopRatedMovies(env);
+    case "sync_recent":
+      return syncRecentMovies(env);
+    case "sync_comprehensive":
+      return syncComprehensive(env);
     case "sync_movie":
       return syncSingleMovie(env, params?.movieId || 0);
     case "sync_delta":
@@ -87,17 +93,166 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 async function syncPopularMovies(env: Env) {
   const pages = 50; // Sync top 1000 movies (20 per page)
   let totalSynced = 0;
+  let apiCallCount = 0;
+  const startTime = Date.now();
+
+  // Check if we've synced recently to avoid unnecessary load
+  const lastSync = await env.MOVIES_DB.prepare(
+    "SELECT value FROM sync_metadata WHERE key = ?"
+  )
+    .bind("last_popular_sync")
+    .first();
+
+  const lastSyncTime = lastSync?.value
+    ? new Date(lastSync.value as string)
+    : null;
+  const hoursSinceLastSync = lastSyncTime
+    ? (Date.now() - lastSyncTime.getTime()) / (1000 * 60 * 60)
+    : 999;
+
+  // Only sync if it's been more than 24 hours
+  if (hoursSinceLastSync < 24) {
+    return Response.json({
+      success: true,
+      message: "Sync skipped - last sync was less than 24 hours ago",
+      lastSync: lastSyncTime,
+      hoursSince: Math.round(hoursSinceLastSync * 100) / 100,
+    });
+  }
 
   for (let page = 1; page <= pages; page++) {
     const response = await fetch(
       `https://api.themoviedb.org/3/movie/popular?page=${page}&api_key=${env.TMDB_API_KEY}`,
       {
         headers: {
-          "User-Agent": "BoxdBuddy/1.1.0",
+          "User-Agent":
+            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev; respectful-bot)",
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
       }
     );
+
+    apiCallCount++;
+
+    // Handle rate limiting gracefully
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 10000;
+      console.log(`Rate limited, waiting ${waitTime}ms before retry`);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      continue; // Retry this page
+    }
+
+    if (!response.ok) {
+      console.log(`API error for page ${page}: ${response.status}`);
+      continue;
+    }
+
+    const data = (await response.json()) as { results: TMDBMovie[] };
+    const movies = data.results || [];
+
+    for (const movie of movies) {
+      await upsertMovie(env.MOVIES_DB, movie);
+      totalSynced++;
+    }
+
+    // Respectful rate limiting: 3.5 requests per second (well under 4/sec limit)
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Progress logging every 10 pages
+    if (page % 10 === 0) {
+      const elapsed = (Date.now() - startTime) / 1000;
+      console.log(
+        `Progress: ${page}/${pages} pages, ${totalSynced} movies, ${Math.round(elapsed)}s elapsed`
+      );
+    }
+  }
+
+  const totalTime = (Date.now() - startTime) / 1000;
+  console.log(
+    `Sync completed: ${totalSynced} movies, ${apiCallCount} API calls, ${Math.round(totalTime)}s total`
+  );
+
+  await env.MOVIES_DB.prepare(
+    "INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)"
+  )
+    .bind("last_popular_sync", new Date().toISOString())
+    .run();
+
+  return Response.json({
+    success: true,
+    synced: totalSynced,
+    apiCalls: apiCallCount,
+    duration: Math.round(totalTime),
+    ratePerSecond: Math.round((apiCallCount / totalTime) * 100) / 100,
+  });
+}
+
+async function syncTopRatedMovies(env: Env) {
+  return syncMovieCategory(env, "top_rated", "last_top_rated_sync", 25); // Top 500 rated movies
+}
+
+async function syncRecentMovies(env: Env) {
+  return syncMovieCategory(env, "now_playing", "last_recent_sync", 10); // Current movies
+}
+
+async function syncMovieCategory(
+  env: Env,
+  category: string,
+  syncKey: string,
+  maxPages: number
+) {
+  let totalSynced = 0;
+  let apiCallCount = 0;
+  const startTime = Date.now();
+
+  // Check if we've synced this category recently
+  const lastSync = await env.MOVIES_DB.prepare(
+    "SELECT value FROM sync_metadata WHERE key = ?"
+  )
+    .bind(syncKey)
+    .first();
+
+  const lastSyncTime = lastSync?.value
+    ? new Date(lastSync.value as string)
+    : null;
+  const hoursSinceLastSync = lastSyncTime
+    ? (Date.now() - lastSyncTime.getTime()) / (1000 * 60 * 60)
+    : 999;
+
+  // Only sync if it's been more than 12 hours for supplementary categories
+  if (hoursSinceLastSync < 12) {
+    return Response.json({
+      success: true,
+      message: `${category} sync skipped - last sync was less than 12 hours ago`,
+      category,
+      lastSync: lastSyncTime,
+      hoursSince: Math.round(hoursSinceLastSync * 100) / 100,
+    });
+  }
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await fetch(
+      `https://api.themoviedb.org/3/movie/${category}?page=${page}&api_key=${env.TMDB_API_KEY}`,
+      {
+        headers: {
+          "User-Agent":
+            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev; respectful-bot)",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+
+    apiCallCount++;
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 10000;
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      continue;
+    }
 
     if (!response.ok) continue;
 
@@ -109,17 +264,49 @@ async function syncPopularMovies(env: Env) {
       totalSynced++;
     }
 
-    // Rate limiting
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Respectful rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 350));
   }
 
   await env.MOVIES_DB.prepare(
     "INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)"
   )
-    .bind("last_popular_sync", new Date().toISOString())
+    .bind(syncKey, new Date().toISOString())
     .run();
 
-  return Response.json({ success: true, synced: totalSynced });
+  const totalTime = (Date.now() - startTime) / 1000;
+  return Response.json({
+    success: true,
+    category,
+    synced: totalSynced,
+    apiCalls: apiCallCount,
+    duration: Math.round(totalTime),
+  });
+}
+
+async function syncComprehensive(env: Env) {
+  const results = [];
+
+  // Sync popular movies first
+  results.push(await syncPopularMovies(env));
+
+  // Wait between major operations
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // Sync top rated movies
+  results.push(await syncTopRatedMovies(env));
+
+  // Wait between major operations
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // Sync recent movies
+  results.push(await syncRecentMovies(env));
+
+  return Response.json({
+    success: true,
+    comprehensive: true,
+    message: "Comprehensive sync completed across multiple categories",
+  });
 }
 
 async function upsertMovie(db: D1Database, movie: TMDBMovie) {

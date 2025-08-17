@@ -17,10 +17,19 @@
  */
 
 import { useState, useEffect } from "react";
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 import "./App.css";
 
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+// API Configuration Constants
+const API_ENDPOINTS = {
+  LETTERBOXD_FRIENDS: "/letterboxd/friends",
+  LETTERBOXD_WATCHLIST_COUNT: "/letterboxd/watchlist-count",
+  LETTERBOXD_COMPARE: "/letterboxd/compare",
+  LETTERBOXD_AVATAR_PROXY: "/letterboxd/avatar-proxy",
+} as const;
+
+// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 // Generate consistent colors for user display throughout the app
 function getUserColors(username: string) {
   const colors = [
@@ -66,11 +75,6 @@ function getUserColors(username: string) {
   };
 }
 
-// Legacy function for backwards compatibility (avatars)
-function getAvatarColor(username: string): string {
-  return getUserColors(username).avatarColor;
-}
-
 // AI Generated: GitHub Copilot - 2025-08-16
 // FriendAvatar component with CORS proxy support
 function FriendAvatar({ friend }: { friend: Friend }) {
@@ -80,10 +84,25 @@ function FriendAvatar({ friend }: { friend: Friend }) {
     ? friend.displayName.charAt(0).toUpperCase()
     : friend.username.charAt(0).toUpperCase();
 
+  // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+  // Secure URL validation for Letterboxd images to prevent domain spoofing
+  const isValidLetterboxdUrl = (url: string): boolean => {
+    try {
+      const parsedUrl = new window.URL(url);
+      // Ensure the hostname ends with .ltrbxd.com (not just contains it)
+      return (
+        parsedUrl.hostname.endsWith(".ltrbxd.com") ||
+        parsedUrl.hostname === "ltrbxd.com"
+      );
+    } catch {
+      return false;
+    }
+  };
+
   // Use proxy for Letterboxd images to bypass CORS
   const imageUrl =
-    friend.profileImageUrl && friend.profileImageUrl.includes("ltrbxd.com")
-      ? `/letterboxd/avatar-proxy?url=${encodeURIComponent(friend.profileImageUrl)}`
+    friend.profileImageUrl && isValidLetterboxdUrl(friend.profileImageUrl)
+      ? `${API_ENDPOINTS.LETTERBOXD_AVATAR_PROXY}?url=${encodeURIComponent(friend.profileImageUrl)}`
       : friend.profileImageUrl;
 
   const handleImageError = () => {
@@ -106,7 +125,9 @@ function FriendAvatar({ friend }: { friend: Friend }) {
       ) : (
         <div
           className="avatar-initials"
-          style={{ backgroundColor: getAvatarColor(friend.username) }}
+          style={{
+            backgroundColor: getUserColors(friend.username).avatarColor,
+          }}
         >
           {initials}
         </div>
@@ -168,11 +189,6 @@ interface EnhancementProgress {
 
 type PageType = "setup" | "friend-selection" | "results";
 
-// Generate consistent colors for friend badges (unified with avatar colors)
-const generateFriendColor = (username: string) => {
-  return getUserColors(username);
-};
-
 function App() {
   const [page, setPage] = useState<PageType>("setup");
   const [username, setUsername] = useState("");
@@ -223,16 +239,18 @@ function App() {
     setError(null);
 
     try {
-      // Start progress simulation for friends loading
+      // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+      // Start progress simulation for friends loading with deterministic increments
       const progressInterval = setInterval(() => {
         setFriendsLoadingProgress((prev) => {
-          const increment = Math.random() * 15 + 5; // 5-20% increments
+          // Use deterministic progress increments instead of random for better UX
+          const increment = 8 + prev / 10; // Gradual slowdown as we approach completion
           return Math.min(prev + increment, 95); // Cap at 95% until actual completion
         });
       }, 800);
 
       // Use the enhanced friends endpoint with caching and profile pictures
-      const response = await window.fetch("/letterboxd/friends", {
+      const response = await window.fetch(API_ENDPOINTS.LETTERBOXD_FRIENDS, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -286,16 +304,19 @@ function App() {
       setIsLoadingWatchlistCounts(true);
       const usernames = friendsData.map((f) => f.username);
 
-      const response = await window.fetch("/letterboxd/watchlist-count", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          usernames,
-          forceRefresh: false, // Use cache for better performance, profile page method is accurate anyway
-        }),
-      });
+      const response = await window.fetch(
+        API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            usernames,
+            forceRefresh: false, // Use cache for better performance, profile page method is accurate anyway
+          }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -351,11 +372,13 @@ function App() {
       status: "Starting comparison...",
     });
 
-    // Simulate progress
+    // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+    // Deterministic progress simulation for better UX
     let progress = 0;
     const progressInterval = setInterval(() => {
       if (progress < 85) {
-        progress += Math.random() * 6 + 1;
+        // Use deterministic increment instead of random for smoother progress
+        progress += 3 + progress / 20; // Gradual slowdown
         setEnhancementProgress({
           completed: Math.round(progress),
           total: 100,
@@ -374,7 +397,7 @@ function App() {
     try {
       const friendUsernames = selectedFriends.map((f) => f.username);
 
-      const response = await window.fetch("/letterboxd/compare", {
+      const response = await window.fetch(API_ENDPOINTS.LETTERBOXD_COMPARE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -879,8 +902,7 @@ function ResultsPage({ movies, onBack }: ResultsPageProps) {
                         <div className="friend-list-expanded">
                           {movie.friendList.map(
                             (friendName: string, idx: number) => {
-                              const friendColors =
-                                generateFriendColor(friendName);
+                              const friendColors = getUserColors(friendName);
                               return (
                                 <span
                                   key={idx}

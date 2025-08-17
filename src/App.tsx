@@ -20,6 +20,7 @@ import React, { useState, useEffect, useCallback } from "react";
 // AI Generated: GitHub Copilot - 2025-08-12
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
+import axios from "axios";
 import "./App.css";
 import logger from "./utils/logger";
 import { calculateProgressPercent } from "./utils/progressUtils";
@@ -540,26 +541,36 @@ function App() {
       await backendCallWithTimeout(async () => {
         const friendUsernames = selectedFriends.map((f) => f.username);
         logger.debug(
-          "FRONTEND: Calling compare_watchlists with friends:",
+          "FRONTEND: Calling web API compare with friends:",
           friendUsernames
         );
 
-        logger.debug("FRONTEND: About to invoke compare_watchlists...");
-        const compareResult = await invoke<{ commonMovies: Movie[] }>(
-          "compare_watchlists",
+        logger.debug("FRONTEND: About to call web API...");
+
+        // Call the web API instead of Tauri command
+        const response = await axios.post(
+          "https://boxdbuddy.pages.dev/letterboxd/compare",
           {
-            mainUsername: username,
-            friendUsernames: friendUsernames,
-            tmdbApiKey: tmdbApiKey || null,
-            limitTo500: false,
+            username: username,
+            friends: friendUsernames,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
         );
-        logger.debug(
-          "FRONTEND: compare_watchlists returned result:",
-          compareResult
-        );
 
-        const results = compareResult.commonMovies;
+        if (response.status !== 200) {
+          throw new Error(
+            `API request failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const compareResult = response.data;
+        logger.debug("FRONTEND: web API returned result:", compareResult);
+
+        const results = compareResult.movies || [];
         logger.debug(
           "FRONTEND: extracted common movies:",
           results.length,

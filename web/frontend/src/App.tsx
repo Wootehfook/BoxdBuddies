@@ -21,10 +21,10 @@ import "./index.css";
 import logger from "./utils/logger";
 import { calculateProgressPercent } from "./utils/progressUtils";
 import {
-  mockBackendAPI,
+  realBackendAPI as backendAPI,
   type Movie,
   type Friend,
-} from "./services/mockBackend";
+} from "./services/realBackend";
 
 // AI Generated: GitHub Copilot - 2025-01-07
 
@@ -165,7 +165,7 @@ function App() {
     const checkExistingUser = async () => {
       try {
         logger.debug("FRONTEND: Checking for existing user preferences...");
-        const userPrefs = await mockBackendAPI.loadUserPreferences();
+        const userPrefs = await backendAPI.loadUserPreferences();
 
         if (userPrefs?.username) {
           logger.debug(
@@ -175,10 +175,10 @@ function App() {
 
           // Load friends list automatically with watchlist counts
           const friendsResult =
-            await mockBackendAPI.getFriendsWithWatchlistCounts();
+            await backendAPI.getFriendsWithWatchlistCounts();
           // Filter out the current user from the friends list
           const filteredFriends = friendsResult.filter(
-            (friend) => friend.username !== userPrefs.username
+            (friend: Friend) => friend.username !== userPrefs.username
           );
           setFriends(filteredFriends);
 
@@ -270,7 +270,7 @@ function App() {
       );
       await backendCallWithTimeout(async () => {
         logger.debug("FRONTEND: About to save user preferences");
-        await mockBackendAPI.saveUserPreferences({
+        await backendAPI.saveUserPreferences({
           username: username.trim(),
           alwaysOnTop: false,
         });
@@ -283,14 +283,14 @@ function App() {
       // Auto-fetch friends
       try {
         logger.debug("FRONTEND: About to fetch friends");
-        await mockBackendAPI.scrapeLetterboxdFriends(username.trim());
+        await backendAPI.scrapeLetterboxdFriends(username.trim());
 
         // After scraping, load friends with watchlist counts
         const friendsWithCounts =
-          await mockBackendAPI.getFriendsWithWatchlistCounts();
+          await backendAPI.getFriendsWithWatchlistCounts();
         // Filter out the current user from the friends list
         const filteredFriends = friendsWithCounts.filter(
-          (friend) => friend.username !== username.trim()
+          (friend: Friend) => friend.username !== username.trim()
         );
         setFriends(filteredFriends);
         setSetupProgress((prev) => ({ ...prev, friendsLoaded: true }));
@@ -327,11 +327,11 @@ function App() {
 
     try {
       await backendCallWithTimeout(async () => {
-        await mockBackendAPI.scrapeLetterboxdFriends(username.trim());
+        await backendAPI.scrapeLetterboxdFriends(username.trim());
 
         // After scraping, load friends with watchlist counts
         const friendsWithCounts =
-          await mockBackendAPI.getFriendsWithWatchlistCounts();
+          await backendAPI.getFriendsWithWatchlistCounts();
         // Filter out the current user from the friends list
         const filteredFriends = friendsWithCounts.filter(
           (friend) => friend.username !== username.trim()
@@ -421,7 +421,7 @@ function App() {
         );
 
         logger.debug("FRONTEND: About to call compareWatchlists...");
-        const compareResult = await mockBackendAPI.compareWatchlists({
+        const compareResult = await backendAPI.compareWatchlists({
           mainUsername: username,
           friendUsernames: friendUsernames,
           limitTo500: false,

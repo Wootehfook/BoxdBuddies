@@ -30,16 +30,18 @@ interface Env {
   TMDB_API_KEY: string;
 }
 
-interface MovieSearchResult {
-  id: number;
-  title: string;
-  year: number | null;
-  poster_path: string | null;
-  overview: string | null;
-  vote_average: number;
-  runtime: number | null;
-  director?: string;
-}
+// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+// Temporarily unused interface - commenting out to fix lint warnings
+// interface MovieSearchResult {
+//   id: number;
+//   title: string;
+//   year: number | null;
+//   poster_path: string | null;
+//   overview: string | null;
+//   vote_average: number;
+//   runtime: number | null;
+//   director?: string;
+// }
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
@@ -53,6 +55,17 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 
   // Try local database first
   try {
+    // First get total count of matching records
+    const countResult = await env.MOVIES_DB.prepare(
+      `SELECT COUNT(*) as total FROM tmdb_movies 
+       WHERE title LIKE ? OR original_title LIKE ?`
+    )
+      .bind(`%${q}%`, `%${q}%`)
+      .all();
+
+    const totalRecords = (countResult.results?.[0] as any)?.total || 0;
+
+    // Then get the paginated results
     const localResults = await env.MOVIES_DB.prepare(
       `SELECT * FROM tmdb_movies 
        WHERE title LIKE ? OR original_title LIKE ?
@@ -77,7 +90,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       return Response.json(
         {
           movies,
-          totalPages: Math.ceil(movies.length / 20),
+          totalPages: Math.ceil(totalRecords / 20),
+          totalRecords,
         },
         {
           headers: { "Cache-Control": "public, max-age=300" },

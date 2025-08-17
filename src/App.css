@@ -107,7 +107,9 @@ body {
   height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  margin-left: -10.875rem; /* Shift header additional 30px left for perfect alignment */
+  /* AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z */
+  /* Use transform instead of margin for better layout stability */
+  transform: translateX(-10.875rem);
 }
 
 .app-header p {

@@ -2,8 +2,8 @@
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
+import App from "./App-web.tsx";
+import "./styles.css";
 import { WebCacheService } from "./services/webCacheService.ts";
 
 // Clean up expired cache entries on startup

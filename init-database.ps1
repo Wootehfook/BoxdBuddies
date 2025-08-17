@@ -1,11 +1,14 @@
+# AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 # PowerShell script to initialize TMDB database
-# Replace YOUR_ADMIN_SECRET with the actual secret value you set
+# Securely prompt for admin secret at runtime
 
-$adminSecret = "23wesdxc@#WESDXC"  # Replace this with actual secret
+# Prompt for admin secret securely
+$adminSecret = Read-Host "Enter your admin secret" -AsSecureString
+$adminSecretPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminSecret))
 $url = "https://b571b1b6.boxdbuddy.pages.dev/admin/tmdb-sync"
 
 $headers = @{
-    "Authorization" = "Bearer $adminSecret"
+    "Authorization" = "Bearer $adminSecretPlain"
     "Content-Type"  = "application/json"
 }
 
