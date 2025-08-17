@@ -107,7 +107,7 @@ body {
   height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  margin-left: -4rem; /* Offset Buddio to the left so text centers with subtitle */
+  margin-left: -10.875rem; /* Shift header additional 30px left for perfect alignment */
 }
 
 .app-header p {
