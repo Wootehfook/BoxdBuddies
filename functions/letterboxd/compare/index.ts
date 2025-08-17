@@ -382,10 +382,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       };
     });
 
-    // Sort by vote average (rating)
-    moviesWithFilteredFriends.sort(
-      (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
-    );
+    // Sort by friend count (descending) first, then by rating (descending)
+    moviesWithFilteredFriends.sort((a, b) => {
+      // Primary sort: number of common friends (more friends = higher priority)
+      const friendCountDiff = b.friendCount - a.friendCount;
+      if (friendCountDiff !== 0) {
+        return friendCountDiff;
+      }
+
+      // Secondary sort: TMDB rating (higher rating = higher priority)
+      return (b.vote_average || 0) - (a.vote_average || 0);
+    });
 
     return Response.json(
       {
