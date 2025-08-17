@@ -1943,7 +1943,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 750px; /* Increased height for better visual proportions */
+  height: 700px; /* Reduced by 50px to compress movie details section */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1995,7 +1995,7 @@ body {
 
 /* Movie Poster Section - Increased height for better poster visibility */
 .movie-poster-section {
-  height: 70%; /* Increased to make poster section twice as prominent */
+  height: 70%; /* Keep poster section the same */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -2045,7 +2045,7 @@ body {
   padding: 0.5rem;
   border-radius: 0 0 12px 12px;
   border-top: 1px solid #2c3440;
-  height: 30%; /* Reduced to accommodate larger poster section */
+  height: 30%; /* Reduced info section height while maintaining friends section */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
