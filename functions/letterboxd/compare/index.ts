@@ -317,16 +317,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Support both formats: new format {usernames: []} and legacy format {username: "", friends: []}
     let usernames: string[] = [];
-    let mainUser: string = "";
 
     if (body.usernames && Array.isArray(body.usernames)) {
       // New format: {usernames: ["user1", "user2", "user3"]}
       usernames = body.usernames;
-      mainUser = usernames[0] || ""; // First user is the main user
     } else if (body.username && body.friends && Array.isArray(body.friends)) {
       // Legacy format: {username: "user1", friends: ["user2", "user3"]}
       usernames = [body.username, ...body.friends];
-      mainUser = body.username;
     }
 
     // Clean and validate usernames
@@ -368,12 +365,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
 
-    // Filter out the main user from friend lists and remove duplicates
+    // Remove duplicates from friend lists but keep all users including main user
     const moviesWithFilteredFriends = enhancedMovies.map((movie) => {
-      // Use Set to remove duplicates, then filter out main user
-      const uniqueFriends = Array.from(new Set(movie.friendList)).filter(
-        (friend) => friend !== mainUser
-      );
+      // Use Set to remove duplicates, but keep main user if they have the movie
+      const uniqueFriends = Array.from(new Set(movie.friendList));
 
       return {
         ...movie,
