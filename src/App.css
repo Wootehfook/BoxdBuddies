@@ -103,12 +103,17 @@ body {
   position: relative;
 }
 
+/* Move the app title text closer to Buddio (120px closer) */
+.app-title-text {
+  transform: translateX(-7.5rem);
+}
+
 .buddio-logo {
   height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   /* AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z */
-  /* Use transform instead of margin for better layout stability */
+  /* Keep Buddio in original position, adjust text positioning instead */
   transform: translateX(-10.875rem);
 }
 

@@ -498,7 +498,7 @@ function App() {
           <div className="header-title">
             <h1>
               <img src="/buddio.svg" alt="Buddio" className="buddio-logo" />
-              BoxdBuddy
+              <span className="app-title-text">BoxdBuddy</span>
             </h1>
             <p>Find movies all your friends want to watch</p>
           </div>
