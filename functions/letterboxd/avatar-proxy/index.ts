@@ -30,27 +30,62 @@ export async function onRequest(context: {
   const url = new URL(context.request.url);
   const imageUrl = url.searchParams.get("url");
 
-  // AI Generated: GitHub Copilot - 2025-08-16T22:30:00Z
-  // Secure URL validation to prevent domain spoofing attacks
+  // AI Generated: GitHub Copilot - 2025-08-17T04:20:00Z
+  // Enhanced secure URL validation to prevent domain spoofing and bypass attacks
   const isValidLetterboxdUrl = (urlString: string): boolean => {
     try {
       const parsedUrl = new URL(urlString);
-      // Ensure the hostname ends with .ltrbxd.com or is exactly ltrbxd.com
-      // This prevents attacks like "evil.com?ltrbxd.com" or "ltrbxd.com.evil.com"
-      return (
-        parsedUrl.hostname.endsWith(".ltrbxd.com") ||
-        parsedUrl.hostname === "ltrbxd.com"
-      );
+
+      // 1. Only allow https protocol
+      if (parsedUrl.protocol !== "https:") {
+        return false;
+      }
+
+      // 2. Reject percent-encoded characters in hostname or path (e.g., %2e, %2f)
+      //    This helps prevent bypasses using encoded dots or slashes
+      const rawHostname = parsedUrl.hostname;
+      const rawPathname = parsedUrl.pathname;
+      if (
+        /%[0-9a-f]{2}/i.test(rawHostname) ||
+        /%[0-9a-f]{2}/i.test(rawPathname)
+      ) {
+        return false;
+      }
+
+      // 3. Hostname must be exactly ltrbxd.com or end with .ltrbxd.com (case-insensitive)
+      const hostname = rawHostname.toLowerCase();
+      if (!(hostname === "ltrbxd.com" || hostname.endsWith(".ltrbxd.com"))) {
+        return false;
+      }
+
+      // 4. Path validation: only allow image file extensions, and block suspicious patterns
+      //    Allow: .jpg, .jpeg, .png, .webp, .gif
+      if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(rawPathname)) {
+        return false;
+      }
+      // Block path traversal or encoded slashes
+      if (
+        rawPathname.includes("..") ||
+        rawPathname.includes("%2e") ||
+        rawPathname.includes("%2f")
+      ) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
   };
 
   if (!imageUrl || !isValidLetterboxdUrl(imageUrl)) {
-    return new Response("Invalid image URL - must be from Letterboxd domain", {
-      status: 400,
-      headers: corsHeaders,
-    });
+    return new Response(
+      "Invalid image URL - must be from Letterboxd domain with valid image extension",
+      {
+        status: 400,
+        headers: corsHeaders,
+      }
+    );
   }
 
   try {
