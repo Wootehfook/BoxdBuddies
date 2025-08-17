@@ -2,8 +2,23 @@ name = "boxdbuddies-web"
 main = "web/worker/src/index.ts"
 compatibility_date = "2024-01-15"
 
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "boxdbuddies-db"
+database_id = "your-d1-database-id"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
 [env.production]
 vars = { ENVIRONMENT = "production" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "boxdbuddies-db-prod"
+database_id = "your-production-d1-database-id"
 
 # Cloudflare Pages configuration
 # Build command: cd web/frontend && npm install && npm run build
@@ -19,3 +34,5 @@ vars = { ENVIRONMENT = "production" }
 #
 # Environment variables for production:
 # NODE_ENV = production
+# VITE_API_URL = https://boxdbuddy.pages.dev
+# VITE_USE_WORKER_API = true

@@ -1885,7 +1885,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 720px;
+  height: 700px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1933,9 +1933,9 @@ body {
     0 0 0 1px rgba(255, 128, 0, 0.5);
 }
 
-/* Movie Poster Section - 75% of card space */
+/* Movie Poster Section - 70% of card space (490px of 700px) */
 .movie-poster-section {
-  height: 75%; /* 75% of card space for poster */
+  height: 70%; /* 70% of card space for poster (490px) */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1985,7 +1985,7 @@ body {
   padding: 0.75rem;
   border-radius: 0 0 12px 12px;
   border-top: 1px solid #2c3440;
-  height: 25%; /* 25% of card space for info */
+  height: 30%; /* 30% of card space for info (210px) */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -2054,9 +2054,15 @@ body {
   border-top: 1px solid #2c3440;
 }
 
-/* Movie Friend Count Visual */
+/* Movie Friend Count Visual - Enhanced for better visibility */
 .movie-friends {
-  margin-top: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 128, 0, 0.2);
+  background: rgba(26, 31, 36, 0.5);
+  margin: 0.5rem -0.75rem -0.75rem -0.75rem;
+  padding: 0.75rem;
+  border-radius: 0 0 12px 12px;
 }
 
 .friend-count-visual {
@@ -2075,17 +2081,27 @@ body {
 
 .friend-list-expanded {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.375rem;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .friend-tag {
-  font-size: 0.6rem;
-  padding: 0.125rem 0.25rem;
-  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
   border: 1px solid;
   white-space: nowrap;
   line-height: 1;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.friend-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .friend-count-visual.friend-count-clickable {
