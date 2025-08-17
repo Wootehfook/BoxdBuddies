@@ -225,16 +225,28 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+      
       - name: 🔧 Apply Automatic Fixes
         uses: actions/github-script@v7
+        env:
+          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const today = new Date().toISOString().slice(0, 10);
 
-            // Safely hydrate JSON from workflow outputs
-            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
+            // Use environment variable to safely get the JSON data
+            let autoFixable = [];
+            try {
+              const rawOutput = process.env.AUTO_FIXABLE_JSON || '[]';
+              autoFixable = JSON.parse(rawOutput);
+              console.log(`Parsed ${autoFixable.length} auto-fixable items`);
+            } catch (error) {
+              console.log('Error parsing auto-fixable output, using empty array:', error.message);
+              autoFixable = [];
+            }
+
             let filesModified = [];
 
             for (const fix of autoFixable) {
@@ -331,12 +343,33 @@ jobs:
     steps:
       - name: 📊 Comment on PR
         uses: actions/github-script@v7
+        env:
+          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
+          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
         with:
           script: |
             // GitHub Script provides: github, context, core
-            // Safely hydrate arrays from workflow outputs
-            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
-            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
+            // Use environment variables to safely get the JSON data
+            let autoFixable = [];
+            let manualReview = [];
+
+            try {
+              const rawAutoFixable = process.env.AUTO_FIXABLE_JSON || '[]';
+              autoFixable = JSON.parse(rawAutoFixable);
+              console.log(`Parsed ${autoFixable.length} auto-fixable items`);
+            } catch (error) {
+              console.log('Error parsing auto-fixable output:', error.message);
+              autoFixable = [];
+            }
+
+            try {
+              const rawManualReview = process.env.MANUAL_REVIEW_JSON || '[]';
+              manualReview = JSON.parse(rawManualReview);
+              console.log(`Parsed ${manualReview.length} manual review items`);
+            } catch (error) {
+              console.log('Error parsing manual-review output:', error.message);
+              manualReview = [];
+            }
 
             // Only comment on PR events, not scheduled runs
             if (context.eventName.startsWith('pull_request') && context.payload.pull_request) {
@@ -376,9 +409,20 @@ jobs:
 
       - name: 🚨 Set Check Status
         uses: actions/github-script@v7
+        env:
+          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
         with:
           script: |
-            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
+            // Use environment variable to safely get the JSON data
+            let manualReview = [];
+            try {
+              const rawManualReview = process.env.MANUAL_REVIEW_JSON || '[]';
+              manualReview = JSON.parse(rawManualReview);
+              console.log(`Parsed ${manualReview.length} manual review items`);
+            } catch (error) {
+              console.log('Error parsing manual-review output:', error.message);
+              manualReview = [];
+            }
 
             // Do not fail the job; emit a warning to keep this check non-blocking
             if (manualReview.length > 0) {
