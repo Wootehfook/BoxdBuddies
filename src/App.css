@@ -102,6 +102,12 @@ body {
   gap: 0.5rem;
 }
 
+.buddio-logo {
+  height: 2.5rem;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 .app-header p {
   color: #9ab;
   font-size: 1.1rem;
@@ -1418,6 +1424,13 @@ body {
   font-size: 4rem;
   margin-bottom: 20px;
   opacity: 0.6;
+}
+
+.buddio-empty-state {
+  height: 4rem;
+  width: auto;
+  opacity: 0.6;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .empty-state h3 {

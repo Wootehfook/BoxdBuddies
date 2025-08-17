@@ -473,7 +473,10 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="header-title">
-            <h1>🎬 BoxdBuddy</h1>
+            <h1>
+              <img src="/buddio.svg" alt="Buddio" className="buddio-logo" />
+              BoxdBuddy
+            </h1>
             <p>Find movies all your friends want to watch</p>
           </div>
         </div>
@@ -776,7 +779,13 @@ function ResultsPage({ movies, onBack }: ResultsPageProps) {
       <div className="page-content">
         {movies.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">🎬</div>
+            <div className="empty-state-icon">
+              <img
+                src="/buddio.svg"
+                alt="Buddio"
+                className="buddio-empty-state"
+              />
+            </div>
             <h3>No common movies found</h3>
             <p>
               Try selecting different friends or check if watchlists are public

@@ -6,7 +6,11 @@
 [![Rust](https://img.shields.io/badge/Rust-Latest-red)](https://www.rust-lang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com/)
 
-> **Find movies all your friends want to watch - Available as Desktop App & Web App**
+> # BoxdBuddy 🤖
+
+![Buddio - BoxdBuddy Mascot](public/buddio.svg "Buddio")
+
+**Find movies all your friends want to watch**
 
 BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. Now available both as a native desktop application and a modern web application powered by Cloudflare.
 
