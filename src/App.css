@@ -100,12 +100,14 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  position: relative;
 }
 
 .buddio-logo {
   height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  margin-left: -4rem; /* Offset Buddio to the left so text centers with subtitle */
 }
 
 .app-header p {
