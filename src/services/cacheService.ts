@@ -1,203 +1,184 @@
-/*
- * BoxdBuddy - Movie Watchlist Comparison Tool
- * Copyright (C) 2025 Wootehfook
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+// AI Generated: GitHub Copilot - 2025-08-16
 
-// Cache Service for BoxdBuddy
-// Handles local database caching operations
-
-// AI Generated: GitHub Copilot - 2025-08-12
-import { invoke } from "@tauri-apps/api/core";
-import { logger } from "../utils/logger";
-
-export interface CachedWatchlistMovie {
-  id?: number;
-  friend_username: string;
-  movie_title: string;
-  movie_year?: number;
-  letterboxd_slug?: string;
-  tmdb_id?: number;
-  date_added?: string;
-  last_updated: string;
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  version: string;
 }
 
-export interface FriendSyncStatus {
-  friend_username: string;
-  last_watchlist_sync?: string;
-  watchlist_count: number;
-  sync_status: string;
-  last_error?: string;
+interface UserCache {
+  username?: string;
+  friends?: CacheEntry<string[]>;
+  watchlists?: Record<string, CacheEntry<MovieData[]>>;
+  comparisons?: Record<string, CacheEntry<ComparisonResult>>;
 }
 
-export interface WatchlistMovie {
+interface MovieData {
+  letterboxd_slug: string;
   title: string;
-  year?: number;
-  letterboxd_slug?: string;
-  poster_url?: string;
+  year: number | null;
+  letterboxd_url: string;
+  tmdb_data?: {
+    id: number;
+    poster_path: string | null;
+    vote_average: number;
+    overview: string;
+    director: string | null;
+    runtime: number | null;
+  };
 }
 
-class CacheService {
-  /**
-   * Get cached watchlist for a friend
-   */
-  async getCachedWatchlist(
-    friendUsername: string
-  ): Promise<CachedWatchlistMovie[]> {
+interface ComparisonResult {
+  common_movies: MovieData[];
+  unique_to: Record<string, MovieData[]>;
+  timestamp: number;
+}
+
+export class WebCacheService {
+  private static CACHE_KEY = "boxdbuddy_cache";
+  private static CACHE_VERSION = "1.0.0";
+
+  static getCache(): UserCache {
     try {
-      return await invoke<CachedWatchlistMovie[]>("get_cached_watchlist", {
-        friendUsername,
-      });
-    } catch (error) {
-      logger.error("Failed to get cached watchlist:", error);
-      throw error;
+      const cached = window.localStorage.getItem(this.CACHE_KEY);
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
     }
   }
 
-  /**
-   * Save watchlist to cache
-   */
-  async saveWatchlistToCache(
-    friendUsername: string,
-    movies: WatchlistMovie[]
-  ): Promise<void> {
+  static saveCache(cache: UserCache): void {
     try {
-      await invoke("save_watchlist_to_cache", {
-        friendUsername,
-        movies,
-      });
-    } catch (error) {
-      logger.error("Failed to save watchlist to cache:", error);
-      throw error;
+      window.localStorage.setItem(this.CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("Failed to save cache:", e);
     }
   }
 
-  /**
-   * Get sync status for a friend
-   */
-  async getFriendSyncStatus(
-    friendUsername: string
-  ): Promise<FriendSyncStatus | null> {
-    try {
-      return await invoke<FriendSyncStatus | null>("get_friend_sync_status", {
-        friendUsername,
-      });
-    } catch (error) {
-      logger.error("Failed to get friend sync status:", error);
-      throw error;
+  static getUsername(): string | null {
+    const cache = this.getCache();
+    return cache.username || null;
+  }
+
+  static setUsername(username: string): void {
+    const cache = this.getCache();
+    cache.username = username;
+    this.saveCache(cache);
+  }
+
+  static getFriends(_username: string): string[] | null {
+    const cache = this.getCache();
+    const entry = cache.friends;
+
+    if (!entry || entry.version !== this.CACHE_VERSION) {
+      return null;
     }
+
+    // Cache expires after 7 days
+    const isExpired = Date.now() - entry.timestamp > 7 * 24 * 60 * 60 * 1000;
+    return isExpired ? null : entry.data;
   }
 
-  /**
-   * Check if watchlist cache is fresh
-   */
-  async isWatchlistCacheFresh(
-    friendUsername: string,
-    maxAgeHours: number = 24
-  ): Promise<boolean> {
-    try {
-      return await invoke<boolean>("is_watchlist_cache_fresh", {
-        friendUsername,
-        maxAgeHours,
-      });
-    } catch (error) {
-      logger.error("Failed to check cache freshness:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Get cache status for multiple friends
-   */
-  async getFriendsCacheStatus(
-    friendUsernames: string[]
-  ): Promise<Record<string, FriendSyncStatus | null>> {
-    const statuses: Record<string, FriendSyncStatus | null> = {};
-
-    await Promise.all(
-      friendUsernames.map(async (username) => {
-        try {
-          statuses[username] = await this.getFriendSyncStatus(username);
-        } catch (error) {
-          logger.error(`Failed to get cache status for ${username}:`, error);
-          statuses[username] = null;
-        }
-      })
-    );
-
-    return statuses;
-  }
-
-  /**
-   * Get cache statistics
-   */
-  async getCacheStats(): Promise<{
-    totalCachedFriends: number;
-    totalCachedMovies: number;
-    oldestCacheDate?: string;
-    newestCacheDate?: string;
-  }> {
-    // This would need a new backend function to aggregate cache statistics
-    // For now, return a placeholder
-    return {
-      totalCachedFriends: 0,
-      totalCachedMovies: 0,
+  static setFriends(_username: string, friends: string[]): void {
+    const cache = this.getCache();
+    cache.friends = {
+      data: friends,
+      timestamp: Date.now(),
+      version: this.CACHE_VERSION,
     };
+    this.saveCache(cache);
   }
 
-  /**
-   * Format cache age for display
-   */
-  formatCacheAge(lastUpdated: string): string {
-    try {
-      const lastUpdate = new Date(lastUpdated);
-      const now = new Date();
-      const diffMs = now.getTime() - lastUpdate.getTime();
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffHours / 24);
+  static getWatchlist(username: string): MovieData[] | null {
+    const cache = this.getCache();
+    const entry = cache.watchlists?.[username];
 
-      if (diffHours < 1) {
-        return "Just now";
-      } else if (diffHours < 24) {
-        return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-      } else if (diffDays < 7) {
-        return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-      } else {
-        return lastUpdate.toLocaleDateString();
+    if (!entry || entry.version !== this.CACHE_VERSION) {
+      return null;
+    }
+
+    // Cache expires after 24 hours
+    const isExpired = Date.now() - entry.timestamp > 24 * 60 * 60 * 1000;
+    return isExpired ? null : entry.data;
+  }
+
+  static setWatchlist(username: string, movies: MovieData[]): void {
+    const cache = this.getCache();
+    if (!cache.watchlists) cache.watchlists = {};
+
+    cache.watchlists[username] = {
+      data: movies,
+      timestamp: Date.now(),
+      version: this.CACHE_VERSION,
+    };
+    this.saveCache(cache);
+  }
+
+  static shouldRefreshWatchlist(
+    username: string,
+    currentCount: number
+  ): boolean {
+    const cached = this.getWatchlist(username);
+    if (!cached) return true;
+
+    // Refresh if count changed
+    return cached.length !== currentCount;
+  }
+
+  static getComparison(usernames: string[]): ComparisonResult | null {
+    const key = usernames.sort().join(":");
+    const cache = this.getCache();
+    const entry = cache.comparisons?.[key];
+
+    if (!entry || entry.version !== this.CACHE_VERSION) {
+      return null;
+    }
+
+    // Cache expires after 24 hours
+    const isExpired = Date.now() - entry.timestamp > 24 * 60 * 60 * 1000;
+    return isExpired ? null : entry.data;
+  }
+
+  static setComparison(usernames: string[], result: ComparisonResult): void {
+    const key = usernames.sort().join(":");
+    const cache = this.getCache();
+    if (!cache.comparisons) cache.comparisons = {};
+
+    cache.comparisons[key] = {
+      data: result,
+      timestamp: Date.now(),
+      version: this.CACHE_VERSION,
+    };
+    this.saveCache(cache);
+  }
+
+  static clearCache(): void {
+    window.localStorage.removeItem(this.CACHE_KEY);
+  }
+
+  static clearExpiredEntries(): void {
+    const cache = this.getCache();
+    const now = Date.now();
+
+    // Clean expired watchlists
+    if (cache.watchlists) {
+      for (const [key, entry] of Object.entries(cache.watchlists)) {
+        if (now - entry.timestamp > 24 * 60 * 60 * 1000) {
+          delete cache.watchlists[key];
+        }
       }
-    } catch {
-      return "Unknown";
     }
-  }
 
-  /**
-   * Check if cache needs refresh (older than specified hours)
-   */
-  needsRefresh(lastUpdated: string, maxAgeHours: number = 24): boolean {
-    try {
-      const lastUpdate = new Date(lastUpdated);
-      const now = new Date();
-      const diffMs = now.getTime() - lastUpdate.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-
-      return diffHours > maxAgeHours;
-    } catch {
-      return true; // If we can't parse the date, assume refresh is needed
+    // Clean expired comparisons
+    if (cache.comparisons) {
+      for (const [key, entry] of Object.entries(cache.comparisons)) {
+        if (now - entry.timestamp > 24 * 60 * 60 * 1000) {
+          delete cache.comparisons[key];
+        }
+      }
     }
+
+    this.saveCache(cache);
   }
 }
-
-export const cacheService = new CacheService();
-export default cacheService;

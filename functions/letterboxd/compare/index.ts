@@ -77,25 +77,55 @@ interface Movie {
   friendList: string[];
 }
 
-// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-// Safe HTML entity decoding function to prevent double-escaping issues
+// AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
+// Enhanced HTML entity decoding function to prevent double-escaping issues
 function decodeHTMLEntities(text: string): string {
-  // Use a more robust approach that handles nested encoding properly
+  // Comprehensive entity map with numeric character references
   const entityMap: Record<string, string> = {
     "&amp;": "&",
     "&lt;": "<",
     "&gt;": ">",
     "&quot;": '"',
+    "&apos;": "'",
     "&#039;": "'",
     "&#x27;": "'",
     "&#x2F;": "/",
     "&#x60;": "`",
     "&#x3D;": "=",
+    "&nbsp;": " ",
+    "&copy;": "©",
+    "&reg;": "®",
+    "&trade;": "™",
+    "&hellip;": "…",
+    "&mdash;": "—",
+    "&ndash;": "–",
+    "&lsquo;": "'",
+    "&rsquo;": "'",
+    "&ldquo;": "\u201C",
+    "&rdquo;": "\u201D",
   };
 
-  return text.replace(/&[#\w]+;/g, (entity) => {
+  // First pass: decode named entities
+  let decoded = text.replace(/&[a-zA-Z][a-zA-Z0-9]*;/g, (entity) => {
     return entityMap[entity] || entity;
   });
+
+  // Second pass: decode numeric character references
+  decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => {
+    const codePoint = parseInt(hex, 16);
+    return codePoint > 0 && codePoint < 0x10ffff
+      ? String.fromCharCode(codePoint)
+      : match;
+  });
+
+  decoded = decoded.replace(/&#([0-9]+);/g, (match, decimal) => {
+    const codePoint = parseInt(decimal, 10);
+    return codePoint > 0 && codePoint < 0x10ffff
+      ? String.fromCharCode(codePoint)
+      : match;
+  });
+
+  return decoded;
 }
 
 // Enhanced Letterboxd scraper with pagination
@@ -439,9 +469,23 @@ async function enhanceWithTMDBData(
           `❌ No TMDB match found for "${movie.title}" (${movie.year}) [slug: ${movie.slug}]`
         );
 
+        // AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
+        // Enhanced fallback ID generation using deterministic hash
+        const generateFallbackId = (title: string, year: number): number => {
+          let hash = 0;
+          const str = `${title.toLowerCase()}-${year}`;
+          for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = (hash << 5) - hash + char;
+            hash = hash & hash; // Convert to 32-bit integer
+          }
+          // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
+          return Math.abs(hash % 100000) + 900000;
+        };
+
         // Fallback if not found in database
         enhancedMovies.push({
-          id: Math.floor(Math.random() * 1000000),
+          id: generateFallbackId(movie.title, movie.year),
           title: movie.title,
           year: movie.year,
           letterboxdSlug: movie.slug,
@@ -450,10 +494,24 @@ async function enhanceWithTMDBData(
         });
       }
     } catch (error) {
+      // AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
+      // Enhanced fallback ID generation using deterministic hash
+      const generateFallbackId = (title: string, year: number): number => {
+        let hash = 0;
+        const str = `${title.toLowerCase()}-${year}`;
+        for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = (hash << 5) - hash + char;
+          hash = hash & hash; // Convert to 32-bit integer
+        }
+        // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
+        return Math.abs(hash % 100000) + 900000;
+      };
+
       console.error("Error enhancing movie:", error);
       // Add basic movie data as fallback
       enhancedMovies.push({
-        id: Math.floor(Math.random() * 1000000),
+        id: generateFallbackId(movie.title, movie.year),
         title: movie.title,
         year: movie.year,
         letterboxdSlug: movie.slug,

@@ -2,11 +2,11 @@ name: CodeQL
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '20 1 * * 6'
+    - cron: "20 1 * * 6"
 
 permissions:
   contents: read
@@ -18,23 +18,27 @@ jobs:
     name: Analyze (CodeQL)
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'rust', 'javascript' ]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js (for JavaScript/TypeScript analysis)
-        if: matrix.language == 'javascript'
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
-      - name: Install JS deps (no scripts)
-        if: matrix.language == 'javascript'
+      - name: Check for Rust code
+        id: check-rust
+        run: |
+          if [ -d "src-tauri/src" ] && [ -f "src-tauri/Cargo.toml" ]; then
+            echo "rust_exists=true" >> $GITHUB_OUTPUT
+            echo "languages=javascript,rust" >> $GITHUB_OUTPUT
+          else
+            echo "rust_exists=false" >> $GITHUB_OUTPUT
+            echo "languages=javascript" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
         run: |
           npm ci --ignore-scripts
           # Also install Cloudflare specific dependencies if needed
@@ -45,34 +49,13 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.language == 'rust' && 'manual' || 'autobuild' }}
+          languages: ${{ steps.check-rust.outputs.languages }}
           config-file: ./.github/codeql/codeql-config.yml
-          # Include additional source directories for analysis
-          source-root: ${{ matrix.language == 'javascript' && '.' || 'src-tauri' }}
 
-      - name: Autobuild (non-Rust)
-        if: matrix.language != 'rust'
+      - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-
-      - name: Build Rust workspace (src-tauri)
-        if: matrix.language == 'rust'
-        working-directory: src-tauri
-        run: |
-          # Check if src-tauri directory exists and has Rust code
-          if [ ! -f "Cargo.toml" ]; then
-            echo "No Cargo.toml found in src-tauri, skipping Rust analysis"
-            exit 0
-          fi
-          
-          rustup toolchain install stable --profile minimal
-          rustup default stable
-          cargo fetch
-          
-          # Build with more permissive settings for analysis
-          cargo build --locked || cargo build || echo "Build failed but continuing with analysis"
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{ matrix.language }}"
+          category: "/language:javascript"

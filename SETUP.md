@@ -1,125 +1,132 @@
 # BoxdBuddies Development Setup
 
-## � Current Status: Production Ready
+## 🎯 Current Status: Production Web Application
 
-**BoxdBuddies is now fully functional and production-ready!** All core features have been implemented and thoroughly tested, including intelligent caching, TMDB integration, and robust error handling.
+**BoxdBuddies is now a fully functional web application!** All core features have been implemented and deployed, including intelligent caching, TMDB integration, and serverless Cloudflare backend.
 
-## �🎯 Quick Start Instructions
+## 🚀 Quick Start Instructions
 
-### Prerequisites Installation
+### Prerequisites
 
-Since Rust and Node.js are not currently installed, you'll need to install them first:
+All you need is Node.js for development:
 
 1. **Install Node.js**:
-   ```powershell
+
+   ```bash
    # Download and install Node.js from https://nodejs.org/
-   # Or use Chocolatey:
-   choco install nodejs
-   
-   # Or use winget:
-   winget install OpenJS.NodeJS
+   # Or use a package manager:
+   # Windows: choco install nodejs or winget install OpenJS.NodeJS
+   # macOS: brew install node
+   # Linux: Follow your distribution's package manager
    ```
 
-2. **Install Rust**:
-   ```powershell
-   # Download and install Rust
-   Invoke-WebRequest -Uri "https://win.rustup.rs/x86_64" -OutFile "rustup-init.exe"
-   .\rustup-init.exe
-   
-   # Restart your terminal or reload PATH
-   ```
-
-3. **Verify installations**:
-   ```powershell
+2. **Verify installation**:
+   ```bash
    node --version
    npm --version
-   rustc --version
-   cargo --version
    ```
 
-### Project Setup
+### Development Setup
 
-1. **Install dependencies**:
-   ```powershell
+1. **Clone the repository**:
+
+   ```bash
+   git clone https://github.com/Wootehfook/BoxdBuddies.git
+   cd BoxdBuddies
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
    npm install
    ```
 
-2. **Install Tauri CLI**:
-   ```powershell
-   npm install -g @tauri-apps/cli
+3. **Start the development server**:
+
+   ```bash
+   npm run dev
    ```
 
-3. **Run the development server**:
-   ```powershell
-   npm run tauri dev
-   ```
+4. **Access the application**:
+   - Development server: <http://localhost:5173>
 
-### VS Code Tasks Available
+### Available Scripts
 
-- **Ctrl+Shift+P** → "Tasks: Run Task" → Select:
-  - `tauri dev` - Start Tauri development (default build task)
-  - `tauri build` - Build for production
-  - `frontend dev` - Start only frontend dev server
-  - `frontend build` - Build only frontend
-  - `docker dev` - Start with Docker
-  - `install dependencies` - Install npm packages
+- `npm run dev` - Start Vite development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
+- `npm run type-check` - Run TypeScript checking
+- `npm run lint` - Run ESLint analysis
 
-### Debugging
+### VS Code Setup
 
-- **F5** to start debugging with "Launch Tauri Development"
-- Use VS Code's integrated terminal for command-line operations
-- Rust analyzer provides IntelliSense for Rust code
-- TypeScript provides IntelliSense for React code
+1. **Install recommended extensions**:
+   - TypeScript and JavaScript Language Features
+   - ESLint
+   - Prettier
+   - ES7+ React/Redux/React-Native snippets
 
-### Docker Alternative
+2. **Use built-in tasks**:
+   - **Ctrl+Shift+P** → "Tasks: Run Task" → Select available tasks
+   - **F5** to start debugging the web application
 
-If you prefer Docker development:
+## 🔧 What's Been Built & Achieved
 
-```powershell
-# Build and run development environment
-docker-compose up boxdbuddies-dev
+✅ **Modern Web Application** - React 18 + TypeScript + Vite
+✅ **Serverless Backend** - Cloudflare Workers + D1 Database + KV Storage
+✅ **Multi-layer Caching** - Edge cache + database + local storage
+✅ **Letterboxd Integration** - Robust scraping with accurate movie links
+✅ **TMDB Enhancement** - Server-side API integration (no user keys required)
+✅ **Real-time Progress** - Smooth UI updates and responsive design
+✅ **Global Deployment** - Cloudflare Pages with worldwide CDN
+✅ **Security Focused** - Input validation, rate limiting, sanitized data
+✅ **Professional Quality** - Comprehensive error handling and testing
 
-# Access at http://localhost:1420
-```
+## 🌐 Production Deployment
 
-## 🔧 What's Been Set Up & Achieved
+The application is automatically deployed via Cloudflare Pages:
 
-✅ Complete Tauri project structure with production-grade architecture
-✅ React 18 + TypeScript frontend with responsive design
-✅ Rust backend with comprehensive error handling and caching
-✅ Intelligent SQLite database with batch processing
-✅ Letterboxd scraping with accurate URL handling
-✅ TMDB API integration with persistent caching
-✅ Real-time progress tracking and debug capabilities
-✅ Docker multi-stage builds for development and production
-✅ VS Code workspace configuration with essential tasks
-✅ Comprehensive testing and quality assurance systems
-✅ Professional UI/UX with accessibility features
+- **Production**: [boxdbuddy.pages.dev](https://boxdbuddy.pages.dev) (main branch)
+- **Preview**: Feature branch deployments for testing
+- **Edge Computing**: Global distribution with millisecond latency
 
-## 🚀 Production Metrics
+## 🎯 Current Architecture
 
-- **Performance**: Processes 300+ movies with <1 second cache loading
-- **Accuracy**: 100% accurate Letterboxd movie links using scraped slugs  
-- **Reliability**: Robust timeout mechanisms and fallback strategies
-- **Quality**: Professional-grade code with comprehensive error handling
-- **Security**: Input validation, environment variables, sanitized parsing
+### Frontend (React + TypeScript)
 
-## 🎯 Next Steps: Publishing & Distribution
+- Component-based architecture with hooks
+- Responsive design for all device sizes
+- Local storage caching for performance
+- Real-time progress tracking
 
-The development phase is complete! The next phase focuses on packaging and distribution:
+### Backend (Cloudflare Workers)
 
-1. **Desktop App Packaging** - Create distributable executables for Windows, macOS, Linux
-2. **GitHub Release Management** - Tag releases, create changelogs, distribute binaries
-3. **Documentation Enhancement** - User guides, installation instructions, feature documentation
-4. **Demo Content** - Screenshots, videos, and usage examples for users
-5. **Community Preparation** - Contributing guidelines, issue templates, roadmap planning
+- Serverless functions for all API endpoints
+- D1 database with comprehensive movie catalog
+- KV storage for high-performance caching
+- Rate limiting and security measures
 
-## 📁 Key Files to Customize
+### Database Layer
 
-- `src/App.tsx` - Main React component
-- `src-tauri/src/main.rs` - Rust backend logic
-- `src-tauri/tauri.conf.json` - App configuration
-- `package.json` - Dependencies and scripts
-- `README.md` - Project documentation
+- TMDB movie catalog in Cloudflare D1
+- Friend watchlist caching system
+- Automated daily delta sync
+- Transaction-based operations
 
-Your BoxdBuddies project is ready for development! 🎉
+## 📁 Key Development Files
+
+- `src/App.tsx` - Main React application component
+- `src/services/cacheService.ts` - Client-side caching logic
+- `functions/` - Cloudflare Workers serverless functions
+- `migrations/` - Database schema and setup
+- `wrangler.toml` - Cloudflare configuration
+- `vite.config.ts` - Build configuration
+
+## 🛠️ Development Workflow
+
+1. **Local Development**: Use `npm run dev` for frontend development
+2. **Backend Testing**: Deploy to Cloudflare Preview environment
+3. **Production Deploy**: Merge to main branch for automatic deployment
+4. **Quality Assurance**: Automated CI/CD with ESLint and TypeScript checks
+
+Your BoxdBuddies web application is ready for development! 🎉

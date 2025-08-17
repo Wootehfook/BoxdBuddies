@@ -34,11 +34,6 @@ jobs:
           node-version: "18"
           cache: "npm"
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy # Only install what we need
-
       - name: Install dependencies (cached)
         run: |
           # Use npm ci for faster, deterministic installs
@@ -48,21 +43,6 @@ jobs:
         run: |
           npm audit --audit-level moderate
           echo "NPM audit completed"
-
-      - name: Cache cargo audit
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/bin/cargo-audit
-          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install and run cargo-audit
-        run: |
-          # Only install if not cached
-          if ! command -v cargo-audit &> /dev/null; then
-            cargo install cargo-audit
-          fi
-          cd src-tauri
-          cargo audit --ignore RUSTSEC-2023-0044  # Skip known non-critical issues for speed
 
       # CodeQL Analysis - using GitHub's default setup for maximum security coverage
       # GitHub's default CodeQL detected 26 HIGH security alerts that custom workflows missed

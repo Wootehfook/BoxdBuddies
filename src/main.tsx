@@ -19,9 +19,25 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
+import "./index.css";
+import { WebCacheService } from "./services/cacheService";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+// Clean up expired cache entries on startup
+WebCacheService.clearExpiredEntries();
+
+// AI Generated: GitHub Copilot - 2025-01-07
+// eslint-disable-next-line no-console
+console.log("🌐 BoxdBuddy Web App - Running in browser");
+
+// Add web-specific styles
+document.documentElement.classList.add("web-mode");
+
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>

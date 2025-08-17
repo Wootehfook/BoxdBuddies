@@ -73,7 +73,7 @@ body {
 
 /* App Header */
 .app-header {
-  padding: 2rem 1rem;
+  padding: 1rem 1rem; /* Reduced from 2rem to 1rem */
   background-color: #14181c;
   border-bottom: 1px solid #2c3440;
 }
@@ -103,12 +103,17 @@ body {
   position: relative;
 }
 
+/* Move the app title text closer to Buddio (120px closer) */
+.app-title-text {
+  transform: translateX(-6.25rem);
+}
+
 .buddio-logo {
   height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   /* AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z */
-  /* Use transform instead of margin for better layout stability */
+  /* Keep Buddio in original position, adjust text positioning instead */
   transform: translateX(-10.875rem);
 }
 
@@ -203,7 +208,7 @@ body {
 
   .app-header {
     position: relative;
-    padding-top: 3rem;
+    padding-top: 1.5rem; /* Reduced from 3rem to 1.5rem */
   }
 }
 
@@ -1960,7 +1965,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 700px; /* Reduced by 50px to compress movie details section */
+  height: 350px; /* 2.5x friend card height (140px * 2.5) */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2010,9 +2015,9 @@ body {
     0 0 0 1px rgba(255, 128, 0, 0.5);
 }
 
-/* Movie Poster Section - Increased height for better poster visibility */
+/* Movie Poster Section - Optimized for compact card height */
 .movie-poster-section {
-  height: 70%; /* Keep poster section the same */
+  height: 65%; /* Slightly reduced for compact layout */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

@@ -1,8 +1,15 @@
-# AI Generated: GitHub Copilot - 2025-08-16
-name = "boxdbuddy"
+# AI Generated: GitHub Copilot - 2025-08-17
+name = "boxdbud"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "web/frontend/dist"
+pages_build_output_dir = "dist"
+
+# Note: Build commands must be configured in Cloudflare Pages dashboard
+# Cloudflare Pages does not support [build] section in wrangler.toml
+# Dashboard should be set to:
+# - Build command: npm install && npm run build
+# - Build output directory: dist
+# - Root directory: / (or blank)
 
 [[d1_databases]]
 binding = "MOVIES_DB"

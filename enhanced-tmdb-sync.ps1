@@ -10,15 +10,28 @@ param(
     [string]$AdminSecret = ""
 )
 
-# AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
-# Secure credential handling - prompt if not provided
+# AI Generated: GitHub Copilot - 2025-08-17T04:30:00Z
+# Enhanced secure credential handling using environment variables
 if ([string]::IsNullOrEmpty($AdminSecret)) {
-    Write-Host "🔐 Admin secret required for authentication" -ForegroundColor Yellow
-    $adminSecretSecure = Read-Host "Enter your admin secret" -AsSecureString
-    $AdminSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminSecretSecure))
+    # First, try to get from environment variable
+    $AdminSecret = $env:BOXDBUDDY_ADMIN_SECRET
+    
+    if ([string]::IsNullOrEmpty($AdminSecret)) {
+        Write-Host "🔐 Admin secret required for authentication" -ForegroundColor Yellow
+        Write-Host "💡 Tip: Set environment variable BOXDBUDDY_ADMIN_SECRET to avoid prompts" -ForegroundColor Cyan
+        $adminSecretSecure = Read-Host "Enter your admin secret" -AsSecureString
+        $AdminSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminSecretSecure))
+    }
+    else {
+        Write-Host "🔐 Using admin secret from environment variable" -ForegroundColor Green
+    }
 }
 
-$url = "https://c59b032e.boxdbuddy.pages.dev/admin/tmdb-sync"
+$url = $env:BOXDBUDDY_SYNC_URL
+if ([string]::IsNullOrEmpty($url)) {
+    $url = "https://c59b032e.boxdbuddy.pages.dev/admin/tmdb-sync"
+    Write-Host "💡 Using default sync URL. Set BOXDBUDDY_SYNC_URL environment variable to customize" -ForegroundColor Cyan
+}
 
 $headers = @{
     "Authorization" = "Bearer $AdminSecret"
