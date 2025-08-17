@@ -175,7 +175,10 @@ function findCommonMovies(
 
       if (existing) {
         existing.count++;
-        existing.users.push(watchlist.username);
+        // Only add username if it's not already in the users array
+        if (!existing.users.includes(watchlist.username)) {
+          existing.users.push(watchlist.username);
+        }
       } else {
         movieCounts.set(key, {
           movie,
@@ -365,13 +368,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
 
-    // Filter out the main user from friend lists so they don't see their own name
-    const moviesWithFilteredFriends = enhancedMovies.map((movie) => ({
-      ...movie,
-      friendList: movie.friendList.filter((friend) => friend !== mainUser),
-      friendCount: movie.friendList.filter((friend) => friend !== mainUser)
-        .length,
-    }));
+    // Filter out the main user from friend lists and remove duplicates
+    const moviesWithFilteredFriends = enhancedMovies.map((movie) => {
+      // Use Set to remove duplicates, then filter out main user
+      const uniqueFriends = Array.from(new Set(movie.friendList)).filter(
+        (friend) => friend !== mainUser
+      );
+
+      return {
+        ...movie,
+        friendList: uniqueFriends,
+        friendCount: uniqueFriends.length,
+      };
+    });
 
     // Sort by vote average (rating)
     moviesWithFilteredFriends.sort(
