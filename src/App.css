@@ -105,7 +105,7 @@ body {
 
 /* Move the app title text closer to Buddio (120px closer) */
 .app-title-text {
-  transform: translateX(-6.25rem);
+  transform: translateX(-7.5rem);
 }
 
 .buddio-logo {
