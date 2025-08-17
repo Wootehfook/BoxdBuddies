@@ -1,6 +1,6 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 
-import { WebCacheService } from "./webCacheService";
+import { WebCacheService } from "./cacheService";
 
 // Add fetch global declaration for web environment
 declare const fetch: typeof globalThis.fetch;
