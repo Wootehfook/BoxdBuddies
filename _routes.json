@@ -10,6 +10,8 @@
     "/scheduled/*"
   ],
   "exclude": [
+    "/",
+    "/index.html",
     "/*.html",
     "/*.css",
     "/*.js",
@@ -23,7 +25,6 @@
     "/*.webp",
     "/assets/*",
     "/static/*",
-    "/public/*",
-    "/dist/*"
+    "/public/*"
   ]
 }
