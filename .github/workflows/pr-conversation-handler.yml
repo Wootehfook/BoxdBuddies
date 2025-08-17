@@ -225,24 +225,28 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+      
       - name: 🔧 Apply Automatic Fixes
         uses: actions/github-script@v7
+        env:
+          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const today = new Date().toISOString().slice(0, 10);
 
-            // Safely parse the workflow outputs with error handling
+            // Use environment variable to safely get the JSON data
             let autoFixable = [];
             try {
-              const rawOutput = `${{ needs.check-conversations.outputs.auto-fixable }}`;
-              autoFixable = rawOutput && rawOutput !== '' && rawOutput !== '[]' ? JSON.parse(rawOutput) : [];
+              const rawOutput = process.env.AUTO_FIXABLE_JSON || '[]';
+              autoFixable = JSON.parse(rawOutput);
+              console.log(`Parsed ${autoFixable.length} auto-fixable items`);
             } catch (error) {
               console.log('Error parsing auto-fixable output, using empty array:', error.message);
               autoFixable = [];
             }
-            
+
             let filesModified = [];
 
             for (const fix of autoFixable) {
@@ -339,24 +343,29 @@ jobs:
     steps:
       - name: 📊 Comment on PR
         uses: actions/github-script@v7
+        env:
+          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
+          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
         with:
           script: |
             // GitHub Script provides: github, context, core
-            // Safely parse arrays from workflow outputs with error handling
+            // Use environment variables to safely get the JSON data
             let autoFixable = [];
             let manualReview = [];
-            
+
             try {
-              const rawAutoFixable = `${{ needs.check-conversations.outputs.auto-fixable }}`;
-              autoFixable = rawAutoFixable && rawAutoFixable !== '' && rawAutoFixable !== '[]' ? JSON.parse(rawAutoFixable) : [];
+              const rawAutoFixable = process.env.AUTO_FIXABLE_JSON || '[]';
+              autoFixable = JSON.parse(rawAutoFixable);
+              console.log(`Parsed ${autoFixable.length} auto-fixable items`);
             } catch (error) {
               console.log('Error parsing auto-fixable output:', error.message);
               autoFixable = [];
             }
-            
+
             try {
-              const rawManualReview = `${{ needs.check-conversations.outputs.manual-review }}`;
-              manualReview = rawManualReview && rawManualReview !== '' && rawManualReview !== '[]' ? JSON.parse(rawManualReview) : [];
+              const rawManualReview = process.env.MANUAL_REVIEW_JSON || '[]';
+              manualReview = JSON.parse(rawManualReview);
+              console.log(`Parsed ${manualReview.length} manual review items`);
             } catch (error) {
               console.log('Error parsing manual-review output:', error.message);
               manualReview = [];
@@ -400,13 +409,16 @@ jobs:
 
       - name: 🚨 Set Check Status
         uses: actions/github-script@v7
+        env:
+          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
         with:
           script: |
-            // Safely parse manual review output with error handling
+            // Use environment variable to safely get the JSON data
             let manualReview = [];
             try {
-              const rawManualReview = `${{ needs.check-conversations.outputs.manual-review }}`;
-              manualReview = rawManualReview && rawManualReview !== '' && rawManualReview !== '[]' ? JSON.parse(rawManualReview) : [];
+              const rawManualReview = process.env.MANUAL_REVIEW_JSON || '[]';
+              manualReview = JSON.parse(rawManualReview);
+              console.log(`Parsed ${manualReview.length} manual review items`);
             } catch (error) {
               console.log('Error parsing manual-review output:', error.message);
               manualReview = [];
