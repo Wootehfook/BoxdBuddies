@@ -1,5 +1,5 @@
 # AI Generated: GitHub Copilot - 2025-08-17
-name = "boxdbuddy"
+name = "boxdbud"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
