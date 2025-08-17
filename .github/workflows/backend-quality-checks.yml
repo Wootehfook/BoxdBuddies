@@ -1,0 +1,48 @@
+name: Backend Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for backend code
+        id: check-backend
+        run: |
+          if [ -d "src-tauri/src" ] && [ -f "src-tauri/Cargo.toml" ]; then
+            echo "backend_exists=true" >> $GITHUB_OUTPUT
+            echo "Backend code detected (Rust/Tauri)"
+          else
+            echo "backend_exists=false" >> $GITHUB_OUTPUT
+            echo "No backend code detected - web-only deployment"
+          fi
+
+      - name: Setup Rust (if backend exists)
+        if: steps.check-backend.outputs.backend_exists == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Rust quality checks
+        if: steps.check-backend.outputs.backend_exists == 'true'
+        run: |
+          cd src-tauri
+          cargo check
+          cargo clippy -- -D warnings
+          cargo fmt --check
+
+      - name: Web-only deployment check
+        if: steps.check-backend.outputs.backend_exists == 'false'
+        run: |
+          echo "✅ Backend quality checks passed - web-only deployment detected"
+          echo "No Rust backend to analyze in this configuration"
+
+# AI Generated: GitHub Copilot - 2025-08-17T05:00:00Z

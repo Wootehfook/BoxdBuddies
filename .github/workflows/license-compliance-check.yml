@@ -21,11 +21,21 @@ jobs:
       - name: Check license headers
         run: |
           echo "Checking for AGPL-3.0 license headers..."
-          if ! grep -r "GNU Affero General Public License" src-tauri/src/ --include="*.rs"; then
-            echo "Missing license headers in Rust files"
-            exit 1
+          
+          # Check Rust files if they exist (for desktop app)
+          if [ -d "src-tauri/src" ]; then
+            if ! grep -r "GNU Affero General Public License" src-tauri/src/ --include="*.rs"; then
+              echo "Missing license headers in Rust files"
+              exit 1
+            fi
+            echo "Rust license headers verified"
+          else
+            echo "No Rust files found - web-only deployment"
           fi
+          
+          # Check TypeScript files
           if ! grep -r "Copyright (C) 2025 Wootehfook" src/ --include="*.tsx" --include="*.ts"; then
             echo "Missing copyright notices in TypeScript files"
           fi
+          
           echo "License compliance check passed"

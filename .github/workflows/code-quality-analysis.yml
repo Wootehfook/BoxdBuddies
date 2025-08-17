@@ -28,7 +28,8 @@ jobs:
           node-version: "18"
           cache: "npm"
 
-      - name: Setup Rust
+      - name: Setup Rust (conditional)
+        if: ${{ hashFiles('src-tauri/Cargo.toml') != '' }}
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
