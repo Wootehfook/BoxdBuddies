@@ -299,30 +299,72 @@ async function enhanceWithTMDBData(
           .all();
       }
 
-      // If still no exact match, try fuzzy matching but only if the title is short (to avoid false positives)
+      // If still no exact match, try more precise fuzzy matching
       if (!result.results || result.results.length === 0) {
         const titleLength = searchTitle.length;
-        if (titleLength >= 8) {
-          // Only fuzzy match for titles with 8+ characters
+        if (titleLength >= 6) {
+          // Lowered threshold but with better logic
           console.log(
-            `No exact match found, trying careful fuzzy search for "${searchTitle}"`
+            `No exact match found, trying precise fuzzy search for "${searchTitle}"`
           );
-          result = await env.MOVIES_DB.prepare(
-            `SELECT * FROM tmdb_movies 
-             WHERE (title LIKE ? OR original_title LIKE ?) 
-             AND (year = ? OR year IS NULL OR ? = 0)
-             AND LENGTH(title) <= ?
-             ORDER BY popularity DESC
-             LIMIT 1`
-          )
-            .bind(
-              `%${searchTitle}%`,
-              `%${searchTitle}%`,
-              movie.year,
-              movie.year,
-              titleLength + 10 // Limit result title length to avoid very different movies
+
+          // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+          // More precise fuzzy matching to avoid false positives like "The Fall" matching "The Fall Guy"
+
+          // For short titles like "The Fall", be extremely strict to prevent false matches
+          if (titleLength <= 12) {
+            console.log(
+              `Short title detected, using exact prefix matching to prevent false positives`
+            );
+
+            // Try multiple exact patterns before giving up:
+            // 1. Exact match (already tried above)
+            // 2. Title followed by year: "The Fall (2019)"
+            // 3. Title followed by colon: "The Fall: Subtitle"
+            // 4. Title as complete word at start
+
+            const patterns = [
+              `${searchTitle} (%`, // "The Fall (2019)"
+              `${searchTitle}:%`, // "The Fall: Subtitle"
+              `${searchTitle}.%`, // "The Fall. Subtitle"
+            ];
+
+            for (const pattern of patterns) {
+              result = await env.MOVIES_DB.prepare(
+                `SELECT * FROM tmdb_movies 
+                 WHERE LOWER(title) LIKE LOWER(?)
+                 AND (year = ? OR year = ? OR year = ?)
+                 ORDER BY popularity DESC
+                 LIMIT 1`
+              )
+                .bind(pattern, movie.year, movie.year - 1, movie.year + 1)
+                .all();
+
+              if (result.results && result.results.length > 0) {
+                console.log(`Found match with pattern: ${pattern}`);
+                break;
+              }
+            }
+          } else {
+            // For longer titles, use the original fuzzy logic but with stricter constraints
+            result = await env.MOVIES_DB.prepare(
+              `SELECT * FROM tmdb_movies 
+               WHERE (title LIKE ? OR original_title LIKE ?) 
+               AND (year = ? OR year IS NULL OR ? = 0)
+               AND LENGTH(title) BETWEEN ? AND ?
+               ORDER BY popularity DESC
+               LIMIT 1`
             )
-            .all();
+              .bind(
+                `%${searchTitle}%`,
+                `%${searchTitle}%`,
+                movie.year,
+                movie.year,
+                Math.max(titleLength - 3, Math.floor(titleLength * 0.8)), // Stricter minimum length
+                titleLength + 8 // Reasonable maximum length
+              )
+              .all();
+          }
         } else {
           console.log(`Title "${searchTitle}" too short for fuzzy matching`);
         }
@@ -330,6 +372,18 @@ async function enhanceWithTMDBData(
 
       if (result.results && result.results.length > 0) {
         const tmdbMovie = result.results[0] as any;
+
+        // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+        // Enhanced logging to help debug movie matching
+        console.log(`✅ Found TMDB match for "${movie.title}":`, {
+          letterboxdTitle: movie.title,
+          letterboxdSlug: movie.slug,
+          letterboxdYear: movie.year,
+          tmdbTitle: tmdbMovie.title,
+          tmdbYear: tmdbMovie.year,
+          tmdbId: tmdbMovie.id,
+        });
+
         enhancedMovies.push({
           id: tmdbMovie.id,
           title: tmdbMovie.title,
@@ -344,6 +398,12 @@ async function enhanceWithTMDBData(
           friendList: movie.friendList,
         });
       } else {
+        // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+        // Enhanced logging for failed matches
+        console.log(
+          `❌ No TMDB match found for "${movie.title}" (${movie.year}) [slug: ${movie.slug}]`
+        );
+
         // Fallback if not found in database
         enhancedMovies.push({
           id: Math.floor(Math.random() * 1000000),
