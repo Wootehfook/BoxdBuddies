@@ -6,15 +6,28 @@
  * Proxies Letterboxd avatar images to bypass CORS restrictions
  */
 
-// AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
-// Secure URL validation function to prevent domain spoofing attacks
+// AI Generated: GitHub Copilot - 2025-08-17T04:20:00Z
+// Enhanced secure URL validation function to prevent domain spoofing attacks
 function isValidLetterboxdUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
+
+    // Ensure protocol is HTTPS only for security
+    if (parsedUrl.protocol !== "https:") {
+      return false;
+    }
+
+    // Prevent percent-encoding attacks and path traversal
+    if (url.includes("%") || url.includes("..") || url.includes("//")) {
+      return false;
+    }
+
     // Ensure the hostname ends with .ltrbxd.com (not just contains it)
-    return (
-      parsedUrl.hostname.endsWith(".ltrbxd.com") ||
-      parsedUrl.hostname === "ltrbxd.com"
+    const validHosts = ["ltrbxd.com", "a.ltrbxd.com", "s.ltrbxd.com"];
+
+    return validHosts.some(
+      (host) =>
+        parsedUrl.hostname === host || parsedUrl.hostname.endsWith("." + host)
     );
   } catch {
     return false;
@@ -45,10 +58,25 @@ export async function onRequest(context: {
   const url = new URL(context.request.url);
   const imageUrl = url.searchParams.get("url");
 
-  // AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
-  // Secure URL validation to prevent domain spoofing attacks
+  // AI Generated: GitHub Copilot - 2025-08-17T04:20:00Z
+  // Enhanced security validation to prevent domain spoofing attacks
   if (!imageUrl || !isValidLetterboxdUrl(imageUrl)) {
-    return new Response("Invalid image URL", {
+    return new Response("Invalid or unsafe image URL", {
+      status: 400,
+      headers: corsHeaders,
+    });
+  }
+
+  // AI Generated: GitHub Copilot - 2025-08-17T04:20:00Z
+  // Additional file extension validation for image types
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"];
+  const urlPath = new URL(imageUrl).pathname.toLowerCase();
+  const hasValidExtension = allowedExtensions.some((ext) =>
+    urlPath.endsWith(ext)
+  );
+
+  if (!hasValidExtension) {
+    return new Response("Invalid image file type", {
       status: 400,
       headers: corsHeaders,
     });
