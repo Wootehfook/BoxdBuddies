@@ -30,8 +30,24 @@ export async function onRequest(context: {
   const url = new URL(context.request.url);
   const imageUrl = url.searchParams.get("url");
 
-  if (!imageUrl || !imageUrl.includes("ltrbxd.com")) {
-    return new Response("Invalid image URL", {
+  // AI Generated: GitHub Copilot - 2025-08-16T22:30:00Z
+  // Secure URL validation to prevent domain spoofing attacks
+  const isValidLetterboxdUrl = (urlString: string): boolean => {
+    try {
+      const parsedUrl = new URL(urlString);
+      // Ensure the hostname ends with .ltrbxd.com or is exactly ltrbxd.com
+      // This prevents attacks like "evil.com?ltrbxd.com" or "ltrbxd.com.evil.com"
+      return (
+        parsedUrl.hostname.endsWith(".ltrbxd.com") ||
+        parsedUrl.hostname === "ltrbxd.com"
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  if (!imageUrl || !isValidLetterboxdUrl(imageUrl)) {
+    return new Response("Invalid image URL - must be from Letterboxd domain", {
       status: 400,
       headers: corsHeaders,
     });
