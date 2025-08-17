@@ -3,13 +3,7 @@
 
 name: "BoxdBuddies CodeQL Configuration"
 
-# Paths to include in analysis
-paths:
-  - src/
-  - functions/
-  - src-tauri/src/
-
-# Paths to exclude from analysis  
+# Global paths to exclude from all analysis
 paths-ignore:
   - node_modules/
   - dist/
@@ -19,6 +13,7 @@ paths-ignore:
   - "**/*.test.js"
   - "**/*.spec.ts"
   - "**/*.spec.js"
+  - "**/*.d.ts"
 
 # Disable default queries that might be too aggressive
 disable-default-queries: false
@@ -30,6 +25,10 @@ queries:
 
 # Language-specific configurations
 javascript:
+  # Paths for JavaScript/TypeScript analysis
+  paths:
+    - src/
+    - functions/
   # Include TypeScript files
   extractor-options:
     typescript:
@@ -37,6 +36,14 @@ javascript:
       - "--include-imports"
 
 rust:
+  # Paths for Rust analysis (only Tauri project)
+  paths:
+    - src-tauri/
+  # Exclude non-Rust directories from Rust analysis
+  paths-ignore:
+    - src/
+    - functions/
+    - node_modules/
   # Rust-specific options for Tauri analysis
   extractor-options:
     cargo:
