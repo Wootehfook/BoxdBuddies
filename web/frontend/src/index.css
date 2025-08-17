@@ -2104,6 +2104,38 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* Mobile optimizations for movie cards */
+@media (max-width: 768px) {
+  .movie-card {
+    height: 650px; /* Slightly smaller on mobile */
+  }
+  
+  .movie-poster-section {
+    height: 68%; /* Adjust poster ratio for mobile */
+  }
+  
+  .movie-info {
+    height: 32%; /* Adjust info ratio for mobile */
+    padding: 0.5rem;
+  }
+  
+  .friend-tag {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .movie-card {
+    height: 600px; /* Even smaller on very small screens */
+  }
+  
+  .movie-friends {
+    padding: 0.5rem;
+    margin: 0.25rem -0.5rem -0.5rem -0.5rem;
+  }
+}
+
 .friend-count-visual.friend-count-clickable {
   cursor: pointer;
   transition: opacity 0.2s ease;
