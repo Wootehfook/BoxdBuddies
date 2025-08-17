@@ -314,13 +314,16 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Support both formats: new format {usernames: []} and legacy format {username: "", friends: []}
     let usernames: string[] = [];
+    let mainUser: string = "";
 
     if (body.usernames && Array.isArray(body.usernames)) {
       // New format: {usernames: ["user1", "user2", "user3"]}
       usernames = body.usernames;
+      mainUser = usernames[0] || ""; // First user is the main user
     } else if (body.username && body.friends && Array.isArray(body.friends)) {
       // Legacy format: {username: "user1", friends: ["user2", "user3"]}
       usernames = [body.username, ...body.friends];
+      mainUser = body.username;
     }
 
     // Clean and validate usernames
@@ -362,15 +365,23 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
 
+    // Filter out the main user from friend lists so they don't see their own name
+    const moviesWithFilteredFriends = enhancedMovies.map((movie) => ({
+      ...movie,
+      friendList: movie.friendList.filter((friend) => friend !== mainUser),
+      friendCount: movie.friendList.filter((friend) => friend !== mainUser)
+        .length,
+    }));
+
     // Sort by vote average (rating)
-    enhancedMovies.sort(
+    moviesWithFilteredFriends.sort(
       (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
     );
 
     return Response.json(
       {
-        movies: enhancedMovies,
-        commonCount: enhancedMovies.length,
+        movies: moviesWithFilteredFriends,
+        commonCount: moviesWithFilteredFriends.length,
         usernames: usernames,
         watchlistSizes: watchlists.map((w) => ({
           username: w.username,
