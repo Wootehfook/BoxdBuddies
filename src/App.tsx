@@ -108,7 +108,9 @@ function FriendAvatar({ friend }: { friend: Friend }) {
   const handleImageError = () => {
     console.error(
       `Failed to load image for ${friend.username}:`,
-      friend.profileImageUrl
+      friend.profileImageUrl,
+      "Proxied URL:",
+      imageUrl
     );
     setImageError(true);
   };
