@@ -103,7 +103,7 @@ body {
 }
 
 .buddio-logo {
-  height: 2.5rem;
+  height: 7.5rem;
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
@@ -1427,7 +1427,7 @@ body {
 }
 
 .buddio-empty-state {
-  height: 4rem;
+  height: 12rem;
   width: auto;
   opacity: 0.6;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));

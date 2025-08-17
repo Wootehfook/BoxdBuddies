@@ -226,11 +226,33 @@ async function enhanceWithTMDBData(
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">");
 
+      // Extract a cleaner title from the Letterboxd slug if available
+      let searchTitle = decodedTitle;
+      if (movie.slug) {
+        // Convert slug to title: "the-vanishing-1993" -> "The Vanishing"
+        const slugTitle = movie.slug
+          .replace(/-\d{4}$/, "") // Remove year suffix
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+        // Use slug-derived title if it's different and seems more specific
+        if (
+          slugTitle.length > 0 &&
+          slugTitle.toLowerCase() !== decodedTitle.toLowerCase()
+        ) {
+          console.log(
+            `Using slug-derived title: "${slugTitle}" instead of "${decodedTitle}"`
+          );
+          searchTitle = slugTitle;
+        }
+      }
+
       console.log(
-        `Looking up movie: "${movie.title}" -> "${decodedTitle}" (${movie.year})`
+        `Looking up movie: "${movie.title}" -> "${searchTitle}" (${movie.year}) [slug: ${movie.slug}]`
       );
 
-      // Try exact match first
+      // Try exact match first (strict)
       let result = await env.MOVIES_DB.prepare(
         `SELECT * FROM tmdb_movies 
          WHERE LOWER(title) = LOWER(?) 
@@ -238,28 +260,55 @@ async function enhanceWithTMDBData(
          ORDER BY popularity DESC
          LIMIT 1`
       )
-        .bind(decodedTitle, movie.year, movie.year - 1, movie.year + 1)
+        .bind(searchTitle, movie.year, movie.year - 1, movie.year + 1)
         .all();
 
-      // If no exact match, try fuzzy matching
-      if (!result.results || result.results.length === 0) {
+      // If no exact match with slug title, try exact match with original title
+      if (
+        (!result.results || result.results.length === 0) &&
+        searchTitle !== decodedTitle
+      ) {
         console.log(
-          `No exact match found, trying fuzzy search for "${decodedTitle}"`
+          `No match with slug title, trying original title: "${decodedTitle}"`
         );
         result = await env.MOVIES_DB.prepare(
           `SELECT * FROM tmdb_movies 
-           WHERE (title LIKE ? OR original_title LIKE ?) 
-           AND (year = ? OR year IS NULL OR ? = 0)
+           WHERE LOWER(title) = LOWER(?) 
+           AND (year = ? OR year = ? OR year = ?)
            ORDER BY popularity DESC
            LIMIT 1`
         )
-          .bind(
-            `%${decodedTitle}%`,
-            `%${decodedTitle}%`,
-            movie.year,
-            movie.year
-          )
+          .bind(decodedTitle, movie.year, movie.year - 1, movie.year + 1)
           .all();
+      }
+
+      // If still no exact match, try fuzzy matching but only if the title is short (to avoid false positives)
+      if (!result.results || result.results.length === 0) {
+        const titleLength = searchTitle.length;
+        if (titleLength >= 8) {
+          // Only fuzzy match for titles with 8+ characters
+          console.log(
+            `No exact match found, trying careful fuzzy search for "${searchTitle}"`
+          );
+          result = await env.MOVIES_DB.prepare(
+            `SELECT * FROM tmdb_movies 
+             WHERE (title LIKE ? OR original_title LIKE ?) 
+             AND (year = ? OR year IS NULL OR ? = 0)
+             AND LENGTH(title) <= ?
+             ORDER BY popularity DESC
+             LIMIT 1`
+          )
+            .bind(
+              `%${searchTitle}%`,
+              `%${searchTitle}%`,
+              movie.year,
+              movie.year,
+              titleLength + 10 // Limit result title length to avoid very different movies
+            )
+            .all();
+        } else {
+          console.log(`Title "${searchTitle}" too short for fuzzy matching`);
+        }
       }
 
       if (result.results && result.results.length > 0) {
