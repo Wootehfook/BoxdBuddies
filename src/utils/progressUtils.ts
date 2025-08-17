@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// AI Generated: GitHub Copilot - 2025-08-06
+// AI Generated: GitHub Copilot - 2025-01-07
 // Utility functions for progress calculations
 
 /**

@@ -19,9 +19,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
+import "./index.css";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+// AI Generated: GitHub Copilot - 2025-01-07
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
