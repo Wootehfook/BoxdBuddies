@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/letterboxd/*",
+    "/admin/*",
+    "/compare/*",
+    "/search/*",
+    "/test/*",
+    "/scheduled/*"
+  ],
+  "exclude": [
+    "/*.html",
+    "/*.css",
+    "/*.js",
+    "/*.json",
+    "/*.ico",
+    "/*.svg",
+    "/*.png",
+    "/*.jpg",
+    "/*.jpeg",
+    "/*.gif",
+    "/*.webp",
+    "/assets/*",
+    "/static/*",
+    "/public/*",
+    "/dist/*"
+  ]
+}
