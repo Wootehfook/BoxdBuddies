@@ -377,8 +377,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       };
     });
 
+    // Filter out movies that don't have at least 2 friends after deduplication
+    const moviesWithMultipleFriends = moviesWithFilteredFriends.filter(
+      (movie) => movie.friendCount >= 2
+    );
+
     // Sort by friend count (descending) first, then by rating (descending)
-    moviesWithFilteredFriends.sort((a, b) => {
+    moviesWithMultipleFriends.sort((a, b) => {
       // Primary sort: number of common friends (more friends = higher priority)
       const friendCountDiff = b.friendCount - a.friendCount;
       if (friendCountDiff !== 0) {
@@ -391,8 +396,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     return Response.json(
       {
-        movies: moviesWithFilteredFriends,
-        commonCount: moviesWithFilteredFriends.length,
+        movies: moviesWithMultipleFriends,
+        commonCount: moviesWithMultipleFriends.length,
         usernames: usernames,
         watchlistSizes: watchlists.map((w) => ({
           username: w.username,
