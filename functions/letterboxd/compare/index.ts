@@ -1,5 +1,40 @@
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Letterboxd Watchlist Comparison API
+
+// AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
+// Structured logging utility for production
+const logger = {
+  info: (message: string, meta?: any) => {
+    console.log(
+      JSON.stringify({
+        level: "info",
+        message,
+        meta,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  },
+  error: (message: string, error?: any) => {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        message,
+        error: error?.message || error,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  },
+  warn: (message: string, meta?: any) => {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        message,
+        meta,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  },
+};
 
 interface D1Database {
   prepare(query: string): D1PreparedStatement;
@@ -72,7 +107,7 @@ async function scrapeLetterboxdWatchlist(
   let hasMorePages = true;
   const maxPages = 50; // Safety limit to prevent infinite loops
 
-  console.log(`Starting to scrape ${username}'s complete watchlist...`);
+  logger.info(`Starting to scrape watchlist`, { username });
 
   while (hasMorePages && currentPage <= maxPages) {
     const url =
@@ -224,7 +259,7 @@ function findCommonMovies(
     }
   }
 
-  console.log(`Found ${commonMovies.length} common movies`);
+  logger.info(`Found common movies`, { count: commonMovies.length });
   return commonMovies;
 }
 

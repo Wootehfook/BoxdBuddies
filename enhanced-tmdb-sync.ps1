@@ -1,5 +1,5 @@
 # Enhanced PowerShell script for respectful TMDB database synchronization
-# AI Generated: GitHub Copilot - 2025-08-16
+# AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
 
 param(
     [Parameter(Mandatory = $false)]
@@ -7,8 +7,16 @@ param(
     [string]$SyncType = "popular",
     
     [Parameter(Mandatory = $false)]
-    [string]$AdminSecret = "23wesdxc@#WESDXC"
+    [string]$AdminSecret = ""
 )
+
+# AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
+# Secure credential handling - prompt if not provided
+if ([string]::IsNullOrEmpty($AdminSecret)) {
+    Write-Host "🔐 Admin secret required for authentication" -ForegroundColor Yellow
+    $adminSecretSecure = Read-Host "Enter your admin secret" -AsSecureString
+    $AdminSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminSecretSecure))
+}
 
 $url = "https://c59b032e.boxdbuddy.pages.dev/admin/tmdb-sync"
 

@@ -75,7 +75,7 @@ function getUserColors(username: string) {
   };
 }
 
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot - 2025-08-16T21:00:00Z
 // FriendAvatar component with CORS proxy support
 function FriendAvatar({ friend }: { friend: Friend }) {
   const [imageError, setImageError] = useState(false);
@@ -136,7 +136,7 @@ function FriendAvatar({ friend }: { friend: Friend }) {
   );
 }
 
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot - 2025-08-16T21:30:00Z
 // Famous movie quotes for progress display
 const FAMOUS_MOVIE_QUOTES = [
   { quote: "May the Force be with you.", movie: "Star Wars" },
@@ -297,7 +297,7 @@ function App() {
     }
   };
 
-  // AI Generated: GitHub Copilot - 2025-08-16
+  // AI Generated: GitHub Copilot - 2025-08-16T22:30:00Z
   // Fetch watchlist counts for friends in the background
   const fetchWatchlistCounts = async (friendsData: Friend[]) => {
     try {
