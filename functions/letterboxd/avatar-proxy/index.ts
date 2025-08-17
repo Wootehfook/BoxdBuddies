@@ -6,6 +6,21 @@
  * Proxies Letterboxd avatar images to bypass CORS restrictions
  */
 
+// AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
+// Secure URL validation function to prevent domain spoofing attacks
+function isValidLetterboxdUrl(url: string): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    // Ensure the hostname ends with .ltrbxd.com (not just contains it)
+    return (
+      parsedUrl.hostname.endsWith(".ltrbxd.com") ||
+      parsedUrl.hostname === "ltrbxd.com"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function onRequest(context: {
   request: Request;
   env: {
@@ -30,7 +45,9 @@ export async function onRequest(context: {
   const url = new URL(context.request.url);
   const imageUrl = url.searchParams.get("url");
 
-  if (!imageUrl || !imageUrl.includes("ltrbxd.com")) {
+  // AI Generated: GitHub Copilot - 2025-08-16T23:00:00Z
+  // Secure URL validation to prevent domain spoofing attacks
+  if (!imageUrl || !isValidLetterboxdUrl(imageUrl)) {
     return new Response("Invalid image URL", {
       status: 400,
       headers: corsHeaders,

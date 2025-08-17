@@ -233,8 +233,16 @@ jobs:
             const path = require('path');
             const today = new Date().toISOString().slice(0, 10);
 
-            // Safely hydrate JSON from workflow outputs
-            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
+            // Safely parse the workflow outputs with error handling
+            let autoFixable = [];
+            try {
+              const rawOutput = `${{ needs.check-conversations.outputs.auto-fixable }}`;
+              autoFixable = rawOutput && rawOutput !== '' && rawOutput !== '[]' ? JSON.parse(rawOutput) : [];
+            } catch (error) {
+              console.log('Error parsing auto-fixable output, using empty array:', error.message);
+              autoFixable = [];
+            }
+            
             let filesModified = [];
 
             for (const fix of autoFixable) {
@@ -334,9 +342,25 @@ jobs:
         with:
           script: |
             // GitHub Script provides: github, context, core
-            // Safely hydrate arrays from workflow outputs
-            const autoFixable = ${{ fromJSON(needs.check-conversations.outputs.auto-fixable) }};
-            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
+            // Safely parse arrays from workflow outputs with error handling
+            let autoFixable = [];
+            let manualReview = [];
+            
+            try {
+              const rawAutoFixable = `${{ needs.check-conversations.outputs.auto-fixable }}`;
+              autoFixable = rawAutoFixable && rawAutoFixable !== '' && rawAutoFixable !== '[]' ? JSON.parse(rawAutoFixable) : [];
+            } catch (error) {
+              console.log('Error parsing auto-fixable output:', error.message);
+              autoFixable = [];
+            }
+            
+            try {
+              const rawManualReview = `${{ needs.check-conversations.outputs.manual-review }}`;
+              manualReview = rawManualReview && rawManualReview !== '' && rawManualReview !== '[]' ? JSON.parse(rawManualReview) : [];
+            } catch (error) {
+              console.log('Error parsing manual-review output:', error.message);
+              manualReview = [];
+            }
 
             // Only comment on PR events, not scheduled runs
             if (context.eventName.startsWith('pull_request') && context.payload.pull_request) {
@@ -378,7 +402,15 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const manualReview = ${{ fromJSON(needs.check-conversations.outputs.manual-review) }};
+            // Safely parse manual review output with error handling
+            let manualReview = [];
+            try {
+              const rawManualReview = `${{ needs.check-conversations.outputs.manual-review }}`;
+              manualReview = rawManualReview && rawManualReview !== '' && rawManualReview !== '[]' ? JSON.parse(rawManualReview) : [];
+            } catch (error) {
+              console.log('Error parsing manual-review output:', error.message);
+              manualReview = [];
+            }
 
             // Do not fail the job; emit a warning to keep this check non-blocking
             if (manualReview.length > 0) {
