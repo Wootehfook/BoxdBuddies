@@ -68,7 +68,9 @@ export function reduceMovie(m) {
     id: m.id,
     title: m.title,
     year: m.release_date ? new Date(m.release_date).getFullYear() : null,
-    poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : undefined,
+  // AI Generated: GitHub Copilot - 2025-08-18
+  // Prefer explicit null for absent values to keep JSON shape stable
+  poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : null,
     overview: m.overview,
     rating: m.vote_average,
     runtime: m.runtime,
