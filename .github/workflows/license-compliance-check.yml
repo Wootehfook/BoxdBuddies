@@ -25,5 +25,5 @@ jobs:
             echo "Missing copyright notices in TypeScript files"
             exit 1
           fi
-          
+
           echo "License compliance check passed"

@@ -1,7 +1,7 @@
-# CodeQL Configuration for BoxdBuddies
-# AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
+# CodeQL Configuration for BoxdBuddies Web App
+# AI Generated: GitHub Copilot - 2025-08-17
 
-name: "BoxdBuddies CodeQL Configuration"
+name: "BoxdBuddies Web App CodeQL Configuration"
 
 # Global paths to exclude from all analysis
 paths-ignore:
@@ -34,18 +34,3 @@ javascript:
     typescript:
       - "--include-types"
       - "--include-imports"
-
-rust:
-  # Paths for Rust analysis (only Tauri project)
-  paths:
-    - src-tauri/
-  # Exclude non-Rust directories from Rust analysis
-  paths-ignore:
-    - src/
-    - functions/
-    - node_modules/
-  # Rust-specific options for Tauri analysis
-  extractor-options:
-    cargo:
-      - "--all-features"
-      - "--all-targets"
