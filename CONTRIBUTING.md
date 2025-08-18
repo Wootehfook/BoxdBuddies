@@ -53,6 +53,7 @@ This project is committed to providing a welcoming and inclusive environment for
 ### Commit Message Format
 
 Use conventional commits:
+
 - `feat: add new feature`
 - `fix: resolve bug`
 - `docs: update documentation`
@@ -64,18 +65,21 @@ Use conventional commits:
 ## 🏗️ Architecture Guidelines
 
 ### Backend (Rust)
+
 - Use strong typing, avoid `unwrap()` in production
 - Include comprehensive error handling
 - Add `///` doc comments for public functions
 - Follow security best practices
 
 ### Frontend (TypeScript/React)
+
 - Use TypeScript strict mode, no `any` types
 - Include JSDoc comments for complex functions
 - Follow React best practices
 - Ensure accessibility compliance
 
 ### Database
+
 - Use snake_case for SQL identifiers
 - Include proper migration scripts
 - Use transactions for data consistency
@@ -96,6 +100,7 @@ Use conventional commits:
 ## 🐛 Bug Reports
 
 Include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior
@@ -105,6 +110,7 @@ Include:
 ## 💡 Feature Requests
 
 Include:
+
 - Clear description of the proposed feature
 - Use case and motivation
 - Proposed implementation approach
@@ -126,6 +132,7 @@ By contributing, you agree that your contributions will be licensed under the AG
 ## 📞 Questions?
 
 Feel free to open an issue for questions about:
+
 - Development setup
 - Architecture decisions
 - Contribution guidelines
@@ -135,6 +142,8 @@ Thank you for contributing to BoxdBuddies! 🎬
 
 ---
 
-*Last updated: August 4, 2025 - PR #4 closed, focusing on PR #3 completion*
+_Last updated: August 4, 2025 - PR #4 closed, focusing on PR #3 completion_
 
-````
+```
+
+```
