@@ -7,7 +7,9 @@ export async function onRequestGet(context) {
   const page = Number(url.searchParams.get("page") || "1");
 
   const cache = getCache();
-  const cacheKey = new globalThis.Request(request.url, request);
+  // AI Generated: GitHub Copilot - 2025-08-18
+  // Use RequestInit for second parameter, not a Request object
+  const cacheKey = new globalThis.Request(request.url);
   if (cache) {
     const cached = await cache.match(cacheKey);
     if (cached) return cached;

@@ -1,12 +1,16 @@
-# AI Generated: GitHub Copilot - 2025-08-03
+# AI Generated: GitHub Copilot - 2025-08-18
 # Automated PR Conversation Handler - Self-Healing CI/CD Component
-name: 🤖 PR Conversation Handler
+name: "🤖 PR Conversation Handler"
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
   pull_request_review:
     types: [submitted]
+  # AI Generated: GitHub Copilot - 2025-08-18
+  # Trigger on creation/edits of review comments which represent PR conversations
+  pull_request_review_comment:
+    types: [created, edited]
   schedule:
     # Run daily at 9 AM UTC to check all open PRs
     - cron: "0 9 * * *"
@@ -25,21 +29,20 @@ permissions:
 
 jobs:
   check-conversations:
-    name: 🔍 Check Unresolved Conversations
+    name: "🔍 Check Unresolved Conversations"
     runs-on: ubuntu-latest
     outputs:
-      has-unresolved: ${{ steps.check.outputs.has-unresolved }}
-      auto-fixable: ${{ steps.check.outputs.auto-fixable }}
-      manual-review: ${{ steps.check.outputs.manual-review }}
-
+      has_unresolved: ${{ steps.check.outputs.has_unresolved }}
+      auto_fixable: ${{ steps.check.outputs.auto_fixable }}
+      manual_review: ${{ steps.check.outputs.manual_review }}
     steps:
-      - name: 🏗️ Checkout Repository
+      - name: "🏗️ Checkout Repository"
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🔍 Check Unresolved Conversations
+      - name: "🔍 Check Unresolved Conversations"
         id: check
         uses: actions/github-script@v7
         with:
@@ -72,9 +75,9 @@ jobs:
 
             for (const prNumber of prsToCheck) {
               if (!prNumber) continue;
-              
+
               console.log(`🔍 Checking PR #${prNumber} for unresolved conversations...`);
-              
+
               try {
                 // Get review comments
                 const { data: comments } = await github.rest.pulls.listReviewComments({
@@ -82,29 +85,29 @@ jobs:
                   repo: context.repo.repo,
                   pull_number: prNumber
                 });
-                
+
                 // Get reviews to check resolution status
                 const { data: reviews } = await github.rest.pulls.listReviews({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: prNumber
                 });
-                
+
                 // Analyze unresolved conversations
                 for (const comment of comments) {
                   const conversationResolved = await checkConversationResolved(comment, reviews);
-                  
+
                   if (!conversationResolved) {
                     const analysis = analyzeComment(comment);
-                    
+
                     // Skip automated or stale comments
                     if (analysis.skip) {
                       console.log(`⏭️ Skipping comment: ${analysis.reason}`);
                       continue;
                     }
-                    
+
                     totalUnresolved++;
-                    
+
                     if (analysis.autoFixable) {
                       autoFixable.push({
                         pr: prNumber,
@@ -136,15 +139,15 @@ jobs:
             async function checkConversationResolved(comment, reviews) {
               // Simple heuristic: if there's a newer review after the comment, consider it addressed
               const commentTime = new Date(comment.created_at);
-              return reviews.some(review => 
-                new Date(review.submitted_at) > commentTime && 
+              return reviews.some(review =>
+                new Date(review.submitted_at) > commentTime &&
                 review.state !== 'COMMENTED'
               );
             }
 
             function analyzeComment(comment) {
               const body = comment.body.toLowerCase();
-              
+
               // Skip if this is a GitHub automated comment or action
               if (body.includes('github-actions') || body.includes('codecov') || body.includes('dependabot')) {
                 return {
@@ -153,7 +156,7 @@ jobs:
                   skip: true
                 };
               }
-              
+
               // Skip if line number is null or undefined (often indicates stale comments)
               if (!comment.line && !comment.start_line) {
                 return {
@@ -162,7 +165,7 @@ jobs:
                   skip: true
                 };
               }
-              
+
               // AI attribution timestamp pattern
               if (body.includes('ai attribution') && body.includes('timestamp')) {
                 return {
@@ -171,7 +174,7 @@ jobs:
                   suggestion: 'Update AI attribution timestamp to current date'
                 };
               }
-              
+
               // Axios configuration pattern
               if (body.includes('axios') && body.includes('timeout')) {
                 return {
@@ -180,7 +183,7 @@ jobs:
                   suggestion: 'Add axios timeout and interceptors configuration'
                 };
               }
-              
+
               // Error handling pattern
               if (body.includes('error handling') && body.includes('specific')) {
                 return {
@@ -189,7 +192,7 @@ jobs:
                   suggestion: 'Improve error handling with specific messages'
                 };
               }
-              
+
               // URL validation (security - manual review)
               if (body.includes('url') && (body.includes('validation') || body.includes('security'))) {
                 return {
@@ -197,7 +200,7 @@ jobs:
                   reason: 'Security-related URL validation requires manual review'
                 };
               }
-              
+
               // Common false positives to skip
               if (body.includes('looks good') || body.includes('lgtm') || body.includes('approved')) {
                 return {
@@ -206,7 +209,7 @@ jobs:
                   skip: true
                 };
               }
-              
+
               // Default to manual review for unknown patterns, but be more descriptive
               return {
                 autoFixable: false,
@@ -215,9 +218,9 @@ jobs:
             }
 
             // Set outputs
-            core.setOutput('has-unresolved', (totalUnresolved > 0).toString());
-            core.setOutput('auto-fixable', JSON.stringify(autoFixable));
-            core.setOutput('manual-review', JSON.stringify(manualReview));
+            core.setOutput('has_unresolved', (totalUnresolved > 0).toString());
+            core.setOutput('auto_fixable', JSON.stringify(autoFixable));
+            core.setOutput('manual_review', JSON.stringify(manualReview));
 
             // Create summary
             core.summary
@@ -228,7 +231,7 @@ jobs:
                 ['Auto-fixable', autoFixable.length.toString()],
                 ['Manual Review Needed', manualReview.length.toString()]
               ]);
-              
+
             if (autoFixable.length > 0) {
               core.summary.addHeading('🔧 Auto-fixable Issues', 3);
               autoFixable.forEach(item => {
@@ -248,22 +251,24 @@ jobs:
             console.log(`✅ Analysis complete: ${totalUnresolved} unresolved, ${autoFixable.length} auto-fixable, ${manualReview.length} manual review`);
 
   auto-fix:
-    name: 🔧 Apply Automatic Fixes
+    name: "🔧 Apply Automatic Fixes"
     runs-on: ubuntu-latest
     needs: check-conversations
-    if: needs.check-conversations.outputs.has-unresolved == 'true' && needs.check-conversations.outputs.auto-fixable != '[]'
-
+    # AI Generated: GitHub Copilot - 2025-08-18
+    # Only attempt auto-fixes when running on a PR event (not schedule/dispatch),
+    # there are unresolved conversations with auto-fixable items, and the PR is not from a fork.
+  if: ${{ (github.event_name == 'pull_request' || startsWith(github.event_name, 'pull_request_')) && needs['check-conversations'].outputs.has_unresolved == 'true' && needs['check-conversations'].outputs.auto_fixable != '[]' && ( (github.event.pull_request && github.event.pull_request.head.repo.fork == false) || (github.event.review && github.event.review.pull_request && github.event.review.pull_request.head.repo.fork == false) ) }}
     steps:
-      - name: 🏗️ Checkout Repository
+      - name: "🏗️ Checkout Repository"
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: 🔧 Apply Automatic Fixes
+      - name: "🔧 Apply Automatic Fixes"
         uses: actions/github-script@v7
         env:
-          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
+          AUTO_FIXABLE_JSON: ${{ needs['check-conversations'].outputs.auto_fixable }}
         with:
           script: |
             const fs = require('fs');
@@ -339,26 +344,26 @@ jobs:
 
             console.log(`🎯 Applied fixes to ${filesModified.length} files`);
 
-      - name: 📝 Commit Automatic Fixes
+      - name: "📝 Commit Automatic Fixes"
         run: |
           if [ -f "modified-files.json" ]; then
             MODIFIED_FILES=$(cat modified-files.json)
             if [ "$MODIFIED_FILES" != "[]" ]; then
               git config --local user.email "action@github.com"
               git config --local user.name "GitHub Action - PR Conversation Handler"
-              
+
               # Add only the modified files
               echo "$MODIFIED_FILES" | jq -r '.[]' | xargs git add
-              
+
               git commit -m "🤖 Auto-fix: Address unresolved PR conversations
-              
+
               - Updated AI attribution timestamps to current date
               - Enhanced axios configuration with timeouts and interceptors  
               - Improved error handling with specific messages
-              
+
               Applied by automated PR conversation handler
               Co-authored-by: GitHub Copilot <copilot@github.com>"
-              
+
               git push
               echo "✅ Committed automatic fixes"
             else
@@ -369,17 +374,21 @@ jobs:
           fi
 
   report:
-    name: 📊 Generate Report
+    name: "📊 Generate Report"
     runs-on: ubuntu-latest
-    needs: [check-conversations, auto-fix]
-    if: always() && needs.check-conversations.outputs.has-unresolved == 'true'
-
+    # Only depend on the analysis job so this job can always run even if auto-fix is skipped
+    needs: check-conversations
+    # AI Generated: GitHub Copilot - 2025-08-18
+    # Always run so the required check doesn't appear as Skipped.
+    if: ${{ always() }}
     steps:
-      - name: 📊 Comment on PR
+      - name: "📊 Comment on PR"
+        # Only post a PR comment on PR-related events and when unresolved items exist
+        if: ${{ (github.event_name == 'pull_request' || startsWith(github.event_name, 'pull_request_')) && needs['check-conversations'].outputs.has_unresolved == 'true' }}
         uses: actions/github-script@v7
         env:
-          AUTO_FIXABLE_JSON: ${{ needs.check-conversations.outputs.auto-fixable }}
-          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
+          AUTO_FIXABLE_JSON: ${{ needs['check-conversations'].outputs.auto_fixable }}
+          MANUAL_REVIEW_JSON: ${{ needs['check-conversations'].outputs.manual_review }}
         with:
           script: |
             // GitHub Script provides: github, context, core
@@ -408,9 +417,9 @@ jobs:
             // Only comment on PR events, not scheduled runs
             if (context.eventName.startsWith('pull_request') && context.payload.pull_request) {
               const prNumber = context.payload.pull_request.number;
-              
+
               let comment = `## 🤖 PR Conversation Handler Report\n\n`;
-              
+
               if (autoFixable.length > 0) {
                 comment += `### ✅ Automatic Fixes Applied (${autoFixable.length})\n\n`;
                 autoFixable.forEach(fix => {
@@ -418,7 +427,7 @@ jobs:
                 });
                 comment += `\n*These issues have been automatically resolved.*\n\n`;
               }
-              
+
               if (manualReview.length > 0) {
                 comment += `### 👀 Manual Review Required (${manualReview.length})\n\n`;
                 manualReview.forEach(item => {
@@ -426,13 +435,13 @@ jobs:
                 });
                 comment += `\n*Please address these issues manually before merging.*\n\n`;
               }
-              
+
               if (autoFixable.length === 0 && manualReview.length === 0) {
                 comment += `### 🎉 All Conversations Resolved!\n\nNo unresolved review conversations found.\n\n`;
               }
-              
+
               comment += `---\n*This is an automated message from the self-healing CI/CD system.*`;
-              
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -441,10 +450,10 @@ jobs:
               });
             }
 
-      - name: 🚨 Set Check Status
+      - name: "🚨 Set Check Status"
         uses: actions/github-script@v7
         env:
-          MANUAL_REVIEW_JSON: ${{ needs.check-conversations.outputs.manual-review }}
+          MANUAL_REVIEW_JSON: ${{ needs['check-conversations'].outputs.manual_review }}
         with:
           script: |
             // Use environment variable to safely get the JSON data

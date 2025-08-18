@@ -68,7 +68,9 @@ export function reduceMovie(m) {
     id: m.id,
     title: m.title,
     year: m.release_date ? new Date(m.release_date).getFullYear() : null,
-    poster_path: m.poster_path && `${TMDB_IMAGE_BASE}${m.poster_path}`,
+  // AI Generated: GitHub Copilot - 2025-08-18
+  // Prefer explicit null for absent values to keep JSON shape stable
+  poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : null,
     overview: m.overview,
     rating: m.vote_average,
     runtime: m.runtime,
@@ -80,6 +82,9 @@ export function reduceMovie(m) {
  * @param {string|Date|null|undefined} d - The date to extract the year from. Can be a date string, Date object, or null/undefined.
  * @returns {number|null} The year as a four-digit number, or null if the input is falsy or invalid.
  */
+// AI Generated: GitHub Copilot - 2025-08-18
 export function toYear(d) {
-  return d ? new Date(d).getFullYear() : null;
+  if (!d) return null;
+  const date = new Date(d);
+  return !Number.isNaN(date.getTime()) ? date.getFullYear() : null;
 }
