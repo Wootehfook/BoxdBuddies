@@ -1,12 +1,10 @@
-name: CodeQL
+name: CodeQL Analysis (Custom)
 
 on:
+  # Only run on push to main and manual dispatch to avoid conflicts
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: "20 1 * * 6"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +13,7 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (CodeQL)
+    name: Custom CodeQL Analysis
     runs-on: ubuntu-latest
 
     steps:
@@ -30,10 +28,6 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci --ignore-scripts
-          # Also install Cloudflare specific dependencies if needed
-          if [ -f "functions/package.json" ]; then
-            cd functions && npm ci --ignore-scripts
-          fi
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -46,4 +40,4 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:javascript"
+          category: "/language:javascript-custom"
