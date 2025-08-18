@@ -95,8 +95,15 @@ jobs:
                   const conversationResolved = await checkConversationResolved(comment, reviews);
                   
                   if (!conversationResolved) {
-                    totalUnresolved++;
                     const analysis = analyzeComment(comment);
+                    
+                    // Skip automated or stale comments
+                    if (analysis.skip) {
+                      console.log(`⏭️ Skipping comment: ${analysis.reason}`);
+                      continue;
+                    }
+                    
+                    totalUnresolved++;
                     
                     if (analysis.autoFixable) {
                       autoFixable.push({
@@ -113,7 +120,7 @@ jobs:
                         pr: prNumber,
                         commentId: comment.id,
                         file: comment.path,
-                        line: comment.line,
+                        line: comment.line || 'N/A',
                         body: comment.body,
                         reason: analysis.reason
                       });
@@ -137,6 +144,24 @@ jobs:
 
             function analyzeComment(comment) {
               const body = comment.body.toLowerCase();
+              
+              // Skip if this is a GitHub automated comment or action
+              if (body.includes('github-actions') || body.includes('codecov') || body.includes('dependabot')) {
+                return {
+                  autoFixable: false,
+                  reason: 'Automated comment - no action needed',
+                  skip: true
+                };
+              }
+              
+              // Skip if line number is null or undefined (often indicates stale comments)
+              if (!comment.line && !comment.start_line) {
+                return {
+                  autoFixable: false,
+                  reason: 'Stale comment with no line reference - likely resolved',
+                  skip: true
+                };
+              }
               
               // AI attribution timestamp pattern
               if (body.includes('ai attribution') && body.includes('timestamp')) {
@@ -173,10 +198,19 @@ jobs:
                 };
               }
               
-              // Default to manual review for unknown patterns
+              // Common false positives to skip
+              if (body.includes('looks good') || body.includes('lgtm') || body.includes('approved')) {
+                return {
+                  autoFixable: false,
+                  reason: 'Positive review comment - no action needed',
+                  skip: true
+                };
+              }
+              
+              // Default to manual review for unknown patterns, but be more descriptive
               return {
                 autoFixable: false,
-                reason: 'Unknown pattern requires manual review'
+                reason: `Review comment requires attention: "${comment.body.substring(0, 50)}${comment.body.length > 50 ? '...' : ''}"`
               };
             }
 
@@ -225,7 +259,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: 🔧 Apply Automatic Fixes
         uses: actions/github-script@v7
         env:

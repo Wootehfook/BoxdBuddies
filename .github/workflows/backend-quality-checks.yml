@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -44,5 +44,6 @@ jobs:
         run: |
           echo "✅ Backend quality checks passed - web-only deployment detected"
           echo "No Rust backend to analyze in this configuration"
+          echo "This is a Cloudflare Pages deployment with no backend requirements"
 
-# AI Generated: GitHub Copilot - 2025-08-17T05:00:00Z
+# AI Generated: GitHub Copilot - 2025-08-17T23:30:00Z

@@ -1,0 +1,41 @@
+name: Build Application
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ -d "dist" ]; then
+            echo "✅ Build successful - dist directory created"
+            echo "Build contains $(find dist -type f | wc -l) files"
+          else
+            echo "❌ Build failed - no dist directory found"
+            exit 1
+          fi
+
+# AI Generated: GitHub Copilot - 2025-08-17T23:30:00Z

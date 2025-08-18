@@ -28,19 +28,11 @@
             "integration_id": null
           },
           {
-            "context": "Backend Quality Checks",
-            "integration_id": null
-          },
-          {
             "context": "Security Audit",
             "integration_id": null
           },
           {
             "context": "Code Quality Analysis",
-            "integration_id": null
-          },
-          {
-            "context": "Build Application",
             "integration_id": null
           },
           {
