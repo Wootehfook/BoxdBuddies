@@ -259,7 +259,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: 🔧 Apply Automatic Fixes
         uses: actions/github-script@v7
         env:
