@@ -68,7 +68,7 @@ export function reduceMovie(m) {
     id: m.id,
     title: m.title,
     year: m.release_date ? new Date(m.release_date).getFullYear() : null,
-    poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : undefined,
+    poster_path: m.poster_path && `${TMDB_IMAGE_BASE}${m.poster_path}`,
     overview: m.overview,
     rating: m.vote_average,
     runtime: m.runtime,
