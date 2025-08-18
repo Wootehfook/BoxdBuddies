@@ -34,6 +34,10 @@
           {
             "context": "Code Quality Analysis",
             "integration_id": null
+          },
+          {
+            "context": "📊 Generate Report",
+            "integration_id": null
           }
         ],
         "strict_required_status_checks_policy": true

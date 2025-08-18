@@ -7,7 +7,8 @@
       "Security Audit / security-audit",
       "Code Quality Analysis / code-quality-analysis",
       "Build Application / build-application",
-      "License Compliance Check / license-compliance-check"
+      "License Compliance Check / license-compliance-check",
+      "📊 Generate Report"
     ]
   },
   "enforce_admins": true,
