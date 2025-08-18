@@ -1,6 +1,6 @@
-# Contributing to BoxdBuddies
+# Contributing to BoxdBuddy
 
-Thank you for your interest in contributing to BoxdBuddies! This document provides guidelines for contributing to this project.
+Thank you for your interest in contributing to BoxdBuddy! This document provides guidelines for contributing to our web-based Letterboxd watchlist comparison application.
 
 ## 📋 Code of Conduct
 
@@ -11,8 +11,8 @@ This project is committed to providing a welcoming and inclusive environment for
 ### Prerequisites
 
 - Node.js (v18 or later)
-- Rust (latest stable)
 - Git
+- VS Code (recommended) with TypeScript extensions
 
 ### Setup
 
@@ -28,31 +28,49 @@ This project is committed to providing a welcoming and inclusive environment for
    ```
 4. Start development environment:
    ```bash
-   npm run tauri dev
+   npm run dev
    ```
+5. Access the application at `http://localhost:5173`
+
+### Environment Configuration
+
+Create a `.env.local` file for local development:
+
+```env
+TMDB_API_KEY=your_tmdb_api_key_here
+```
 
 ## 🔧 Development Guidelines
 
 ### Code Style
 
-- **Rust**: Follow `rustfmt` and `clippy` recommendations
 - **TypeScript/React**: Use ESLint and Prettier configurations
-- **Maximum line length**: 100 characters for TypeScript, 80 for Rust
+- **Cloudflare Functions**: Follow TypeScript best practices
+- **Maximum line length**: 100 characters
 - **AI Attribution**: All AI-generated code must include comments with timestamp and model identity
+
+### Architecture Overview
+
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Cloudflare Pages Functions
+- **Database**: Cloudflare D1 (SQLite)
+- **Caching**: Cloudflare KV + D1
+- **External APIs**: TMDB for movie metadata
 
 ### Git Workflow
 
 1. Create a feature branch: `git checkout -b feature/your-feature-name`
 2. Make your changes
-3. Run tests: `npm run test` (when available)
+3. Test locally: `npm run dev`
 4. Format code: `npm run format`
-5. Check linting: `npm run lint` (when available)
+5. Check types: `npm run type-check`
 6. Commit with clear messages
 7. Push to your fork and create a Pull Request
 
 ### Commit Message Format
 
 Use conventional commits:
+
 - `feat: add new feature`
 - `fix: resolve bug`
 - `docs: update documentation`
@@ -64,18 +82,21 @@ Use conventional commits:
 ## 🏗️ Architecture Guidelines
 
 ### Backend (Rust)
+
 - Use strong typing, avoid `unwrap()` in production
 - Include comprehensive error handling
 - Add `///` doc comments for public functions
 - Follow security best practices
 
 ### Frontend (TypeScript/React)
+
 - Use TypeScript strict mode, no `any` types
 - Include JSDoc comments for complex functions
 - Follow React best practices
 - Ensure accessibility compliance
 
 ### Database
+
 - Use snake_case for SQL identifiers
 - Include proper migration scripts
 - Use transactions for data consistency
@@ -96,6 +117,7 @@ Use conventional commits:
 ## 🐛 Bug Reports
 
 Include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior
@@ -105,6 +127,7 @@ Include:
 ## 💡 Feature Requests
 
 Include:
+
 - Clear description of the proposed feature
 - Use case and motivation
 - Proposed implementation approach
@@ -126,6 +149,7 @@ By contributing, you agree that your contributions will be licensed under the AG
 ## 📞 Questions?
 
 Feel free to open an issue for questions about:
+
 - Development setup
 - Architecture decisions
 - Contribution guidelines
@@ -135,6 +159,8 @@ Thank you for contributing to BoxdBuddies! 🎬
 
 ---
 
-*Last updated: August 4, 2025 - PR #4 closed, focusing on PR #3 completion*
+_Last updated: August 4, 2025 - PR #4 closed, focusing on PR #3 completion_
 
-````
+```
+
+```

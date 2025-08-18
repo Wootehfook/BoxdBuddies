@@ -1,6 +1,6 @@
 # Brand and Trademark Usage Policy
 
-BoxdBuddies respects the intellectual property rights of all external services and brands referenced in this application.
+BoxdBuddy respects the intellectual property rights of all external services and brands referenced in this application.
 
 ## 🏷️ Trademark Acknowledgments
 
@@ -8,22 +8,22 @@ BoxdBuddies respects the intellectual property rights of all external services a
 
 - **Trademark**: "Letterboxd" is a trademark of Letterboxd Limited
 - **Website**: https://letterboxd.com/
-- **Usage in BoxdBuddies**:
+- **Usage in BoxdBuddy**:
   - Reference to the service for data source identification
   - No use of Letterboxd logos or brand assets
   - No implied endorsement or affiliation
   - Respectful scraping of public profile data only
 
-**Disclaimer**: BoxdBuddies is not affiliated with, endorsed by, or connected to Letterboxd Limited. We simply access publicly available data from Letterboxd profiles for comparison purposes.
+**Disclaimer**: BoxdBuddy is not affiliated with, endorsed by, or connected to Letterboxd Limited. We simply access publicly available data from Letterboxd profiles for comparison purposes.
 
 ### The Movie Database (TMDB)
 
 - **Trademark**: "TMDB" and "The Movie Database" are trademarks of TiVo Corporation
 - **Website**: https://www.themoviedb.org/
-- **Usage in BoxdBuddies**:
+- **Usage in BoxdBuddy**:
   - Movie data enhancement through official API
   - Proper attribution as required by TMDB API terms
-  - Users provide their own API keys
+  - Server-side API integration, no user API keys required
   - No use of TMDB logos or brand assets without permission
 
 **Required Attribution**: "This product uses the TMDB API but is not endorsed or certified by TMDB."

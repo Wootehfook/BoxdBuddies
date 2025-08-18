@@ -1,53 +1,51 @@
-# 📖 BoxdBuddies User Guide
+# 📖 BoxdBuddy User Guide
 
-Welcome to **BoxdBuddies**! This guide will help you get the most out of comparing Letterboxd watchlists with your friends.
+Welcome to **BoxdBuddy**! This guide will help you get the most out of comparing Letterboxd watchlists with your friends using our web application.
 
 ## 🚀 Getting Started
 
-### Step 1: Initial Setup
+### Step 1: Access the Application
 
-1. **Launch BoxdBuddies** from your desktop or applications folder
-2. **Enter Your Letterboxd Username**
-   - This must be your exact Letterboxd username (case-sensitive)
+1. **Visit BoxdBuddy**: Navigate to [https://boxdbud.pages.dev](https://boxdbud.pages.dev)
+2. **Works Everywhere**: Use any modern web browser on desktop, tablet, or mobile
+3. **No Installation Required**: Instant access, no downloads needed
+
+### Step 2: Enter User Information
+
+1. **Your Letterboxd Username**
+   - Enter your exact Letterboxd username (case-sensitive)
    - Example: If your profile is `letterboxd.com/username`, enter `username`
-3. **Add TMDB API Key (Optional but Recommended)**
-   - Get a free API key from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
-   - This enables movie posters, ratings, descriptions, and director information
-   - Without this, you'll still see basic movie titles and years
+2. **Friends' Usernames**
+   - Add up to 4 friends by entering their Letterboxd usernames
+   - Use the "Add Friend" button to include more friends
+   - Remove friends using the "×" button if needed
 
-### Step 2: Friend Selection
-
-1. **Automatic Friend Discovery**
-   - BoxdBuddies will automatically scan your Letterboxd profile for friends
-   - This may take a few moments depending on how many friends you have
-2. **Select Friends to Compare**
-   - Click on friend cards to select/deselect them
-   - You can compare with multiple friends at once
-   - Friends are shown with their watchlist counts when available
-
-### Step 3: Watchlist Comparison
+### Step 3: Start Comparison
 
 1. **Click "Compare Watchlists"**
-   - The app will scan all selected friends' watchlists
-   - Progress is shown with entertaining movie quotes!
-2. **Review Results**
+   - The app will scan all watchlists and find common movies
+   - Progress is shown with real-time updates
+   - Processing typically takes 30-60 seconds for large watchlists
+2. **View Results**
    - Movies are sorted by how many friends have them in their watchlists
-   - Use filters to narrow down by genre
-   - Click any movie to view it on Letterboxd
+   - Each movie shows which friends have it in their watchlist
+   - Click any movie poster to view detailed information
 
 ## 🎯 Features
 
-### 🔍 Smart Filtering
+### 🔍 Movie Information
 
-- **Genre Filter**: Filter results by specific movie genres
-- **Multiple Sort Options**: Sort by friend count, rating, or release year
-- **Friend Tags**: See which friends have each movie in their watchlist
+- **Rich Metadata**: Posters, ratings, genres, and director information
+- **Letterboxd Links**: Direct links to view movies on Letterboxd
+- **TMDB Enhancement**: Comprehensive movie data from The Movie Database
+- **99.3% Coverage**: Movie information available for vast majority of titles
 
-### ⚡ Intelligent Caching
+### ⚡ Performance & Caching
 
-- **Fast Repeat Comparisons**: Watchlists are cached for 24 hours
-- **Automatic Updates**: Cache refreshes automatically when needed
-- **Instant Results**: Subsequent comparisons load in seconds
+- **Smart Caching**: Watchlists and movie data cached for faster subsequent comparisons
+- **Global Performance**: Cloudflare edge computing ensures fast loading worldwide
+- **Real-time Progress**: Visual progress tracking during comparisons
+- **Mobile Optimized**: Responsive design that works perfectly on all devices
 
 ### 🎬 Rich Movie Data (with TMDB API Key)
 

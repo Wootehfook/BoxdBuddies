@@ -5,75 +5,44 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 
-> # BoxdBuddy 🤖
-
-![Buddio - BoxdBuddy Mascot](public/buddio.svg "Buddio")
-
 **Find movies all your friends want to watch**
 
 BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. Available as a modern web application powered by Cloudflare Pages.
 
-![BoxdBuddies Demo](docs/images/demo-hero.png)
-_Coming Soon: Demo screenshot showing the beautiful interface_
+## 🚀 Live Application
 
-## 🚀 Launch BoxdBuddy
-
-**[Launch BoxdBuddy Web App →](https://boxdbuddy.pages.dev)**
+**[Launch BoxdBuddy →](https://boxdbud.pages.dev)**
 
 - No download or installation required
 - Works on any device with a browser
 - Automatic updates and latest features
-- Persistent local cache for fast performance
 - Secure server-side TMDB integration
-
-### ✅ Recent Achievements (August 16, 2025)
-
-- **🌐 Web App Launch**: Full Cloudflare deployment with serverless architecture
-- **🔒 Enhanced Security**: No API keys required for users - secure server-side TMDB integration
-- **⚡ Smart Caching**: Multi-layer caching (Edge + KV + D1 + LocalStorage) for optimal performance
-- **🤖 AI Development**: Advanced MCP integration with 6 specialized servers for enhanced development workflow
-- **📊 Database Migration**: Complete TMDB movie catalog stored in Cloudflare D1 database
-- **🔄 Auto-Updates**: Daily scheduled TMDB delta sync for fresh movie data
 
 ## ✨ Features
 
-### 🌐 Web App Features
+- � **Letterboxd Integration**: Scrapes complete watchlists with pagination support
+- 👥 **Multi-User Comparison**: Compare watchlists between multiple friends
+- 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and metadata
+- ⚡ **Smart Caching**: D1 database with 2,000+ pre-cached popular movies
+- 📊 **Real-time Progress**: Visual progress tracking during comparisons
+- 🎨 **Responsive Design**: Works seamlessly on desktop and mobile devices
+- � **Secure**: No user API keys required - all external APIs handled server-side
 
-- **No Downloads**: Access directly from your browser
-- **No API Keys**: TMDB integration handled securely on the server
-- **Smart Caching**: Persistent local storage with intelligent cache invalidation
-- **Auto-Updates**: Always up-to-date with the latest features
-- **Cross-Device**: Works seamlessly across desktop, tablet, and mobile
+## 🏆 Performance
 
-### 💻 Desktop App Features
-
-- 🎬 **Letterboxd Integration**: Import watchlists from Letterboxd profiles with accurate URL handling
-- 👥 **Friend Comparison**: Compare watchlists across multiple friends simultaneously
-- 🚀 **TMDB Enhancement**: Enrich movies with high-quality posters, ratings, descriptions, and director information
-- ⚡ **Smart Caching**: Lightning-fast cache system with intelligent count verification and auto-sync
-- 📊 **Real-time Progress**: Live progress tracking with smooth UI updates and debug information
-- 🎨 **Beautiful UI**: Letterboxd-inspired dark theme with responsive design and accessibility features
-- 💾 **Data Persistence**: Save your profile and friends list locally with SQLite database
-- 🔧 **Debug Panel**: Real-time application state monitoring and troubleshooting tools
-
-## 🏆 Production Achievements
-
-- **Performance**: Processes 300+ movies in seconds with intelligent caching
-- **Accuracy**: 100% accurate Letterboxd movie links using scraped slugs
-- **Reliability**: Robust error handling with timeout mechanisms and fallback strategies
-- **Security**: No user API keys required, server-side TMDB integration, rate limiting
-- **Scalability**: Cloudflare edge computing with global CDN distribution
-- **Quality**: Professional-grade code with comprehensive testing and security measures
-- **User Experience**: Smooth progress tracking, responsive design, and intuitive interface
+- Processes 300+ movies per user in seconds
+- 99.3% TMDB data coverage
+- Sub-second cached responses
+- Handles pagination for large watchlists
+- Global edge computing with Cloudflare
 
 ## 🚀 Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Cloudflare Workers + D1 Database + KV Storage
-- **APIs**: Secure server-side TMDB integration
-- **Caching**: Multi-layer edge caching + local storage
+- **Backend**: Cloudflare Pages Functions
+- **Database**: Cloudflare D1 (SQLite) + KV Storage
+- **APIs**: Letterboxd scraping + TMDB integration
 - **Deployment**: Cloudflare Pages with automated CI/CD
-- **Build Tools**: Vite + GitHub Actions
 
 ## 📋 Prerequisites
 
