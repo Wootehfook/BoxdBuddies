@@ -82,6 +82,9 @@ export function reduceMovie(m) {
  * @param {string|Date|null|undefined} d - The date to extract the year from. Can be a date string, Date object, or null/undefined.
  * @returns {number|null} The year as a four-digit number, or null if the input is falsy or invalid.
  */
+// AI Generated: GitHub Copilot - 2025-08-18
 export function toYear(d) {
-  return d ? new Date(d).getFullYear() : null;
+  if (!d) return null;
+  const date = new Date(d);
+  return !Number.isNaN(date.getTime()) ? date.getFullYear() : null;
 }
