@@ -2,27 +2,39 @@
 
 ## 🔒 Supported Versions
 
-BoxdBuddies is currently in active development. Security updates will be provided for:
+BoxdBuddy is currently a production web application. Security updates will be provided for:
 
-| Version | Supported               |
-| ------- | ----------------------- |
-| 1.0.x   | ✅ **Currently Active** |
+| Version | Supported                 |
+| ------- | ------------------------- |
+| 2.0.x   | ✅ **Currently Active**   |
+| 1.0.x   | ❌ **Deprecated Desktop** |
 
 ## 🛡️ Security Features
 
 ### Built-in Security Measures
 
-- **Tauri Security**: Content Security Policy (CSP) and API allowlisting
-- **Input Validation**: All external inputs (Letterboxd scraping, TMDB API) are validated
-- **Environment Variables**: Sensitive configuration stored securely
-- **No Hardcoded Secrets**: API keys managed through environment variables
-- **Database Security**: SQLite with parameterized queries to prevent injection
+- **Cloudflare Security**: Web Application Firewall (WAF) and DDoS protection
+- **Input Validation**: All external inputs (Letterboxd scraping, TMDB API) are validated server-side
+- **Environment Variables**: Sensitive configuration stored in Cloudflare secrets
+- **No User API Keys**: Server-side TMDB integration, no user credentials required
+- **Database Security**: Cloudflare D1 with parameterized queries to prevent injection
+- **CORS Protection**: Strict origin allowlisting for API endpoints
+- **Rate Limiting**: Request throttling to prevent abuse
 
 ### Data Handling
 
-- **Local Storage Only**: All data stays on your device
+- **Minimal Data Collection**: Only processes data during active sessions
+- **No Persistent User Data**: Session-based processing, no long-term storage
 - **No User Tracking**: No analytics or telemetry collection
 - **Respect for Source APIs**: Complies with TMDB and Letterboxd terms of service
+- **Edge Computing**: Cloudflare's global network ensures data proximity and security
+
+### Web Security Standards
+
+- **HTTPS Everywhere**: All traffic encrypted with TLS 1.3
+- **Content Security Policy**: Strict CSP headers prevent XSS attacks
+- **Secure Headers**: HSTS, X-Frame-Options, X-Content-Type-Options implemented
+- **No Third-party Scripts**: Self-contained application with minimal external dependencies
 
 ## 🚨 Reporting Security Vulnerabilities
 

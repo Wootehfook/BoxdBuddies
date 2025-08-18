@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to BoxdBuddies will be documented in this file.
+All notable changes to BoxdBuddy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,45 +9,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned Features
 
-- Advanced filtering and sorting options
+- User accounts with saved friend lists
+- Advanced filtering by genre, year, and rating
 - Export functionality for comparison results
-- Watchlist synchronization scheduling
-- Social features and sharing capabilities
+- Enhanced mobile responsive design
+- Public API for third-party integrations
 
-## [1.0.0] - 2025-08-03
+## [2.0.0] - 2025-08-17
 
-### 🎉 Initial Public Release
+### 🎉 Web Platform Launch
 
-BoxdBuddies v1.0.0 marks the first public release of this production-ready desktop application for comparing Letterboxd watchlists between friends.
+BoxdBuddy v2.0.0 represents a complete platform migration from desktop to web, bringing Letterboxd watchlist comparison to any device with internet access.
 
-### ✨ Features
+### ✨ Major Changes
 
-#### Core Functionality
+#### Platform Migration
 
-- **Letterboxd Integration**: Import watchlists from Letterboxd profiles with accurate URL handling
-- **Friend Comparison**: Compare watchlists across multiple friends simultaneously
-- **TMDB Enhancement**: Enrich movies with high-quality posters, ratings, descriptions, and director information
-- **Smart Caching**: Lightning-fast cache system with intelligent count verification and auto-sync
-- **Real-time Progress**: Live progress tracking with smooth UI updates and debug information
+- **Web Application**: Complete migration from Tauri desktop to Cloudflare Pages web platform
+- **Universal Access**: Available at [https://boxdbud.pages.dev](https://boxdbud.pages.dev) on any device
+- **Zero Installation**: Instant access via web browser, no downloads required
+- **Mobile Optimization**: Responsive design that works seamlessly on smartphones and tablets
 
-#### User Interface
+#### Enhanced Performance
 
-- **Beautiful UI**: Letterboxd-inspired dark theme with responsive design
-- **Accessibility**: WCAG 2.1 compliant design with keyboard navigation and screen reader support
-- **Debug Panel**: Real-time application state monitoring and troubleshooting tools
-- **Progress Tracking**: Smooth progress indicators with movie quotes during long operations
+- **Global CDN**: Cloudflare edge computing for worldwide performance
+- **Smart Caching**: Multi-layer caching (Edge + KV + D1) for lightning-fast responses
+- **Pre-cached Data**: 2,000+ popular movies cached for instant enhancement
+- **99.3% Coverage**: TMDB metadata available for vast majority of movies
 
-#### Technical Excellence
+#### New Features
 
-- **Data Persistence**: Save profile and friends list locally with SQLite database
-- **Cross-Platform**: Working perfectly on Windows and Linux
-- **Performance**: Processes 300+ movies in seconds with intelligent caching
-- **Accuracy**: 100% accurate Letterboxd movie links using scraped slugs
-- **Reliability**: Robust error handling with timeout mechanisms and fallback strategies
+- **Enhanced API**: Robust Cloudflare Functions backend with CORS and rate limiting
+- **Improved Progress**: Real-time progress tracking during comparisons
+- **Better Error Handling**: Comprehensive error messages and retry mechanisms
+- **Security**: Server-side API integration, no user credentials required
 
 ### 🏗️ Architecture
 
 #### Frontend
+
+- React 18 with TypeScript for type safety
+- Vite for fast development and optimized builds
+- Responsive design with mobile-first approach
+- Real-time progress updates with visual feedback
+
+#### Backend
+
+- Cloudflare Pages Functions for serverless computing
+- Cloudflare D1 database for structured data storage
+- Cloudflare KV for high-performance caching
+- TMDB API integration for movie metadata
+
+### 🐛 Bug Fixes
+
+- Fixed movie link accuracy using actual Letterboxd slugs
+- Resolved caching issues with proper data type handling
+- Improved error handling for network timeouts
+- Enhanced progress tracking reliability
+
+### 💔 Breaking Changes
+
+- Desktop application discontinued in favor of web platform
+- Local SQLite database replaced with cloud D1 database
+- Tauri APIs replaced with web-standard fetch APIs
+
+## [1.0.0] - 2025-08-03
+
+### 🎉 Initial Desktop Release (Deprecated)
+
+> **Note**: This version is no longer supported. Please use the web application at https://boxdbud.pages.dev
+
+BoxdBuddies v1.0.0 was the initial desktop application release.
+
+### ✨ Features (Historical)
+
+- Desktop application built with Tauri (Rust + React)
+- Local SQLite database for caching
+- Cross-platform support (Windows, macOS, Linux)
+- Local data storage and processing
 
 - React 18 + TypeScript + Vite
 - Responsive design with CSS Grid/Flexbox

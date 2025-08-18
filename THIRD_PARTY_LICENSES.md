@@ -1,28 +1,16 @@
 # Third-Party Licenses and Attributions
 
-BoxdBuddies uses various open source libraries and services. This document provides attribution and license information for all third-party components.
+BoxdBuddy uses various open source libraries and services. This document provides attribution and license information for all third-party components.
 
 ## 📄 Summary
 
-BoxdBuddies is licensed under **AGPL-3.0-or-later** with commercial use prohibition. All dependencies are compatible with this license.
+BoxdBuddy is licensed under **AGPL-3.0-or-later** with commercial use prohibition. All dependencies are compatible with this license.
 
 ---
 
 ## 🎯 Frontend Dependencies (JavaScript/TypeScript)
 
 ### Runtime Dependencies
-
-#### [@tauri-apps/api](https://github.com/tauri-apps/tauri) - v1.5.0
-
-- **License**: Apache-2.0 OR MIT
-- **Purpose**: Tauri API bindings for frontend-backend communication
-- **Compatible**: ✅ (Permissive licenses compatible with AGPL-3.0)
-
-#### [axios](https://github.com/axios/axios) - v1.11.0
-
-- **License**: MIT
-- **Purpose**: HTTP client for TMDB API requests
-- **Compatible**: ✅ (MIT compatible with AGPL-3.0)
 
 #### [React](https://github.com/facebook/react) - v18.2.0
 
@@ -38,7 +26,31 @@ BoxdBuddies is licensed under **AGPL-3.0-or-later** with commercial use prohibit
 
 ### Development Dependencies
 
-All development dependencies (ESLint, TypeScript, Vite, Jest, etc.) are used only during build process and are not distributed. These include MIT, Apache-2.0, and other permissive licenses, all compatible with AGPL-3.0.
+All development dependencies (ESLint, TypeScript, Vite, Prettier, etc.) are used only during build process and are not distributed. These include MIT, Apache-2.0, and other permissive licenses, all compatible with AGPL-3.0.
+
+---
+
+## 🌐 Backend Dependencies (Cloudflare)
+
+### Cloudflare Services
+
+#### [Cloudflare Pages](https://pages.cloudflare.com/)
+
+- **Service**: Cloudflare Pages for static hosting and Functions
+- **Terms**: [Cloudflare Terms of Service](https://www.cloudflare.com/terms/)
+- **Purpose**: Web application hosting and serverless functions
+
+#### [Cloudflare D1](https://developers.cloudflare.com/d1/)
+
+- **Service**: Cloudflare D1 SQLite database
+- **Terms**: [Cloudflare Terms of Service](https://www.cloudflare.com/terms/)
+- **Purpose**: Structured data storage and caching
+
+#### [Cloudflare KV](https://developers.cloudflare.com/kv/)
+
+- **Service**: Cloudflare Workers KV for key-value storage
+- **Terms**: [Cloudflare Terms of Service](https://www.cloudflare.com/terms/)
+- **Purpose**: High-performance caching layer
 
 ---
 
