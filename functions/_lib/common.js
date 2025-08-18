@@ -2,6 +2,7 @@
 // Enhanced utilities for Cloudflare Pages Functions with CORS and dual caching
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
 export const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -66,14 +67,19 @@ export function reduceMovie(m) {
   return {
     id: m.id,
     title: m.title,
-    year: m.release_date ? new Date(m.release_date).getFullYear() : 0,
-    poster_path: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : undefined,
+    year: m.release_date ? new Date(m.release_date).getFullYear() : null,
+    poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : undefined,
     overview: m.overview,
     rating: m.vote_average,
     runtime: m.runtime,
   };
 }
 
+/**
+ * Extracts the year from a date string or Date object.
+ * @param {string|Date|null|undefined} d - The date to extract the year from. Can be a date string, Date object, or null/undefined.
+ * @returns {number|null} The year as a four-digit number, or null if the input is falsy or invalid.
+ */
 export function toYear(d) {
-  return d ? new Date(d).getFullYear() : 0;
+  return d ? new Date(d).getFullYear() : null;
 }
