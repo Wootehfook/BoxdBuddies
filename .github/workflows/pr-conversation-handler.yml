@@ -36,8 +36,8 @@ jobs:
       auto_fixable: ${{ steps.check.outputs.auto_fixable }}
       manual_review: ${{ steps.check.outputs.manual_review }}
     steps:
-      - name: "🏗️ Checkout Repository"
-        uses: actions/checkout@v4
+      - name: 🏗️ Checkout Repository
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -259,8 +259,8 @@ jobs:
     # there are unresolved conversations with auto-fixable items, and the PR is not from a fork.
   if: ${{ (github.event_name == 'pull_request' || startsWith(github.event_name, 'pull_request_')) && needs['check-conversations'].outputs.has_unresolved == 'true' && needs['check-conversations'].outputs.auto_fixable != '[]' && ( (github.event.pull_request && github.event.pull_request.head.repo.fork == false) || (github.event.review && github.event.review.pull_request && github.event.review.pull_request.head.repo.fork == false) ) }}
     steps:
-      - name: "🏗️ Checkout Repository"
-        uses: actions/checkout@v4
+      - name: 🏗️ Checkout Repository
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0

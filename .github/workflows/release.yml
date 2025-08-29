@@ -28,7 +28,7 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -120,7 +120,7 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -227,7 +227,7 @@ jobs:
       contents: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download all artifacts
         uses: actions/download-artifact@v5
