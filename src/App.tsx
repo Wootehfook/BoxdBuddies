@@ -16,7 +16,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import React from "react";
 // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 import "./App.css";
 
@@ -77,16 +78,18 @@ function getUserColors(username: string) {
 
 // AI Generated: GitHub Copilot - 2025-08-16T21:00:00Z
 // FriendAvatar component with CORS proxy support
-function FriendAvatar({ friend }: { friend: Friend }) {
+const FriendAvatar = React.memo(({ friend }: { friend: Friend }) => {
   const [imageError, setImageError] = useState(false);
 
-  const initials = friend.displayName
-    ? friend.displayName.charAt(0).toUpperCase()
-    : friend.username.charAt(0).toUpperCase();
+  const initials = useMemo(() => {
+    return friend.displayName
+      ? friend.displayName.charAt(0).toUpperCase()
+      : friend.username.charAt(0).toUpperCase();
+  }, [friend.displayName, friend.username]);
 
   // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
   // Secure URL validation for Letterboxd images to prevent domain spoofing
-  const isValidLetterboxdUrl = (url: string): boolean => {
+  const isValidLetterboxdUrl = useCallback((url: string): boolean => {
     try {
       const parsedUrl = new window.URL(url);
       // Ensure the hostname ends with .ltrbxd.com (not just contains it)
@@ -97,15 +100,17 @@ function FriendAvatar({ friend }: { friend: Friend }) {
     } catch {
       return false;
     }
-  };
+  }, []);
 
   // Use proxy for Letterboxd images to bypass CORS
-  const imageUrl =
-    friend.profileImageUrl && isValidLetterboxdUrl(friend.profileImageUrl)
+  const imageUrl = useMemo(() => {
+    return friend.profileImageUrl &&
+      isValidLetterboxdUrl(friend.profileImageUrl)
       ? `${API_ENDPOINTS.LETTERBOXD_AVATAR_PROXY}?url=${encodeURIComponent(friend.profileImageUrl)}`
       : friend.profileImageUrl;
+  }, [friend.profileImageUrl, isValidLetterboxdUrl]);
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     console.error(
       `Failed to load image for ${friend.username}:`,
       friend.profileImageUrl,
@@ -113,7 +118,7 @@ function FriendAvatar({ friend }: { friend: Friend }) {
       imageUrl
     );
     setImageError(true);
-  };
+  }, [friend.username, friend.profileImageUrl, imageUrl]);
 
   return (
     <div className="friend-avatar">
@@ -136,7 +141,9 @@ function FriendAvatar({ friend }: { friend: Friend }) {
       )}
     </div>
   );
-}
+});
+
+FriendAvatar.displayName = "FriendAvatar";
 
 // AI Generated: GitHub Copilot - 2025-08-16T21:30:00Z
 // Famous movie quotes for progress display
@@ -229,7 +236,57 @@ function App() {
     };
   }, [isComparing]);
 
-  const handleUserSetup = async () => {
+  // AI Generated: GitHub Copilot - 2025-08-16T22:30:00Z
+  // Fetch watchlist counts for friends in the background
+  const fetchWatchlistCounts = useCallback(async (friendsData: Friend[]) => {
+    try {
+      setIsLoadingWatchlistCounts(true);
+      const usernames = friendsData.map((f) => f.username);
+
+      const response = await window.fetch(
+        API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            usernames,
+            forceRefresh: false, // Use cache for better performance, profile page method is accurate anyway
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Update friends with watchlist counts
+        setFriends((prev) =>
+          prev.map((friend) => {
+            const count = data.results[friend.username];
+            if (count !== undefined) {
+              return { ...friend, watchlistCount: count };
+            }
+            // If no result for this friend, keep existing value (might be undefined)
+            return friend;
+          })
+        );
+      } else {
+        console.error(
+          "Watchlist count API failed:",
+          response.status,
+          response.statusText
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch watchlist counts:", error);
+      // Don't show error to user - this is a nice-to-have feature
+    } finally {
+      setIsLoadingWatchlistCounts(false);
+    }
+  }, []);
+
+  const handleUserSetup = useCallback(async () => {
     if (!username.trim()) {
       setError("Please enter your Letterboxd username");
       return;
@@ -297,59 +354,8 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // AI Generated: GitHub Copilot - 2025-08-16T22:30:00Z
-  // Fetch watchlist counts for friends in the background
-  const fetchWatchlistCounts = async (friendsData: Friend[]) => {
-    try {
-      setIsLoadingWatchlistCounts(true);
-      const usernames = friendsData.map((f) => f.username);
-
-      const response = await window.fetch(
-        API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            usernames,
-            forceRefresh: false, // Use cache for better performance, profile page method is accurate anyway
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Update friends with watchlist counts
-        setFriends((prev) =>
-          prev.map((friend) => {
-            const count = data.results[friend.username];
-            if (count !== undefined) {
-              return { ...friend, watchlistCount: count };
-            }
-            // If no result for this friend, keep existing value (might be undefined)
-            return friend;
-          })
-        );
-      } else {
-        console.error(
-          "Watchlist count API failed:",
-          response.status,
-          response.statusText
-        );
-      }
-    } catch (error) {
-      console.error("Failed to fetch watchlist counts:", error);
-      // Don't show error to user - this is a nice-to-have feature
-    } finally {
-      setIsLoadingWatchlistCounts(false);
-    }
-  };
-
-  const toggleFriend = (friend: Friend) => {
+  }, [username, fetchWatchlistCounts]);
+  const toggleFriend = useCallback((friend: Friend) => {
     setSelectedFriends((prev) => {
       const isSelected = prev.some((f) => f.username === friend.username);
       if (isSelected) {
@@ -358,9 +364,9 @@ function App() {
         return [...prev, friend];
       }
     });
-  };
+  }, []);
 
-  const handleCompareWatchlists = async () => {
+  const handleCompareWatchlists = useCallback(async () => {
     if (selectedFriends.length === 0) {
       setError("Please select at least one friend to compare with");
       return;
@@ -435,26 +441,26 @@ function App() {
     } finally {
       setIsComparing(false);
     }
-  };
+  }, [selectedFriends, username]);
 
-  const handleBackToFriends = () => {
+  const handleBackToFriends = useCallback(() => {
     setPage("friend-selection");
     setMovies([]);
     setEnhancementProgress({ completed: 0, total: 0, status: "" });
-  };
+  }, []);
 
-  const handleBackToSetup = () => {
+  const handleBackToSetup = useCallback(() => {
     setPage("setup");
     setFriends([]);
     setSelectedFriends([]);
     setMovies([]);
-  };
+  }, []);
 
-  const renderCurrentPage = () => {
+  const renderCurrentPage = useMemo(() => {
     switch (page) {
       case "setup":
         return (
-          <SetupPage
+          <MemoizedSetupPage
             username={username}
             setUsername={setUsername}
             onSetup={handleUserSetup}
@@ -466,7 +472,7 @@ function App() {
         );
       case "friend-selection":
         return (
-          <FriendSelectionPage
+          <MemoizedFriendSelectionPage
             friends={friends}
             selectedFriends={selectedFriends}
             onToggleFriend={toggleFriend}
@@ -481,7 +487,7 @@ function App() {
         );
       case "results":
         return (
-          <ResultsPage
+          <MemoizedResultsPage
             movies={movies}
             selectedFriends={selectedFriends}
             onBack={handleBackToFriends}
@@ -491,7 +497,27 @@ function App() {
       default:
         return null;
     }
-  };
+  }, [
+    page,
+    username,
+    setUsername,
+    handleUserSetup,
+    isLoading,
+    isLoadingFriends,
+    friendsLoadingProgress,
+    error,
+    friends,
+    selectedFriends,
+    toggleFriend,
+    handleCompareWatchlists,
+    handleBackToSetup,
+    isComparing,
+    isLoadingWatchlistCounts,
+    enhancementProgress,
+    currentQuoteIndex,
+    movies,
+    handleBackToFriends,
+  ]);
 
   return (
     <div className="container">
@@ -507,7 +533,7 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">{renderCurrentPage()}</main>
+      <main className="app-main">{renderCurrentPage}</main>
 
       <footer className="attribution">
         <p>
@@ -619,6 +645,10 @@ function SetupPage({
     </section>
   );
 }
+
+// Memoize the SetupPage component
+const MemoizedSetupPage = React.memo(SetupPage);
+MemoizedSetupPage.displayName = "SetupPage";
 
 // Friend Selection Page Component
 interface FriendSelectionPageProps {
@@ -769,6 +799,10 @@ function FriendSelectionPage({
     </section>
   );
 }
+
+// Memoize the FriendSelectionPage component
+const MemoizedFriendSelectionPage = React.memo(FriendSelectionPage);
+MemoizedFriendSelectionPage.displayName = "FriendSelectionPage";
 
 // Results Page Component
 interface ResultsPageProps {
@@ -934,5 +968,9 @@ function ResultsPage({ movies, onBack }: ResultsPageProps) {
     </section>
   );
 }
+
+// Memoize the ResultsPage component
+const MemoizedResultsPage = React.memo(ResultsPage);
+MemoizedResultsPage.displayName = "ResultsPage";
 
 export default App;
