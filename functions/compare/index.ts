@@ -129,6 +129,10 @@ function findCommonMovies(
 
   // Process each watchlist and build the movie map
   for (const watchlist of watchlists) {
+    console.log(
+      `Processing ${watchlist.username} with ${watchlist.movies.length} movies`
+    );
+
     // Use a Set for this watchlist to avoid duplicates within a single user's list
     const userMovies = new Set<string>();
 
@@ -147,6 +151,9 @@ function findCommonMovies(
         if (!existing.users.includes(watchlist.username)) {
           existing.users.push(watchlist.username);
         }
+        console.log(
+          `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
+        );
       } else {
         // First time seeing this movie
         movieMap.set(key, {
@@ -157,6 +164,11 @@ function findCommonMovies(
       }
     }
   }
+
+  console.log(`Total unique movies in map: ${movieMap.size}`);
+  console.log(
+    `Movies with count >= 2: ${Array.from(movieMap.values()).filter((m) => m.count >= 2).length}`
+  );
 
   // Filter to movies that appear in at least 2 watchlists
   const commonMovies: CommonMovie[] = [];
@@ -281,20 +293,35 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as { usernames: string[] };
+    const body = (await request.json()) as {
+      username?: string;
+      friends?: string[];
+      usernames?: string[]; // Legacy support
+    };
 
-    if (
-      !body.usernames ||
-      !Array.isArray(body.usernames) ||
-      body.usernames.length < 2
-    ) {
+    // Support both formats: new format { username, friends } and legacy { usernames }
+    let allUsernames: string[];
+    if (body.username && body.friends) {
+      // New format: user + friends
+      allUsernames = [body.username, ...body.friends];
+    } else if (body.usernames && Array.isArray(body.usernames)) {
+      // Legacy format
+      allUsernames = body.usernames;
+    } else {
       return Response.json(
-        { error: "At least 2 usernames are required" },
+        { error: "Either { username, friends } or { usernames } is required" },
         { status: 400 }
       );
     }
 
-    const usernames = body.usernames
+    if (allUsernames.length < 2) {
+      return Response.json(
+        { error: "At least 2 usernames are required for comparison" },
+        { status: 400 }
+      );
+    }
+
+    const usernames = allUsernames
       .filter((u) => u.trim())
       .map((u) => u.trim())
       .slice(0, 10); // Limit to 10 users
@@ -357,8 +384,26 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       )
     );
 
+    // Add debug logging for the first few movies from each user
+    watchlists.forEach((watchlist) => {
+      console.log(
+        `${watchlist.username} sample movies:`,
+        watchlist.movies.slice(0, 3).map((m) => `"${m.title}" (${m.year})`)
+      );
+    });
+
     // Find common movies
     const commonMovies = findCommonMovies(watchlists);
+
+    console.log(`Common movies found: ${commonMovies.length}`);
+    if (commonMovies.length > 0) {
+      console.log(
+        "Sample common movies:",
+        commonMovies
+          .slice(0, 3)
+          .map((m) => `"${m.title}" (${m.year}) - ${m.friendList.join(", ")}`)
+      );
+    }
 
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
