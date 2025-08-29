@@ -281,20 +281,35 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as { usernames: string[] };
+    const body = (await request.json()) as {
+      username?: string;
+      friends?: string[];
+      usernames?: string[]; // Legacy support
+    };
 
-    if (
-      !body.usernames ||
-      !Array.isArray(body.usernames) ||
-      body.usernames.length < 2
-    ) {
+    // Support both formats: new format { username, friends } and legacy { usernames }
+    let allUsernames: string[];
+    if (body.username && body.friends) {
+      // New format: user + friends
+      allUsernames = [body.username, ...body.friends];
+    } else if (body.usernames && Array.isArray(body.usernames)) {
+      // Legacy format
+      allUsernames = body.usernames;
+    } else {
       return Response.json(
-        { error: "At least 2 usernames are required" },
+        { error: "Either { username, friends } or { usernames } is required" },
         { status: 400 }
       );
     }
 
-    const usernames = body.usernames
+    if (allUsernames.length < 2) {
+      return Response.json(
+        { error: "At least 2 usernames are required for comparison" },
+        { status: 400 }
+      );
+    }
+
+    const usernames = allUsernames
       .filter((u) => u.trim())
       .map((u) => u.trim())
       .slice(0, 10); // Limit to 10 users
