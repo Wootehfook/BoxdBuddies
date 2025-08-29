@@ -263,7 +263,7 @@ function App() {
         // Update friends with watchlist counts using functional update
         dispatch({
           type: "SET_FRIENDS",
-          payload: friends.map((friend) => {
+          payload: friendsData.map((friend) => {
             const count = data.results[friend.username];
             if (count !== undefined) {
               return { ...friend, watchlistCount: count };
