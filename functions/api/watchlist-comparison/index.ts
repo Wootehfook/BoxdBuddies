@@ -67,15 +67,30 @@ async function scrapeLetterboxdWatchlist(
     const html = await response.text();
     const movies: LetterboxdMovie[] = [];
 
+    // Debug: Log a sample of the HTML to see if it contains movie data
+    console.log(
+      `HTML sample for ${username} (first 500 chars):`,
+      html.substring(0, 500)
+    );
+
     // Parse Letterboxd HTML for movie data
     // Look for film poster containers with data attributes
     const filmRegex =
       /<li[^>]*class="poster-container"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g;
 
     let match;
+    let matchCount = 0;
     while ((match = filmRegex.exec(html)) !== null) {
       const slug = match[1];
       const titleWithYear = match[2];
+      matchCount++;
+
+      // Debug: Log first few matches
+      if (matchCount <= 3) {
+        console.log(
+          `Match ${matchCount} for ${username}: slug="${slug}", titleWithYear="${titleWithYear}"`
+        );
+      }
 
       // Extract title and year from "Title Year" format
       const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
@@ -136,12 +151,8 @@ function findCommonMovies(
 
     // Use a Set for this watchlist to avoid duplicates within a single user's list
     const userMovies = new Set<string>();
-    let processedCount = 0;
-    let foundMatches = 0;
 
     for (const movie of watchlist.movies) {
-      processedCount++;
-
       // Create multiple normalized keys for movie matching to handle edge cases
       const normalizedTitle = movie.title
         .toLowerCase()
@@ -161,13 +172,13 @@ function findCommonMovies(
         keys.push(normalizedTitle);
       }
 
-      // Debug log for first few movies
-      if (processedCount <= 5) {
+      // Debug: Log first few movies and their keys for troubleshooting
+      if (watchlist.movies.indexOf(movie) < 2) {
         console.log(
-          `  Movie ${processedCount}: "${movie.title}" (${movie.year})`
+          `Debug movie ${watchlist.username}: "${movie.title}" (${movie.year})`
         );
-        console.log(`    Normalized: "${normalizedTitle}"`);
-        console.log(`    Keys: [${keys.join(", ")}]`);
+        console.log(`  Normalized: "${normalizedTitle}"`);
+        console.log(`  Keys:`, keys);
       }
 
       let movieProcessed = false;
@@ -184,11 +195,10 @@ function findCommonMovies(
             existing.users.push(watchlist.username);
           }
           console.log(
-            `🎬 MATCH FOUND: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
+            `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
           );
           userMovies.add(key);
           movieProcessed = true;
-          foundMatches++;
           break; // Found a match, don't process other keys
         }
       }
@@ -202,17 +212,8 @@ function findCommonMovies(
           count: 1,
         });
         userMovies.add(primaryKey);
-
-        // Debug log for first few movies being added
-        if (processedCount <= 5) {
-          console.log(`    Added to map with key: "${primaryKey}"`);
-        }
       }
     }
-
-    console.log(
-      `  ${watchlist.username}: Processed ${processedCount} movies, found ${foundMatches} matches`
-    );
   }
 
   console.log(`Total unique movies in map: ${movieMap.size}`);
@@ -221,22 +222,20 @@ function findCommonMovies(
   );
   console.log(`Movies with count >= 2: ${moviesWithMultipleUsers.length}`);
 
-  // Debug: Show some examples of movies that appear multiple times
+  // Debug: Show some sample movies with counts
+  console.log("Sample movie map entries:");
+  const sampleEntries = Array.from(movieMap.entries()).slice(0, 5);
+  sampleEntries.forEach(([key, data]) => {
+    console.log(
+      `  "${key}": count=${data.count}, users=[${data.users.join(", ")}]`
+    );
+  });
+
   if (moviesWithMultipleUsers.length > 0) {
-    console.log("Examples of movies with multiple users:");
-    moviesWithMultipleUsers.slice(0, 5).forEach((movie) => {
+    console.log("Movies with multiple users:");
+    moviesWithMultipleUsers.slice(0, 3).forEach((data) => {
       console.log(
-        `  "${movie.movie.title}" (${movie.movie.year}): ${movie.users.join(", ")} [count: ${movie.count}]`
-      );
-    });
-  } else {
-    console.log("❌ NO MOVIES found with count >= 2");
-    // Show some sample movies from the map to understand the data
-    const sampleMovies = Array.from(movieMap.values()).slice(0, 10);
-    console.log("Sample movies in map (all with count = 1):");
-    sampleMovies.forEach((movie) => {
-      console.log(
-        `  "${movie.movie.title}" (${movie.movie.year}): ${movie.users.join(", ")} [count: ${movie.count}]`
+        `  "${data.movie.title}" (${data.movie.year}): count=${data.count}, users=[${data.users.join(", ")}]`
       );
     });
   }
