@@ -24,7 +24,7 @@
 export const API_ENDPOINTS = {
   LETTERBOXD_FRIENDS: "/letterboxd/friends",
   LETTERBOXD_WATCHLIST_COUNT: "/letterboxd/watchlist-count",
-  LETTERBOXD_COMPARE: "/letterboxd/compare",
+  LETTERBOXD_COMPARE: "/api/watchlist-comparison", // Changed to avoid adblocker issues
   LETTERBOXD_AVATAR_PROXY: "/letterboxd/avatar-proxy",
 } as const;
 
