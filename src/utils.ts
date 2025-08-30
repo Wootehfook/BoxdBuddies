@@ -24,7 +24,7 @@
 export const API_ENDPOINTS = {
   LETTERBOXD_FRIENDS: "/letterboxd/friends",
   LETTERBOXD_WATCHLIST_COUNT: "/letterboxd/watchlist-count",
-  LETTERBOXD_COMPARE: "/api/watchlist-comparison", // Changed to avoid adblocker issues
+  LETTERBOXD_COMPARE: "/api/watchlist-comparison", // Changed from "/letterboxd/compare" because some adblockers (e.g., uBlock Origin, AdBlock Plus) block requests to paths containing "compare" or "comparison" under certain URL patterns, mistaking them for tracking or advertising endpoints. Moving this endpoint under "/api/" and renaming it to "watchlist-comparison" avoids these false positives and ensures the feature works even when common adblockers are enabled.
   LETTERBOXD_AVATAR_PROXY: "/letterboxd/avatar-proxy",
 } as const;
 
