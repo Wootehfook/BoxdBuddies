@@ -74,39 +74,95 @@ async function scrapeLetterboxdWatchlist(
     );
 
     // Parse Letterboxd HTML for movie data
-    // Look for film poster containers with data attributes
-    const filmRegex =
-      /<li[^>]*class="poster-container"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g;
+    // Try multiple regex patterns to handle potential HTML structure changes
+    const filmRegexPatterns = [
+      // Current pattern
+      /<li[^>]*class="poster-container"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
+      // Alternative pattern - different class names
+      /<li[^>]*class="[^"]*poster[^"]*"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
+      // More flexible pattern - any li with data-film-slug
+      /<li[^>]*data-film-slug="([^"]+)"[^>]*>[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
+      // Even simpler pattern
+      /data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"/g,
+    ];
 
     let match;
     let matchCount = 0;
-    while ((match = filmRegex.exec(html)) !== null) {
-      const slug = match[1];
-      const titleWithYear = match[2];
-      matchCount++;
 
-      // Debug: Log first few matches
-      if (matchCount <= 3) {
+    // Try each pattern until we find matches
+    for (let i = 0; i < filmRegexPatterns.length; i++) {
+      const filmRegex = filmRegexPatterns[i];
+      console.log(`Trying pattern ${i + 1} for ${username}`);
+
+      filmRegex.lastIndex = 0; // Reset regex state
+      while ((match = filmRegex.exec(html)) !== null) {
+        const slug = match[1];
+        const titleWithYear = match[2];
+        matchCount++;
+
+        // Debug: Log first few matches
+        if (matchCount <= 3) {
+          console.log(
+            `Match ${matchCount} for ${username} (pattern ${i + 1}): slug="${slug}", titleWithYear="${titleWithYear}"`
+          );
+        }
+
+        // Extract title and year from "Title Year" format
+        const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
+        if (yearMatch) {
+          movies.push({
+            title: yearMatch[1].trim(),
+            year: parseInt(yearMatch[2]),
+            slug: slug,
+          });
+        } else {
+          // No year found, use 0 as default
+          movies.push({
+            title: titleWithYear.trim(),
+            year: 0,
+            slug: slug,
+          });
+        }
+      }
+
+      // If we found matches with this pattern, stop trying others
+      if (matchCount > 0) {
         console.log(
-          `Match ${matchCount} for ${username}: slug="${slug}", titleWithYear="${titleWithYear}"`
+          `Pattern ${i + 1} successful for ${username}: ${matchCount} matches`
+        );
+        break;
+      }
+    }
+
+    if (matchCount === 0) {
+      console.log(
+        `No matches found for ${username} with any pattern. Checking for common issues...`
+      );
+
+      // Check for private watchlist indicators
+      if (
+        html.includes("This profile is private") ||
+        html.includes("private watchlist")
+      ) {
+        throw new Error(
+          `${username}'s profile or watchlist appears to be private`
         );
       }
 
-      // Extract title and year from "Title Year" format
-      const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
-      if (yearMatch) {
-        movies.push({
-          title: yearMatch[1].trim(),
-          year: parseInt(yearMatch[2]),
-          slug: slug,
-        });
+      // Check for empty watchlist
+      if (
+        html.includes("no films in their watchlist") ||
+        html.includes("watchlist is empty")
+      ) {
+        console.log(`${username} has an empty watchlist`);
       } else {
-        // No year found, use 0 as default
-        movies.push({
-          title: titleWithYear.trim(),
-          year: 0,
-          slug: slug,
-        });
+        // HTML structure might have changed
+        console.log(
+          `Possible HTML structure change for ${username}. HTML contains poster-container: ${html.includes("poster-container")}`
+        );
+        console.log(
+          `HTML contains data-film-slug: ${html.includes("data-film-slug")}`
+        );
       }
     }
 
