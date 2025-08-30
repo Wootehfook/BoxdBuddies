@@ -1,5 +1,6 @@
 // AI Generated: GitHub Copilot - 2025-08-29
 // Letterboxd Watchlist Comparison API - Renamed to avoid adblocker issues
+// Deployment trigger: Enhanced matching algorithm with multi-strategy normalization
 
 interface D1Database {
   prepare(query: string): D1PreparedStatement;
