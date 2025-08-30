@@ -670,11 +670,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       console.log(
         `${watchlist.username} normalized samples:`,
         watchlist.movies.slice(0, 3).map((m) => {
-          const normalized = m.title
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s]/g, "")
-            .replace(/\s+/g, " ");
+          const normalized = normalizeTitle(m.title);
           return `"${normalized}" (${m.year})`;
         })
       );
