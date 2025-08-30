@@ -357,6 +357,29 @@ function App() {
 
       const data = await response.json();
 
+      // Display debug information if available
+      if (data.debug) {
+        console.error("🔍 Watchlist Comparison Debug Info");
+        console.error("📡 Request:", data.debug.requestReceived);
+        console.error("📊 Movie Counts:", data.debug.movieCounts);
+        console.error("🎬 Sample Movies:", data.debug.sampleMovies);
+        console.error("🔗 Matching Results:", data.debug.matchingInfo);
+        console.error("🧩 Enrichment Sources:", data.debug.enrichment);
+
+        // Show detailed scraping results
+        console.error("📋 Scraping Results Details:");
+        Object.entries(data.debug.scrapingResults).forEach(
+          ([username, result]) => {
+            console.error(`  ${username}:`, result);
+            // Also log the JSON string to ensure it's visible
+            console.error(
+              `  ${username} (JSON):`,
+              JSON.stringify(result, null, 2)
+            );
+          }
+        );
+      }
+
       clearInterval(progressInterval);
       dispatch({
         type: "SET_ENHANCEMENT_PROGRESS",

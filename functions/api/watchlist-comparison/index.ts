@@ -42,138 +42,134 @@ interface Movie {
   letterboxdSlug?: string;
   friendCount: number;
   friendList: string[];
+  // AI Generated: GitHub Copilot - 2025-08-30
+  // Source information for debugging/telemetry (db | tmdb_api | fallback)
+  source?: string;
 }
 
-// Simple Letterboxd scraper
+// (Removed unused testLetterboxdConnection helper to satisfy lint rules)
+
+// Simple Letterboxd scraper with pagination support
 async function scrapeLetterboxdWatchlist(
   username: string
 ): Promise<LetterboxdMovie[]> {
-  const url = `https://letterboxd.com/${username}/watchlist/`;
+  const allMovies: LetterboxdMovie[] = [];
+  let page = 1;
+  const maxPages = 10; // Safety limit to prevent infinite loops
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev) - Watchlist Comparison Tool",
-      },
-    });
+  console.log(`Starting scrape for ${username}`);
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch watchlist for ${username}: ${response.status}`
-      );
-    }
+  while (page <= maxPages) {
+    const url =
+      page === 1
+        ? `https://letterboxd.com/${username}/watchlist/`
+        : `https://letterboxd.com/${username}/watchlist/page/${page}/`;
 
-    const html = await response.text();
-    const movies: LetterboxdMovie[] = [];
+    console.log(`Scraping page ${page} for ${username}: ${url}`);
 
-    // Debug: Log a sample of the HTML to see if it contains movie data
-    console.log(
-      `HTML sample for ${username} (first 500 chars):`,
-      html.substring(0, 500)
-    );
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev) - Watchlist Comparison Tool",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Accept-Encoding": "gzip, deflate, br",
+          Connection: "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+        },
+      });
 
-    // Parse Letterboxd HTML for movie data
-    // Try multiple regex patterns to handle potential HTML structure changes
-    const filmRegexPatterns = [
-      // Current pattern
-      /<li[^>]*class="poster-container"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
-      // Alternative pattern - different class names
-      /<li[^>]*class="[^"]*poster[^"]*"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
-      // More flexible pattern - any li with data-film-slug
-      /<li[^>]*data-film-slug="([^"]+)"[^>]*>[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g,
-      // Even simpler pattern
-      /data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"/g,
-    ];
-
-    let match;
-    let matchCount = 0;
-
-    // Try each pattern until we find matches
-    for (let i = 0; i < filmRegexPatterns.length; i++) {
-      const filmRegex = filmRegexPatterns[i];
-      console.log(`Trying pattern ${i + 1} for ${username}`);
-
-      filmRegex.lastIndex = 0; // Reset regex state
-      while ((match = filmRegex.exec(html)) !== null) {
-        const slug = match[1];
-        const titleWithYear = match[2];
-        matchCount++;
-
-        // Debug: Log first few matches
-        if (matchCount <= 3) {
+      if (!response.ok) {
+        if (response.status === 404 && page > 1) {
           console.log(
-            `Match ${matchCount} for ${username} (pattern ${i + 1}): slug="${slug}", titleWithYear="${titleWithYear}"`
+            `Page ${page} not found for ${username}, stopping pagination`
           );
+          break;
         }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-        // Extract title and year from "Title Year" format
-        const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
-        if (yearMatch) {
-          movies.push({
-            title: yearMatch[1].trim(),
-            year: parseInt(yearMatch[2]),
-            slug: slug,
-          });
-        } else {
-          // No year found, use 0 as default
-          movies.push({
-            title: titleWithYear.trim(),
-            year: 0,
-            slug: slug,
-          });
+      const html = await response.text();
+      console.log(`Page ${page} HTML length: ${html.length}`);
+
+      // AI Generated: GitHub Copilot - 2025-08-30
+      // Improved parsing: find all griditem elements first, then extract attributes
+      const gridItemRegex =
+        /<li[^>]*class="[^"]*griditem[^"]*"[^>]*>([\s\S]*?)<\/li>/g;
+      let gridMatch;
+      let pageMovieCount = 0;
+
+      while ((gridMatch = gridItemRegex.exec(html)) !== null) {
+        const gridContent = gridMatch[1];
+
+        // Extract slug and title from within this grid item
+        const slugMatch = gridContent.match(/data-item-slug="([^"]+)"/);
+        const nameMatch = gridContent.match(/data-item-name="([^"]+)"/);
+
+        if (slugMatch && nameMatch) {
+          const slug = slugMatch[1];
+          const titleWithYear = nameMatch[1];
+          pageMovieCount++;
+
+          // Extract title and year from "Title Year" format
+          const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
+          if (yearMatch) {
+            allMovies.push({
+              title: yearMatch[1].trim(),
+              year: parseInt(yearMatch[2]),
+              slug: slug,
+            });
+          } else {
+            // No year found, use 0 as default
+            allMovies.push({
+              title: titleWithYear.trim(),
+              year: 0,
+              slug: slug,
+            });
+          }
+
+          // Debug: Log first few matches from first page
+          if (page === 1 && pageMovieCount <= 3) {
+            console.log(
+              `Page ${page} Match ${pageMovieCount}: slug="${slug}", title="${titleWithYear}"`
+            );
+          }
         }
       }
 
-      // If we found matches with this pattern, stop trying others
-      if (matchCount > 0) {
-        console.log(
-          `Pattern ${i + 1} successful for ${username}: ${matchCount} matches`
-        );
+      console.log(`Page ${page}: found ${pageMovieCount} movies`);
+
+      // If no movies found on this page, we've reached the end
+      if (pageMovieCount === 0) {
+        console.log(`No movies found on page ${page}, stopping pagination`);
+        break;
+      }
+
+      // Rate limiting between pages
+      if (page < maxPages) {
+        await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay
+      }
+
+      page++;
+    } catch (error) {
+      console.error(`Error scraping page ${page} for ${username}:`, error);
+      if (page === 1) {
+        // If first page fails, throw the error
+        throw error;
+      } else {
+        // For subsequent pages, just stop pagination
+        console.log(`Stopping pagination due to error on page ${page}`);
         break;
       }
     }
-
-    if (matchCount === 0) {
-      console.log(
-        `No matches found for ${username} with any pattern. Checking for common issues...`
-      );
-
-      // Check for private watchlist indicators
-      if (
-        html.includes("This profile is private") ||
-        html.includes("private watchlist")
-      ) {
-        throw new Error(
-          `${username}'s profile or watchlist appears to be private`
-        );
-      }
-
-      // Check for empty watchlist
-      if (
-        html.includes("no films in their watchlist") ||
-        html.includes("watchlist is empty")
-      ) {
-        console.log(`${username} has an empty watchlist`);
-      } else {
-        // HTML structure might have changed
-        console.log(
-          `Possible HTML structure change for ${username}. HTML contains poster-container: ${html.includes("poster-container")}`
-        );
-        console.log(
-          `HTML contains data-film-slug: ${html.includes("data-film-slug")}`
-        );
-      }
-    }
-
-    console.log(`Scraped ${movies.length} movies from ${username}'s watchlist`);
-    return movies;
-  } catch (error) {
-    console.error(`Error scraping ${username}:`, error);
-    throw new Error(
-      `Failed to scrape watchlist for ${username}. Make sure the username exists and the watchlist is public.`
-    );
   }
+
+  console.log(
+    `Scraped ${allMovies.length} total movies from ${username}'s watchlist across ${page - 1} pages`
+  );
+  return allMovies;
 }
 
 // AI Generated: GitHub Copilot - 2025-08-29T12:30:00Z
@@ -193,7 +189,7 @@ function findCommonMovies(
 
   const startTime = Date.now();
 
-  // Create a map for efficient lookups: movie key -> {movie, users[], count}
+  // Create a map for efficient lookups: normalized key -> {movie, users[], count}
   const movieMap = new Map<
     string,
     { movie: LetterboxdMovie; users: string[]; count: number }
@@ -205,70 +201,38 @@ function findCommonMovies(
       `Processing ${watchlist.username} with ${watchlist.movies.length} movies`
     );
 
-    // Use a Set for this watchlist to avoid duplicates within a single user's list
-    const userMovies = new Set<string>();
+    // Use a Set to track movies we've already processed for this user
+    const processedMovies = new Set<string>();
 
     for (const movie of watchlist.movies) {
-      // Create multiple normalized keys for movie matching to handle edge cases
-      const normalizedTitle = movie.title
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s]/g, "") // Remove punctuation
-        .replace(/\s+/g, " "); // Normalize whitespace
+      // AI Generated: GitHub Copilot - 2025-08-30
+      // Use Letterboxd slug as primary key - more reliable than title normalization
+      const movieKey = movie.slug;
 
-      // Try multiple matching strategies
-      const keys = [
-        `${normalizedTitle}-${movie.year}`, // Exact match
-        `${normalizedTitle}-0`, // Title only (ignore year)
-        `${movie.title.toLowerCase().trim()}-${movie.year}`, // Original approach
-      ];
+      // Skip if we've already processed this movie for this user
+      if (processedMovies.has(movieKey)) continue;
 
-      // Also add a key without year if year is 0 or invalid
-      if (movie.year === 0 || !movie.year) {
-        keys.push(normalizedTitle);
-      }
-
-      // Debug: Log first few movies and their keys for troubleshooting
-      if (watchlist.movies.indexOf(movie) < 2) {
-        console.log(
-          `Debug movie ${watchlist.username}: "${movie.title}" (${movie.year})`
-        );
-        console.log(`  Normalized: "${normalizedTitle}"`);
-        console.log(`  Keys:`, keys);
-      }
-
-      let movieProcessed = false;
-
-      for (const key of keys) {
-        // Skip if this user already has this movie (avoid duplicates)
-        if (userMovies.has(key)) continue;
-
-        const existing = movieMap.get(key);
-        if (existing) {
-          // Movie already exists, increment count and add user
-          existing.count++;
-          if (!existing.users.includes(watchlist.username)) {
-            existing.users.push(watchlist.username);
-          }
-          console.log(
-            `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
-          );
-          userMovies.add(key);
-          movieProcessed = true;
-          break; // Found a match, don't process other keys
+      // Check if this movie already exists in our map
+      const existing = movieMap.get(movieKey);
+      if (existing) {
+        // Movie already exists, increment count and add user
+        existing.count++;
+        if (!existing.users.includes(watchlist.username)) {
+          existing.users.push(watchlist.username);
         }
-      }
-
-      if (!movieProcessed) {
-        // First time seeing this movie - use the primary key
-        const primaryKey = keys[0];
-        movieMap.set(primaryKey, {
+        console.log(
+          `Found common movie: "${movie.title}" (${movie.year}) slug="${movie.slug}" - now with users: ${existing.users.join(", ")}`
+        );
+      } else {
+        // First time seeing this movie
+        movieMap.set(movieKey, {
           movie: { ...movie }, // Clone to avoid mutations
           users: [watchlist.username],
           count: 1,
         });
-        userMovies.add(primaryKey);
       }
+
+      processedMovies.add(movieKey);
     }
   }
 
@@ -279,11 +243,11 @@ function findCommonMovies(
   console.log(`Movies with count >= 2: ${moviesWithMultipleUsers.length}`);
 
   // Debug: Show some sample movies with counts
-  console.log("Sample movie map entries:");
+  console.log("Sample movie map entries (slug-based keys):");
   const sampleEntries = Array.from(movieMap.entries()).slice(0, 5);
   sampleEntries.forEach(([key, data]) => {
     console.log(
-      `  "${key}": count=${data.count}, users=[${data.users.join(", ")}]`
+      `  slug="${key}": "${data.movie.title}" (${data.movie.year}) count=${data.count}, users=[${data.users.join(", ")}]`
     );
   });
 
@@ -322,7 +286,7 @@ function findCommonMovies(
 
   const duration = Date.now() - startTime;
   console.log(
-    `Found ${commonMovies.length} common movies in ${duration}ms using optimized algorithm`
+    `Found ${commonMovies.length} common movies in ${duration}ms using simplified algorithm`
   );
 
   return commonMovies;
@@ -340,6 +304,156 @@ async function enhanceWithTMDBData(
 
   const BATCH_SIZE = 10; // Process 10 movies concurrently
   const enhancedMovies: Movie[] = [];
+
+  // AI Generated: GitHub Copilot - 2025-08-30
+  // Helpers
+  const normalizeTitle = (t: string) =>
+    t
+      .toLowerCase()
+      .trim()
+      .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "") // quotes
+      .replace(/[:.,!\-–—()\[\]{}]/g, " ") // punctuation
+      .replace(/\s+/g, " ");
+
+  const parseYear = (date?: string | null): number => {
+    if (!date) return 0;
+    const m = /^(\d{4})/.exec(date);
+    return m ? parseInt(m[1]) : 0;
+  };
+
+  const mapTmdbRowToMovie = (
+    tmdb: any,
+    base: CommonMovie,
+    source: string
+  ): Movie => ({
+    id: Number(tmdb.id),
+    title: (tmdb.title || tmdb.original_title || base.title) as string,
+    year: Number(tmdb.year ?? parseYear(tmdb.release_date) ?? base.year),
+    poster_path: tmdb.poster_path ?? undefined,
+    overview: tmdb.overview ?? undefined,
+    vote_average:
+      typeof tmdb.vote_average === "number" ? tmdb.vote_average : undefined,
+    director: tmdb.director ?? undefined,
+    runtime: typeof tmdb.runtime === "number" ? tmdb.runtime : undefined,
+    letterboxdSlug: base.slug,
+    friendCount: base.friendCount,
+    friendList: base.friendList,
+    source,
+  });
+
+  const fetchTmdbFromApi = async (m: CommonMovie): Promise<Movie | null> => {
+    try {
+      if (!env.TMDB_API_KEY) {
+        console.error("TMDB_API_KEY is not configured in environment");
+        return null;
+      }
+
+      const qs: string[] = [];
+      const pushQS = (k: string, v: string | number | boolean | undefined) => {
+        if (v === undefined) return;
+        qs.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+      };
+      pushQS("api_key", env.TMDB_API_KEY);
+      pushQS("query", m.title);
+      pushQS("include_adult", false);
+      pushQS("language", "en-US");
+      pushQS("page", 1);
+      if (m.year && m.year > 0) {
+        pushQS("year", m.year);
+        pushQS("primary_release_year", m.year);
+      }
+      const url = `https://api.themoviedb.org/3/search/movie?${qs.join("&")}`;
+      const res = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) {
+        console.error("TMDB search failed:", res.status, res.statusText);
+        return null;
+      }
+      const data = (await res.json()) as {
+        results?: Array<Record<string, unknown>>;
+      };
+
+      const results = (data.results || []) as any[];
+      if (results.length === 0) return null;
+
+      // Prefer exact year/title matches if possible
+      const wantYear = m.year || 0;
+      const normWant = normalizeTitle(m.title);
+      const scored = results.map((r) => {
+        const ry = parseYear(r.release_date);
+        const title = normalizeTitle(r.title || r.original_title || "");
+        let score = 0;
+        if (wantYear && ry === wantYear) score += 3;
+        if (title === normWant) score += 3;
+        // small bonus for close titles
+        if (!score && title.includes(normWant)) score += 1;
+        return { r, score, pop: Number(r.popularity || 0) };
+      });
+
+      scored.sort((a, b) => {
+        if (a.score !== b.score) return b.score - a.score;
+        return b.pop - a.pop;
+      });
+
+      const best = scored[0]?.r;
+      if (!best) return null;
+
+      // Fetch details to enrich with runtime, genres, and director
+      const detailQs: string[] = [];
+      const pushDetail = (
+        k: string,
+        v: string | number | boolean | undefined
+      ) => {
+        if (v === undefined) return;
+        detailQs.push(
+          `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`
+        );
+      };
+      pushDetail("api_key", env.TMDB_API_KEY);
+      pushDetail("language", "en-US");
+      pushDetail("append_to_response", "credits");
+      const detailUrl = `https://api.themoviedb.org/3/movie/${best.id}?${detailQs.join("&")}`;
+      const detRes = await fetch(detailUrl, {
+        headers: { Accept: "application/json" },
+      });
+      let enriched: any = best;
+      if (detRes.ok) {
+        const det = (await detRes.json()) as any;
+        enriched = {
+          ...best,
+          runtime: det.runtime,
+          genres: Array.isArray(det.genres)
+            ? det.genres
+                .map((g: any) => (typeof g.name === "string" ? g.name : ""))
+                .filter(Boolean)
+            : undefined,
+          // Extract director from crew
+          director: Array.isArray(det.credits?.crew)
+            ? det.credits.crew.find((c: any) => c.job === "Director")?.name ||
+              undefined
+            : undefined,
+        };
+      }
+
+      const mapped = mapTmdbRowToMovie(enriched, m, "tmdb_api");
+      if (Array.isArray(enriched.genres)) {
+        mapped.genres = enriched.genres as string[];
+      }
+      if (typeof enriched.runtime === "number") {
+        mapped.runtime = enriched.runtime as number;
+      }
+      if (typeof enriched.director === "string") {
+        mapped.director = enriched.director as string;
+      }
+      return mapped;
+    } catch (e) {
+      console.error("TMDB API error for", m.title, e);
+      return null;
+    }
+  };
 
   // Process movies in batches to avoid overwhelming the database
   for (let i = 0; i < movies.length; i += BATCH_SIZE) {
@@ -361,28 +475,21 @@ async function enhanceWithTMDBData(
 
         if (result.results && result.results.length > 0) {
           const tmdbMovie = result.results[0] as any;
-          return {
-            id: tmdbMovie.id,
-            title: tmdbMovie.title,
-            year: tmdbMovie.year || movie.year,
-            poster_path: tmdbMovie.poster_path,
-            overview: tmdbMovie.overview,
-            vote_average: tmdbMovie.vote_average,
-            director: tmdbMovie.director,
-            runtime: tmdbMovie.runtime,
-            letterboxdSlug: movie.slug, // Preserve original slug
-            friendCount: movie.friendCount, // Preserve friend information
-            friendList: movie.friendList, // Preserve friend information
-          };
+          return mapTmdbRowToMovie(tmdbMovie, movie, "db");
         } else {
-          // Fallback if not found in database
+          // Try TMDB API as fallback
+          const fromApi = await fetchTmdbFromApi(movie);
+          if (fromApi) return fromApi;
+
+          // Final fallback if API also fails
           return {
-            id: Math.floor(Math.random() * 1000000),
+            id: Math.floor(Math.random() * 1_000_000),
             title: movie.title,
             year: movie.year,
             letterboxdSlug: movie.slug,
-            friendCount: movie.friendCount, // Preserve friend information
-            friendList: movie.friendList, // Preserve friend information
+            friendCount: movie.friendCount,
+            friendList: movie.friendList,
+            source: "fallback",
           };
         }
       } catch (error) {
@@ -395,6 +502,7 @@ async function enhanceWithTMDBData(
           letterboxdSlug: movie.slug,
           friendCount: movie.friendCount, // Preserve friend information
           friendList: movie.friendList, // Preserve friend information
+          source: "fallback",
         };
       }
     });
@@ -461,6 +569,22 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     console.log(`Starting comparison for: ${usernames.join(", ")}`);
 
+    // Create debug data structure for troubleshooting
+    const debugInfo: any = {
+      requestReceived: {
+        usernames: usernames,
+        timestamp: new Date().toISOString(),
+      },
+      scrapingResults: {},
+      movieCounts: {},
+      sampleMovies: {},
+      matchingInfo: {
+        totalUnique: 0,
+        commonCount: 0,
+        commonMovies: [],
+      },
+    };
+
     // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
     // Performance Optimization: Smart Rate Limiting - Optimized parallel scraping with intelligent delays
     const watchlistPromises = usernames.map(async (username, index) => {
@@ -480,6 +604,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         console.log(
           `Scraped ${username}: ${movies.length} movies in ${duration}ms`
         );
+
+        // Capture debug info
+        debugInfo.scrapingResults[username] = {
+          count: movies.length,
+          timeMs: duration,
+          success: movies.length > 0,
+        };
+        debugInfo.movieCounts[username] = movies.length;
+        debugInfo.sampleMovies[username] = movies.slice(0, 3).map((m) => ({
+          title: m.title,
+          year: m.year,
+        }));
+
         return { username, movies, duration };
       } catch (error) {
         const duration = Date.now() - startTime;
@@ -487,6 +624,18 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           `Failed to scrape ${username} after ${duration}ms:`,
           error
         );
+
+        // Capture error in debug info
+        debugInfo.scrapingResults[username] = {
+          count: 0,
+          timeMs: duration,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          errorType:
+            error instanceof Error ? error.constructor.name : "Unknown",
+          stack: error instanceof Error ? error.stack : undefined,
+        };
+
         throw error;
       }
     });
@@ -534,6 +683,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Find common movies
     const commonMovies = findCommonMovies(watchlists);
 
+    // Update debug info with matching results
+    debugInfo.matchingInfo.totalUnique = new Set(
+      watchlists.flatMap((w) => w.movies.map((m) => `${m.title}-${m.year}`))
+    ).size;
+    debugInfo.matchingInfo.commonCount = commonMovies.length;
+    debugInfo.matchingInfo.commonMovies = commonMovies.slice(0, 5).map((m) => ({
+      title: m.title,
+      year: m.year,
+      users: m.friendList,
+    }));
+
     console.log(`Common movies found: ${commonMovies.length}`);
     if (commonMovies.length > 0) {
       console.log(
@@ -546,6 +706,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
+
+    // Append simple enrichment stats to debug
+    const sourceCounts: Record<string, number> = {};
+    enhancedMovies.forEach((m) => {
+      const src = m.source || "unknown";
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+    });
+    debugInfo.enrichment = { sourceCounts };
 
     // Sort by vote average (rating)
     enhancedMovies.sort(
@@ -561,6 +729,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           username: w.username,
           size: w.movies.length,
         })),
+        debug: debugInfo, // Always include debug info for troubleshooting
       },
       {
         headers: {
