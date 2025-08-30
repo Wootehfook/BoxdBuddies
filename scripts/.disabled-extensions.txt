@@ -1,0 +1,13 @@
+eamodio.gitlens
+ms-azuretools.vscode-docker
+ms-kubernetes-tools.vscode-kubernetes-tools
+ms-python.python
+ms-toolsai.jupyter
+ms-toolsai.jupyter-keymap
+ms-toolsai.jupyter-renderers
+ms-vscode.powershell
+ms-vscode-remote.remote-containers
+rust-lang.rust-analyzer
+sonarsource.sonarlint-vscode
+streetsidesoftware.code-spell-checker
+streetsidesoftware.code-spell-checker
