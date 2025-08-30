@@ -137,30 +137,56 @@ function findCommonMovies(
     const userMovies = new Set<string>();
 
     for (const movie of watchlist.movies) {
-      // Create a normalized key for movie matching
-      const key = `${movie.title.toLowerCase().trim()}-${movie.year}`;
+      // Create multiple normalized keys for movie matching to handle edge cases
+      const normalizedTitle = movie.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s]/g, "") // Remove punctuation
+        .replace(/\s+/g, " "); // Normalize whitespace
 
-      // Skip if this user already has this movie (avoid duplicates)
-      if (userMovies.has(key)) continue;
-      userMovies.add(key);
+      // Try multiple matching strategies
+      const keys = [
+        `${normalizedTitle}-${movie.year}`, // Exact match
+        `${normalizedTitle}-0`, // Title only (ignore year)
+        `${movie.title.toLowerCase().trim()}-${movie.year}`, // Original approach
+      ];
 
-      const existing = movieMap.get(key);
-      if (existing) {
-        // Movie already exists, increment count and add user
-        existing.count++;
-        if (!existing.users.includes(watchlist.username)) {
-          existing.users.push(watchlist.username);
+      // Also add a key without year if year is 0 or invalid
+      if (movie.year === 0 || !movie.year) {
+        keys.push(normalizedTitle);
+      }
+
+      let movieProcessed = false;
+
+      for (const key of keys) {
+        // Skip if this user already has this movie (avoid duplicates)
+        if (userMovies.has(key)) continue;
+
+        const existing = movieMap.get(key);
+        if (existing) {
+          // Movie already exists, increment count and add user
+          existing.count++;
+          if (!existing.users.includes(watchlist.username)) {
+            existing.users.push(watchlist.username);
+          }
+          console.log(
+            `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
+          );
+          userMovies.add(key);
+          movieProcessed = true;
+          break; // Found a match, don't process other keys
         }
-        console.log(
-          `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
-        );
-      } else {
-        // First time seeing this movie
-        movieMap.set(key, {
+      }
+
+      if (!movieProcessed) {
+        // First time seeing this movie - use the primary key
+        const primaryKey = keys[0];
+        movieMap.set(primaryKey, {
           movie: { ...movie }, // Clone to avoid mutations
           users: [watchlist.username],
           count: 1,
         });
+        userMovies.add(primaryKey);
       }
     }
   }
@@ -388,7 +414,20 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     watchlists.forEach((watchlist) => {
       console.log(
         `${watchlist.username} sample movies:`,
-        watchlist.movies.slice(0, 3).map((m) => `"${m.title}" (${m.year})`)
+        watchlist.movies.slice(0, 5).map((m) => `"${m.title}" (${m.year})`)
+      );
+
+      // Also show normalized versions to help debug matching issues
+      console.log(
+        `${watchlist.username} normalized samples:`,
+        watchlist.movies.slice(0, 3).map((m) => {
+          const normalized = m.title
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s]/g, "")
+            .replace(/\s+/g, " ");
+          return `"${normalized}" (${m.year})`;
+        })
       );
     });
 
