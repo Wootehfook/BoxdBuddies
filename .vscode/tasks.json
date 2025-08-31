@@ -2,32 +2,380 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Dev: Frontend",
+      "label": "🤖 AI Code Review",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
-      "group": {"kind": "build", "isDefault": true}
+      "command": "echo",
+      "args": [
+        "Run GitHub Copilot Chat with '@github /explain' for comprehensive code review using Claude Sonnet 4"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "AI-powered code review using Claude models"
     },
     {
-      "label": "Type Check",
+      "label": "🧪 AI Test Generation",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "type-check"],
-      "group": "test"
+      "command": "echo",
+      "args": [
+        "Use '/tests' command in Copilot Chat for comprehensive test generation with Vitest"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Generate comprehensive tests using AI assistance"
     },
     {
-      "label": "Lint",
+      "label": "📚 AI Documentation",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "lint"],
-      "group": "test"
+      "command": "echo",
+      "args": [
+        "Use '/doc' command in Copilot Chat for intelligent documentation generation"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Generate documentation using Claude models"
     },
     {
-      "label": "Build",
+      "label": "🏗️ Roo Architect Mode",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "build"],
-      "group": "build"
+      "command": "echo",
+      "args": [
+        "Switch to Roo Architect mode for system design and planning with Claude Sonnet 4"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Activate architect mode for complex planning tasks"
+    },
+    {
+      "label": "💻 Roo Code Mode",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Switch to Roo Code mode for implementation with Claude Sonnet 4"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Activate code mode for implementation tasks"
+    },
+    {
+      "label": "🪲 Roo Debug Mode",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Switch to Roo Debug mode for troubleshooting with Claude 3.5 Sonnet"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Activate debug mode for troubleshooting"
+    },
+    {
+      "label": "❓ Roo Ask Mode",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Switch to Roo Ask mode for explanations and analysis with Claude Sonnet 4"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Activate ask mode for questions and explanations"
+    },
+    {
+      "label": "🪃 Roo Orchestrator Mode",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Switch to Roo Orchestrator mode for complex multi-step projects with Claude Sonnet 4"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Activate orchestrator mode for complex workflows"
+    },
+    {
+      "label": "🚀 Dev Server",
+      "type": "npm",
+      "script": "dev",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [],
+      "detail": "Start Vite development server",
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "🏗️ Build Project",
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$tsc"],
+      "detail": "Build project for production"
+    },
+    {
+      "label": "🧪 Run Tests",
+      "type": "npm",
+      "script": "test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "detail": "Run Vitest test suite"
+    },
+    {
+      "label": "🧪 Watch Tests",
+      "type": "npm",
+      "script": "test:watch",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "detail": "Run tests in watch mode",
+      "isBackground": true
+    },
+    {
+      "label": "✨ Format Code",
+      "type": "npm",
+      "script": "format",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Format code with Prettier"
+    },
+    {
+      "label": "🔍 Lint Code",
+      "type": "npm",
+      "script": "lint",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$eslint-stylish"],
+      "detail": "Lint code with ESLint"
+    },
+    {
+      "label": "🔧 Fix Lint Issues",
+      "type": "npm",
+      "script": "lint:fix",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$eslint-stylish"],
+      "detail": "Auto-fix ESLint issues"
+    },
+    {
+      "label": "📝 Type Check",
+      "type": "npm",
+      "script": "type-check",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$tsc"],
+      "detail": "Run TypeScript type checking"
+    },
+    {
+      "label": "🧹 Clean Build",
+      "type": "npm",
+      "script": "clean",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Clean build artifacts"
+    },
+    {
+      "label": "☁️ Cloudflare Dev",
+      "type": "npm",
+      "script": "cloudflare:dev",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [],
+      "detail": "Start Cloudflare Pages development server",
+      "dependsOn": "🏗️ Build Project"
+    },
+    {
+      "label": "🚀 Deploy to Cloudflare",
+      "type": "npm",
+      "script": "cloudflare:deploy",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "detail": "Deploy to Cloudflare Pages"
+    },
+    {
+      "label": "🔄 Full Development Workflow",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "🧹 Clean Build",
+        "📝 Type Check",
+        "🔍 Lint Code",
+        "✨ Format Code",
+        "🧪 Run Tests",
+        "🏗️ Build Project"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Complete development workflow with AI assistance"
+    },
+    {
+      "label": "🤖 AI-Powered Development Setup",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "🎯 Roo Code Environment Ready!\\n",
+        "📋 Available AI Modes:\\n",
+        "  🏗️  Architect - System design & planning (Claude Sonnet 4)\\n",
+        "  💻 Code - Implementation & refactoring (Claude Sonnet 4)\\n",
+        "  ❓ Ask - Analysis & explanations (Claude Sonnet 4)\\n",
+        "  🪲 Debug - Troubleshooting (Claude 3.5 Sonnet)\\n",
+        "  🪃 Orchestrator - Complex workflows (Claude Sonnet 4)\\n\\n",
+        "🔧 Quick Commands:\\n",
+        "  Ctrl+Shift+P → 'Roo:' to access modes\\n",
+        "  Ctrl+I → Inline AI suggestions\\n",
+        "  Ctrl+Shift+I → AI chat panel\\n\\n",
+        "✨ Vibe Coder Mode: ACTIVATED!"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "clear": true
+      },
+      "problemMatcher": [],
+      "detail": "Display AI development environment status and shortcuts"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "aiModel",
+      "description": "Select AI model for task",
+      "type": "pickString",
+      "options": [
+        "copilot/claude-sonnet-4",
+        "copilot/claude-3.5-sonnet",
+        "copilot/claude-3.7-sonnet",
+        "copilot/gpt-4o",
+        "copilot/gemini-2.5-pro",
+        "copilot/auto"
+      ],
+      "default": "copilot/claude-sonnet-4"
+    },
+    {
+      "id": "rooMode",
+      "description": "Select Roo mode",
+      "type": "pickString",
+      "options": ["architect", "code", "ask", "debug", "orchestrator"],
+      "default": "code"
     }
   ]
 }

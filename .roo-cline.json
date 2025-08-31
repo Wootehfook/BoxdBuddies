@@ -1,0 +1,198 @@
+{
+  "modelMappings": {
+    "architect": {
+      "primary": "copilot/o3",
+      "fallback": [
+        "copilot/claude-opus-4",
+        "copilot/gpt-5",
+        "copilot/claude-sonnet-4"
+      ]
+    },
+    "code": {
+      "primary": "copilot/claude-sonnet-4",
+      "fallback": [
+        "copilot/o3-mini",
+        "copilot/gpt-4o",
+        "copilot/claude-3.5-sonnet"
+      ]
+    },
+    "ask": {
+      "primary": "copilot/gpt-4o",
+      "fallback": [
+        "copilot/claude-3.5-sonnet",
+        "copilot/gemini-2.5-pro",
+        "copilot/claude-sonnet-4"
+      ]
+    },
+    "debug": {
+      "primary": "copilot/o3-mini",
+      "fallback": [
+        "copilot/gpt-4o",
+        "copilot/claude-3.5-sonnet",
+        "copilot/gemini-2.0-flash-001"
+      ]
+    },
+    "orchestrator": {
+      "primary": "copilot/gpt-5",
+      "fallback": [
+        "copilot/o3",
+        "copilot/claude-opus-4",
+        "copilot/gemini-2.5-pro"
+      ]
+    }
+  },
+  "taskSpecificMappings": {
+    "typescript": "copilot/claude-sonnet-4",
+    "typescriptreact": "copilot/claude-sonnet-4",
+    "javascript": "copilot/gpt-4o",
+    "react": "copilot/claude-sonnet-4",
+    "rust": "copilot/claude-sonnet-4",
+    "sql": "copilot/gemini-2.5-pro",
+    "database": "copilot/gemini-2.5-pro",
+    "performance": "copilot/gemini-2.5-pro",
+    "optimization": "copilot/gemini-2.5-pro",
+    "testing": "copilot/o3-mini",
+    "documentation": "copilot/gpt-4o",
+    "markdown": "copilot/gpt-4o",
+    "configuration": "copilot/gpt-4o",
+    "cloudflare": "copilot/claude-sonnet-4",
+    "api": "copilot/claude-sonnet-4",
+    "backend": "copilot/claude-sonnet-4",
+    "frontend": "copilot/gpt-4o"
+  },
+  "complexityThresholds": {
+    "low": "copilot/gpt-4o",
+    "medium": "copilot/claude-3.5-sonnet",
+    "high": "copilot/o3-mini",
+    "expert": "copilot/o3"
+  },
+  "fileTypeMappings": {
+    "*.tsx": "copilot/claude-sonnet-4",
+    "*.ts": "copilot/claude-sonnet-4",
+    "*.jsx": "copilot/gpt-4o",
+    "*.js": "copilot/gpt-4o",
+    "*.rs": "copilot/claude-sonnet-4",
+    "*.toml": "copilot/gpt-4o",
+    "*.sql": "copilot/gemini-2.5-pro",
+    "*.md": "copilot/gpt-4o",
+    "*.json": "copilot/gpt-4o",
+    "*.yaml": "copilot/gpt-4o",
+    "*.yml": "copilot/gpt-4o",
+    "*.css": "copilot/gpt-4o",
+    "*.scss": "copilot/gpt-4o",
+    "*.html": "copilot/gpt-4o",
+    "Dockerfile": "copilot/gpt-4o",
+    "*.sh": "copilot/gpt-4o",
+    "*.ps1": "copilot/gpt-4o"
+  },
+  "projectContext": {
+    "name": "BoxdBuddies",
+    "type": "fullstack-web-app",
+    "technologies": [
+      "TypeScript",
+      "React",
+      "Vite",
+      "Cloudflare",
+      "Vitest",
+      "ESLint",
+      "Prettier"
+    ],
+    "architecture": "serverless-functions",
+    "deployment": "cloudflare-pages"
+  },
+  "availableModels": [
+    "copilot/claude-sonnet-4",
+    "copilot/claude-3.5-sonnet",
+    "copilot/claude-3.7-sonnet",
+    "copilot/claude-3.7-sonnet-thought",
+    "copilot/claude-opus-4",
+    "copilot/claude-opus-41",
+    "copilot/gpt-4o",
+    "copilot/gpt-4.1",
+    "copilot/gpt-5",
+    "copilot/gpt-5-mini",
+    "copilot/gemini-2.0-flash-001",
+    "copilot/gemini-2.5-pro",
+    "copilot/o3",
+    "copilot/o3-mini",
+    "copilot/o4-mini",
+    "copilot/auto"
+  ],
+  "preferences": {
+    "preferClaude": false,
+    "fallbackStrategy": "intelligent",
+    "contextAwareness": true,
+    "adaptiveSelection": true,
+    "performanceOptimized": true,
+    "vibeCoderMode": true,
+    "bestModelSelection": true,
+    "taskOptimized": true
+  },
+  "vibeCoderSettings": {
+    "creativityLevel": "high",
+    "explorationEnabled": true,
+    "experimentalFeatures": true,
+    "rapidPrototyping": true,
+    "intelligentSuggestions": true,
+    "contextualHelp": true,
+    "seamlessExperience": true
+  },
+  "modelPersonalities": {
+    "copilot/o3": {
+      "style": "supreme-architect",
+      "strengths": [
+        "advanced-reasoning",
+        "complex-problem-solving",
+        "system-architecture"
+      ],
+      "useFor": [
+        "complex-architecture",
+        "strategic-planning",
+        "expert-level-tasks"
+      ]
+    },
+    "copilot/o3-mini": {
+      "style": "efficient-problem-solver",
+      "strengths": ["fast-reasoning", "debugging", "optimization"],
+      "useFor": ["debugging", "testing", "performance-tuning"]
+    },
+    "copilot/gpt-5": {
+      "style": "orchestration-master",
+      "strengths": [
+        "workflow-coordination",
+        "multi-domain-expertise",
+        "complex-orchestration"
+      ],
+      "useFor": ["complex-workflows", "multi-step-processes", "coordination"]
+    },
+    "copilot/claude-sonnet-4": {
+      "style": "type-safe-architect",
+      "strengths": ["type-safety", "system-design", "complex-reasoning"],
+      "useFor": ["typescript", "rust", "backend-architecture"]
+    },
+    "copilot/gpt-4o": {
+      "style": "versatile-implementer",
+      "strengths": ["rapid-development", "documentation", "frontend"],
+      "useFor": ["quick-implementations", "documentation", "ui-development"]
+    },
+    "copilot/gemini-2.5-pro": {
+      "style": "data-performance-expert",
+      "strengths": ["data-analysis", "performance-optimization", "sql"],
+      "useFor": [
+        "database-optimization",
+        "performance-analysis",
+        "data-processing"
+      ]
+    },
+    "copilot/claude-opus-4": {
+      "style": "creative-strategist",
+      "strengths": ["creative-solutions", "strategic-thinking", "innovation"],
+      "useFor": ["innovative-features", "creative-problem-solving", "strategy"]
+    },
+    "copilot/gemini-2.0-flash-001": {
+      "style": "speed-optimizer",
+      "strengths": ["fast-responses", "quick-fixes", "lightweight-solutions"],
+      "useFor": ["rapid-debugging", "quick-fixes", "lightweight-tasks"]
+    }
+  }
+}

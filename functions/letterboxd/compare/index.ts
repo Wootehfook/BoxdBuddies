@@ -1,6 +1,8 @@
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Letterboxd Watchlist Comparison API
 
+import { enhanceMovieWithTMDBData } from "../../_lib/tmdbUtils";
+
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Structured logging utility for production
 const logger = {
@@ -483,15 +485,59 @@ async function enhanceWithTMDBData(
           return Math.abs(hash % 100000) + 900000;
         };
 
-        // Fallback if not found in database
-        enhancedMovies.push({
-          id: generateFallbackId(movie.title, movie.year),
-          title: movie.title,
-          year: movie.year,
-          letterboxdSlug: movie.slug,
-          friendCount: movie.friendCount,
-          friendList: movie.friendList,
-        });
+        // Try real-time TMDB API fallback before using placeholder
+        console.log(
+          `🔍 Attempting real-time TMDB lookup for "${movie.title}" (${movie.year})`
+        );
+
+        try {
+          const tmdbData = await enhanceMovieWithTMDBData(
+            searchTitle,
+            movie.year,
+            env.TMDB_API_KEY
+          );
+
+          if (tmdbData) {
+            // Successfully found via TMDB API
+            enhancedMovies.push({
+              id: tmdbData.id,
+              title: tmdbData.title,
+              year: tmdbData.year,
+              poster_path: tmdbData.poster_path,
+              overview: tmdbData.overview,
+              vote_average: tmdbData.vote_average,
+              director: tmdbData.director,
+              runtime: tmdbData.runtime,
+              letterboxdSlug: movie.slug,
+              friendCount: movie.friendCount,
+              friendList: movie.friendList,
+            });
+          } else {
+            // TMDB API also didn't find it, use enhanced placeholder
+            enhancedMovies.push({
+              id: generateFallbackId(movie.title, movie.year),
+              title: movie.title,
+              year: movie.year,
+              letterboxdSlug: movie.slug,
+              friendCount: movie.friendCount,
+              friendList: movie.friendList,
+            });
+          }
+        } catch (tmdbError) {
+          console.error(
+            `❌ TMDB API lookup failed for "${movie.title}":`,
+            tmdbError
+          );
+          // TMDB API failed, use enhanced placeholder
+          enhancedMovies.push({
+            id: generateFallbackId(movie.title, movie.year),
+            title: movie.title,
+            year: movie.year,
+            letterboxdSlug: movie.slug,
+            friendCount: movie.friendCount,
+            friendList: movie.friendList,
+          });
+        }
       }
     } catch (error) {
       // AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
