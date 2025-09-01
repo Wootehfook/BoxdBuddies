@@ -100,7 +100,7 @@ export const tmdbService = {
     // Axios fallback - use static import for clarity and to satisfy reviewers
     try {
       const params: Record<string, unknown> = { query, page };
-      if (apiKey) (params as Record<string, unknown>).api_key = apiKey;
+      if (apiKey) params.api_key = apiKey;
 
       const response = await axios.get(
         "https://api.themoviedb.org/3/search/movie",
