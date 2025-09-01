@@ -21,6 +21,21 @@ export interface SearchResult {
   totalPages: number;
 }
 
+type BackendMovie = {
+  tmdb_data?: {
+    id?: number;
+    release_date?: string;
+    poster_path?: string | null;
+  };
+  tmdb_id?: number;
+  id?: number;
+  title?: string;
+  name?: string;
+  year?: number | string;
+  release_date?: string;
+  poster_path?: string | null;
+};
+
 let apiKey = "";
 
 export const tmdbService = {
@@ -32,37 +47,42 @@ export const tmdbService = {
     // When VITE_TMDB_BACKEND is enabled, use the web-compatible backend API
     if ((import.meta as any).env?.VITE_TMDB_BACKEND === "true") {
       try {
-        const backendRes: any = await CloudflareBackend.searchMovies(
+        const backendRes = (await CloudflareBackend.searchMovies(
           query,
           page
-        );
-        const moviesArr = backendRes?.movies || [];
+        )) as { movies?: BackendMovie[]; totalPages?: number } | undefined;
+        const moviesArr = backendRes?.movies ?? [];
         const totalPages = backendRes?.totalPages ?? 1;
 
-        if (moviesArr && moviesArr.length > 0) {
-          const m = moviesArr[0] as any;
+        if (moviesArr.length > 0) {
+          const m = moviesArr[0];
           // Map backend movie shape to MovieResult expected by callers/tests
+          const movieId =
+            (m?.tmdb_data?.id as number | undefined) ??
+            (m?.tmdb_id as number | undefined) ??
+            (m?.id as number | undefined) ??
+            0;
+          const title = m?.title ?? m?.name ?? String(query);
+
+          const year =
+            typeof m?.year === "number"
+              ? m.year
+              : m?.year
+                ? Number(m.year)
+                : m?.tmdb_data?.release_date
+                  ? Number(String(m.tmdb_data.release_date).slice(0, 4))
+                  : m?.release_date
+                    ? Number(String(m.release_date).slice(0, 4))
+                    : null;
+
+          const poster_path =
+            m?.tmdb_data?.poster_path ?? m?.poster_path ?? null;
+
           const movie: MovieResult = {
-            id:
-              (m.tmdb_data && m.tmdb_data.id) ??
-              (m.tmdb_id as number) ??
-              (m.id as number) ??
-              0,
-            title: m.title ?? m.name ?? String(query),
-            year:
-              typeof m.year === "number"
-                ? m.year
-                : m.year
-                  ? Number(m.year)
-                  : m.tmdb_data && m.tmdb_data.release_date
-                    ? Number(String(m.tmdb_data.release_date).slice(0, 4))
-                    : m.release_date
-                      ? Number(String(m.release_date).slice(0, 4))
-                      : null,
-            poster_path:
-              (m.tmdb_data && (m.tmdb_data.poster_path ?? null)) ??
-              m.poster_path ??
-              null,
+            id: movieId,
+            title,
+            year,
+            poster_path,
           };
 
           return { totalPages, movies: [movie] };
@@ -76,8 +96,8 @@ export const tmdbService = {
     try {
       const axiosMod = await import("axios");
       const axios = axiosMod?.default ?? axiosMod;
-      const params: Record<string, any> = { query, page };
-      if (apiKey) params.api_key = apiKey;
+      const params: Record<string, unknown> = { query, page };
+      if (apiKey) (params as Record<string, unknown>).api_key = apiKey;
 
       const response = await axios.get(
         "https://api.themoviedb.org/3/search/movie",
@@ -86,17 +106,28 @@ export const tmdbService = {
         }
       );
 
-      const data = response?.data ?? response ?? {};
-      const movies: MovieResult[] = (data.results || []).map((r: any) => ({
-        id: r.id,
-        title: r.title,
-        year: r.release_date
-          ? Number(String(r.release_date).slice(0, 4))
-          : null,
-        poster_path: r.poster_path ?? null,
-      }));
+      const data = (response?.data ?? response) as
+        | { results?: unknown[]; total_pages?: number }
+        | undefined;
+      const results = data?.results ?? [];
+      const movies: MovieResult[] = results.map((r) => {
+        const rr = r as {
+          id?: number;
+          title?: string;
+          release_date?: string;
+          poster_path?: string | null;
+        };
+        return {
+          id: rr.id ?? 0,
+          title: rr.title ?? String(query),
+          year: rr.release_date
+            ? Number(String(rr.release_date).slice(0, 4))
+            : null,
+          poster_path: rr.poster_path ?? null,
+        };
+      });
 
-      return { totalPages: data.total_pages || 1, movies };
+      return { totalPages: (data?.total_pages as number) ?? 1, movies };
     } catch {
       // On any error, return an empty, well-formed result to avoid crashing callers/tests
       return { totalPages: 1, movies: [] };
