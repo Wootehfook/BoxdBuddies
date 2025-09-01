@@ -62,13 +62,12 @@ export const tmdbService = {
             poster_path:
               (m.tmdb_data && (m.tmdb_data.poster_path ?? null)) ??
               m.poster_path ??
-              null ??
               null,
           };
 
           return { totalPages, movies: [movie] };
         }
-      } catch (err) {
+      } catch {
         // If backend path fails for any reason, fall back to axios below
       }
     }
@@ -98,7 +97,7 @@ export const tmdbService = {
       }));
 
       return { totalPages: data.total_pages || 1, movies };
-    } catch (err) {
+    } catch {
       // On any error, return an empty, well-formed result to avoid crashing callers/tests
       return { totalPages: 1, movies: [] };
     }
