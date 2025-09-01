@@ -1,6 +1,7 @@
 // AI Generated: Compatibility shim for tests
 
 import { CloudflareBackend } from "./cloudflareBackend";
+import axios from "axios";
 
 /**
  * Minimal TMDB service shim to satisfy tests that import ../../src/services/tmdbService
@@ -44,8 +45,13 @@ export const tmdbService = {
   },
 
   async searchMovies(query: string, page = 1): Promise<SearchResult> {
+    // Prefer a typed access to import.meta.env to keep TypeScript happy
+    const isBackend =
+      (import.meta as unknown as { env?: { VITE_TMDB_BACKEND?: string } }).env
+        ?.VITE_TMDB_BACKEND === "true";
+
     // When VITE_TMDB_BACKEND is enabled, use the web-compatible backend API
-    if ((import.meta as any).env?.VITE_TMDB_BACKEND === "true") {
+    if (isBackend) {
       try {
         const backendRes = (await CloudflareBackend.searchMovies(
           query,
@@ -92,10 +98,8 @@ export const tmdbService = {
       }
     }
 
-    // Axios fallback (guarded, dynamic import to avoid forcing axios in some environments)
+    // Axios fallback - use static import for clarity and to satisfy reviewers
     try {
-      const axiosMod = await import("axios");
-      const axios = axiosMod?.default ?? axiosMod;
       const params: Record<string, unknown> = { query, page };
       if (apiKey) (params as Record<string, unknown>).api_key = apiKey;
 
