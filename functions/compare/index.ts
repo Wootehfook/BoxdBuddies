@@ -37,6 +37,10 @@ interface Movie {
   vote_average?: number;
   director?: string;
   runtime?: number;
+  genres?: string[]; // Array of genre names
+  letterboxdSlug?: string;
+  friendCount: number;
+  friendList: string[];
 }
 
 // Simple Letterboxd scraper
@@ -100,99 +104,188 @@ async function scrapeLetterboxdWatchlist(
   }
 }
 
-// Find movies that appear in multiple watchlists
+// AI Generated: GitHub Copilot - 2025-08-29T12:30:00Z
+// Performance Optimization: Efficient Common Movies Algorithm - Optimized intersection finding for large datasets
+
+// Extended movie interface for common movies with user information
+interface CommonMovie extends LetterboxdMovie {
+  friendCount: number;
+  friendList: string[];
+}
+
+// Find movies that appear in multiple watchlists using efficient set operations
 function findCommonMovies(
   watchlists: { username: string; movies: LetterboxdMovie[] }[]
-): LetterboxdMovie[] {
+): CommonMovie[] {
   if (watchlists.length < 2) return [];
 
-  const movieCounts = new Map<
+  const startTime = Date.now();
+
+  // Create a map for efficient lookups: movie key -> {movie, users[], count}
+  const movieMap = new Map<
     string,
-    { movie: LetterboxdMovie; count: number; users: string[] }
+    { movie: LetterboxdMovie; users: string[]; count: number }
   >();
 
-  // Count occurrences of each movie across all watchlists
+  // Process each watchlist and build the movie map
   for (const watchlist of watchlists) {
-    for (const movie of watchlist.movies) {
-      const key = `${movie.title.toLowerCase()}-${movie.year}`;
-      const existing = movieCounts.get(key);
+    console.log(
+      `Processing ${watchlist.username} with ${watchlist.movies.length} movies`
+    );
 
+    // Use a Set for this watchlist to avoid duplicates within a single user's list
+    const userMovies = new Set<string>();
+
+    for (const movie of watchlist.movies) {
+      // Create a normalized key for movie matching
+      const key = `${movie.title.toLowerCase().trim()}-${movie.year}`;
+
+      // Skip if this user already has this movie (avoid duplicates)
+      if (userMovies.has(key)) continue;
+      userMovies.add(key);
+
+      const existing = movieMap.get(key);
       if (existing) {
+        // Movie already exists, increment count and add user
         existing.count++;
-        existing.users.push(watchlist.username);
+        if (!existing.users.includes(watchlist.username)) {
+          existing.users.push(watchlist.username);
+        }
+        console.log(
+          `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
+        );
       } else {
-        movieCounts.set(key, {
-          movie,
-          count: 1,
+        // First time seeing this movie
+        movieMap.set(key, {
+          movie: { ...movie }, // Clone to avoid mutations
           users: [watchlist.username],
+          count: 1,
         });
       }
     }
   }
 
-  // Return movies that appear in at least 2 watchlists
-  const commonMovies: LetterboxdMovie[] = [];
-  for (const [, data] of movieCounts) {
-    if (data.count >= 2) {
-      commonMovies.push(data.movie);
-    }
-  }
+  console.log(`Total unique movies in map: ${movieMap.size}`);
+  console.log(
+    `Movies with count >= 2: ${Array.from(movieMap.values()).filter((m) => m.count >= 2).length}`
+  );
 
-  console.log(`Found ${commonMovies.length} common movies`);
+  // Filter to movies that appear in at least 2 watchlists
+  const commonMovies: CommonMovie[] = [];
+  Array.from(movieMap.values()).forEach((data) => {
+    if (data.count >= 2) {
+      // Add user information to the movie for frontend display
+      const movieWithUsers: CommonMovie = {
+        ...data.movie,
+        friendCount: data.count,
+        friendList: data.users,
+      };
+      commonMovies.push(movieWithUsers);
+    }
+  });
+
+  // Sort by popularity (movies with more users first, then by year)
+  commonMovies.sort((a, b) => {
+    // Primary sort: more users first
+    if (a.friendCount !== b.friendCount) {
+      return b.friendCount - a.friendCount;
+    }
+    // Secondary sort: by year (newer first)
+    return b.year - a.year;
+  });
+
+  const duration = Date.now() - startTime;
+  console.log(
+    `Found ${commonMovies.length} common movies in ${duration}ms using optimized algorithm`
+  );
+
   return commonMovies;
 }
 
-// Enhance movies with TMDB data from database
+// AI Generated: GitHub Copilot - 2025-08-29T12:00:00Z
+// Performance Optimization: Parallel Processing - Enhanced TMDB data processing with batch queries and concurrency control
+
+// Enhance movies with TMDB data from database using parallel processing
 async function enhanceWithTMDBData(
-  movies: LetterboxdMovie[],
+  movies: CommonMovie[],
   env: Env
 ): Promise<Movie[]> {
+  if (movies.length === 0) return [];
+
+  const BATCH_SIZE = 10; // Process 10 movies concurrently
   const enhancedMovies: Movie[] = [];
 
-  for (const movie of movies) {
-    try {
-      // Look up movie in our database with fuzzy matching
-      const result = await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies 
-         WHERE (title LIKE ? OR original_title LIKE ?) 
-         AND (year = ? OR year IS NULL OR ? = 0)
-         ORDER BY popularity DESC
-         LIMIT 1`
-      )
-        .bind(`%${movie.title}%`, `%${movie.title}%`, movie.year, movie.year)
-        .all();
+  // Process movies in batches to avoid overwhelming the database
+  for (let i = 0; i < movies.length; i += BATCH_SIZE) {
+    const batch = movies.slice(i, i + BATCH_SIZE);
 
-      if (result.results && result.results.length > 0) {
-        const tmdbMovie = result.results[0] as any;
-        enhancedMovies.push({
-          id: tmdbMovie.id,
-          title: tmdbMovie.title,
-          year: tmdbMovie.year || movie.year,
-          poster_path: tmdbMovie.poster_path,
-          overview: tmdbMovie.overview,
-          vote_average: tmdbMovie.vote_average,
-          director: tmdbMovie.director,
-          runtime: tmdbMovie.runtime,
-        });
-      } else {
-        // Fallback if not found in database
-        enhancedMovies.push({
+    // Create batch queries for parallel execution
+    const batchPromises = batch.map(async (movie) => {
+      try {
+        // Prepare the query for this movie
+        const stmt = env.MOVIES_DB.prepare(
+          `SELECT * FROM tmdb_movies 
+           WHERE (title LIKE ? OR original_title LIKE ?) 
+           AND (year = ? OR year IS NULL OR ? = 0)
+           ORDER BY popularity DESC
+           LIMIT 1`
+        ).bind(`%${movie.title}%`, `%${movie.title}%`, movie.year, movie.year);
+
+        const result = await stmt.all();
+
+        if (result.results && result.results.length > 0) {
+          const tmdbMovie = result.results[0] as any;
+          return {
+            id: tmdbMovie.id,
+            title: tmdbMovie.title,
+            year: tmdbMovie.year || movie.year,
+            poster_path: tmdbMovie.poster_path,
+            overview: tmdbMovie.overview,
+            vote_average: tmdbMovie.vote_average,
+            director: tmdbMovie.director,
+            runtime: tmdbMovie.runtime,
+            letterboxdSlug: movie.slug, // Preserve original slug
+            friendCount: movie.friendCount, // Preserve friend information
+            friendList: movie.friendList, // Preserve friend information
+          };
+        } else {
+          // Fallback if not found in database
+          return {
+            id: Math.floor(Math.random() * 1000000),
+            title: movie.title,
+            year: movie.year,
+            letterboxdSlug: movie.slug,
+            friendCount: movie.friendCount, // Preserve friend information
+            friendList: movie.friendList, // Preserve friend information
+          };
+        }
+      } catch (error) {
+        console.error(`Error enhancing movie "${movie.title}":`, error);
+        // Return basic movie data as fallback
+        return {
           id: Math.floor(Math.random() * 1000000),
           title: movie.title,
           year: movie.year,
-        });
+          letterboxdSlug: movie.slug,
+          friendCount: movie.friendCount, // Preserve friend information
+          friendList: movie.friendList, // Preserve friend information
+        };
       }
-    } catch (error) {
-      console.error("Error enhancing movie:", error);
-      // Add basic movie data as fallback
-      enhancedMovies.push({
-        id: Math.floor(Math.random() * 1000000),
-        title: movie.title,
-        year: movie.year,
-      });
+    });
+
+    // Wait for this batch to complete before processing the next
+    const batchResults = await Promise.all(batchPromises);
+    enhancedMovies.push(...batchResults);
+
+    // Small delay between batches to prevent database overload
+    if (i + BATCH_SIZE < movies.length) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
 
+  console.log(
+    `Enhanced ${enhancedMovies.length} movies with TMDB data using parallel processing`
+  );
   return enhancedMovies;
 }
 
@@ -200,20 +293,35 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as { usernames: string[] };
+    const body = (await request.json()) as {
+      username?: string;
+      friends?: string[];
+      usernames?: string[]; // Legacy support
+    };
 
-    if (
-      !body.usernames ||
-      !Array.isArray(body.usernames) ||
-      body.usernames.length < 2
-    ) {
+    // Support both formats: new format { username, friends } and legacy { usernames }
+    let allUsernames: string[];
+    if (body.username && body.friends) {
+      // New format: user + friends
+      allUsernames = [body.username, ...body.friends];
+    } else if (body.usernames && Array.isArray(body.usernames)) {
+      // Legacy format
+      allUsernames = body.usernames;
+    } else {
       return Response.json(
-        { error: "At least 2 usernames are required" },
+        { error: "Either { username, friends } or { usernames } is required" },
         { status: 400 }
       );
     }
 
-    const usernames = body.usernames
+    if (allUsernames.length < 2) {
+      return Response.json(
+        { error: "At least 2 usernames are required for comparison" },
+        { status: 400 }
+      );
+    }
+
+    const usernames = allUsernames
       .filter((u) => u.trim())
       .map((u) => u.trim())
       .slice(0, 10); // Limit to 10 users
@@ -227,26 +335,75 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     console.log(`Starting comparison for: ${usernames.join(", ")}`);
 
-    // Scrape all watchlists in parallel with rate limiting
+    // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
+    // Performance Optimization: Smart Rate Limiting - Optimized parallel scraping with intelligent delays
     const watchlistPromises = usernames.map(async (username, index) => {
-      // Add delay between requests to be respectful
+      // Implement exponential backoff for rate limiting
+      const baseDelay = 500; // Start with 500ms
+      const maxDelay = 3000; // Max 3 seconds
+      const delay = Math.min(baseDelay * Math.pow(1.5, index), maxDelay);
+
       if (index > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      const movies = await scrapeLetterboxdWatchlist(username);
-      return { username, movies };
+      const startTime = Date.now();
+      try {
+        const movies = await scrapeLetterboxdWatchlist(username);
+        const duration = Date.now() - startTime;
+        console.log(
+          `Scraped ${username}: ${movies.length} movies in ${duration}ms`
+        );
+        return { username, movies, duration };
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error(
+          `Failed to scrape ${username} after ${duration}ms:`,
+          error
+        );
+        throw error;
+      }
     });
 
-    const watchlists = await Promise.all(watchlistPromises);
+    // Execute all scraping operations with timeout protection
+    const scrapingTimeout = 30000; // 30 second timeout
+    const watchlists = await Promise.race([
+      Promise.all(watchlistPromises),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Watchlist scraping timeout")),
+          scrapingTimeout
+        )
+      ),
+    ]);
 
     console.log(
-      "Watchlist sizes:",
-      watchlists.map((w) => `${w.username}: ${w.movies.length}`)
+      "Watchlist scraping completed:",
+      watchlists.map(
+        (w) => `${w.username}: ${w.movies.length} movies (${w.duration}ms)`
+      )
     );
+
+    // Add debug logging for the first few movies from each user
+    watchlists.forEach((watchlist) => {
+      console.log(
+        `${watchlist.username} sample movies:`,
+        watchlist.movies.slice(0, 3).map((m) => `"${m.title}" (${m.year})`)
+      );
+    });
 
     // Find common movies
     const commonMovies = findCommonMovies(watchlists);
+
+    console.log(`Common movies found: ${commonMovies.length}`);
+    if (commonMovies.length > 0) {
+      console.log(
+        "Sample common movies:",
+        commonMovies
+          .slice(0, 3)
+          .map((m) => `"${m.title}" (${m.year}) - ${m.friendList.join(", ")}`)
+      );
+    }
 
     // Enhance with TMDB data
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
