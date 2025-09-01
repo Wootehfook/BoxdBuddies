@@ -16,210 +16,138 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useState, useEffect } from "react";
-// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
+import { useEffect, useReducer, useCallback } from "react";
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Updated imports
 import "./App.css";
 
-// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-// API Configuration Constants
-const API_ENDPOINTS = {
-  LETTERBOXD_FRIENDS: "/letterboxd/friends",
-  LETTERBOXD_WATCHLIST_COUNT: "/letterboxd/watchlist-count",
-  LETTERBOXD_COMPARE: "/letterboxd/compare",
-  LETTERBOXD_AVATAR_PROXY: "/letterboxd/avatar-proxy",
-} as const;
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Import extracted components
+import { SetupPage } from "./components/SetupPage";
+import { FriendSelectionPage } from "./components/FriendSelectionPage";
+import { ResultsPage } from "./components/ResultsPage";
+
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Import types and utilities
+import type { AppState, AppAction, Friend } from "./types";
+import { API_ENDPOINTS, FAMOUS_MOVIE_QUOTES } from "./utils";
 
 // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-// Generate consistent colors for user display throughout the app
-function getUserColors(username: string) {
-  const colors = [
-    "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
-    "#96CEB4",
-    "#FECA57",
-    "#FF9FF3",
-    "#54A0FF",
-    "#5F27CD",
-    "#00D2D3",
-    "#FF9F43",
-    "#1DD1A1",
-    "#FD79A8",
-    "#6C5CE7",
-    "#74B9FF",
-    "#A29BFE",
-    "#1E90FF",
-    "#FF7675",
-    "#74C0FC",
-    "#82CA9D",
-    "#F8B500",
-  ];
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed getUserColors function (now in utils)
 
-  // Create a simple hash from the username
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) {
-    hash = username.charCodeAt(i) + ((hash << 5) - hash);
-  }
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed inline FriendAvatar component
 
-  // Use the hash to pick a color consistently
-  const colorIndex = Math.abs(hash) % colors.length;
-  const baseColor = colors[colorIndex];
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed duplicate FAMOUS_MOVIE_QUOTES
 
-  return {
-    // For avatar backgrounds
-    avatarColor: baseColor,
-    // For username bubbles/badges
-    color: "#ffffff",
-    borderColor: baseColor,
-    backgroundColor: baseColor + "33", // Add 20% opacity
-  };
-}
-
-// AI Generated: GitHub Copilot - 2025-08-16T21:00:00Z
-// FriendAvatar component with CORS proxy support
-function FriendAvatar({ friend }: { friend: Friend }) {
-  const [imageError, setImageError] = useState(false);
-
-  const initials = friend.displayName
-    ? friend.displayName.charAt(0).toUpperCase()
-    : friend.username.charAt(0).toUpperCase();
-
-  // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-  // Secure URL validation for Letterboxd images to prevent domain spoofing
-  const isValidLetterboxdUrl = (url: string): boolean => {
-    try {
-      const parsedUrl = new window.URL(url);
-      // Ensure the hostname ends with .ltrbxd.com (not just contains it)
-      return (
-        parsedUrl.hostname.endsWith(".ltrbxd.com") ||
-        parsedUrl.hostname === "ltrbxd.com"
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case "SET_PAGE":
+      return { ...state, page: action.payload };
+    case "SET_USERNAME":
+      return { ...state, username: action.payload };
+    case "SET_FRIENDS":
+      return { ...state, friends: action.payload };
+    case "SET_SELECTED_FRIENDS":
+      return { ...state, selectedFriends: action.payload };
+    case "TOGGLE_FRIEND": {
+      const isSelected = state.selectedFriends.some(
+        (f) => f.username === action.payload.username
       );
-    } catch {
-      return false;
+      return {
+        ...state,
+        selectedFriends: isSelected
+          ? state.selectedFriends.filter(
+              (f) => f.username !== action.payload.username
+            )
+          : [...state.selectedFriends, action.payload],
+      };
     }
-  };
-
-  // Use proxy for Letterboxd images to bypass CORS
-  const imageUrl =
-    friend.profileImageUrl && isValidLetterboxdUrl(friend.profileImageUrl)
-      ? `${API_ENDPOINTS.LETTERBOXD_AVATAR_PROXY}?url=${encodeURIComponent(friend.profileImageUrl)}`
-      : friend.profileImageUrl;
-
-  const handleImageError = () => {
-    console.error(
-      `Failed to load image for ${friend.username}:`,
-      friend.profileImageUrl,
-      "Proxied URL:",
-      imageUrl
-    );
-    setImageError(true);
-  };
-
-  return (
-    <div className="friend-avatar">
-      {imageUrl && !imageError ? (
-        <img
-          src={imageUrl}
-          alt={friend.displayName || friend.username}
-          onError={handleImageError}
-          loading="lazy"
-        />
-      ) : (
-        <div
-          className="avatar-initials"
-          style={{
-            backgroundColor: getUserColors(friend.username).avatarColor,
-          }}
-        >
-          {initials}
-        </div>
-      )}
-    </div>
-  );
+    case "SET_MOVIES":
+      return { ...state, movies: action.payload };
+    case "SET_LOADING":
+      return { ...state, isLoading: action.payload };
+    case "SET_LOADING_FRIENDS":
+      return { ...state, isLoadingFriends: action.payload };
+    case "SET_FRIENDS_LOADING_PROGRESS":
+      return { ...state, friendsLoadingProgress: action.payload };
+    case "SET_COMPARING":
+      return { ...state, isComparing: action.payload };
+    case "SET_LOADING_WATCHLIST_COUNTS":
+      return { ...state, isLoadingWatchlistCounts: action.payload };
+    case "SET_ERROR":
+      return { ...state, error: action.payload };
+    case "SET_ENHANCEMENT_PROGRESS":
+      return { ...state, enhancementProgress: action.payload };
+    case "SET_CURRENT_QUOTE_INDEX":
+      return { ...state, currentQuoteIndex: action.payload };
+    case "RESET_STATE":
+      return {
+        ...initialState,
+        username: state.username, // Preserve username
+      };
+    default:
+      return state;
+  }
 }
 
-// AI Generated: GitHub Copilot - 2025-08-16T21:30:00Z
-// Famous movie quotes for progress display
-const FAMOUS_MOVIE_QUOTES = [
-  { quote: "May the Force be with you.", movie: "Star Wars" },
-  { quote: "I'll be back.", movie: "The Terminator" },
-  { quote: "Here's looking at you, kid.", movie: "Casablanca" },
-  { quote: "You can't handle the truth!", movie: "A Few Good Men" },
-  { quote: "Houston, we have a problem.", movie: "Apollo 13" },
-  {
-    quote: "Frankly, my dear, I don't give a damn.",
-    movie: "Gone with the Wind",
+const initialState: AppState = {
+  page: "setup",
+  username: "",
+  friends: [],
+  selectedFriends: [],
+  movies: [],
+  isLoading: false,
+  isLoadingFriends: false,
+  friendsLoadingProgress: 0,
+  isComparing: false,
+  isLoadingWatchlistCounts: false,
+  error: null,
+  enhancementProgress: {
+    completed: 0,
+    total: 100,
+    status: "Starting...",
   },
-  { quote: "I see dead people.", movie: "The Sixth Sense" },
-  { quote: "You're gonna need a bigger boat.", movie: "Jaws" },
-  { quote: "Nobody puts Baby in a corner.", movie: "Dirty Dancing" },
-  { quote: "Life is like a box of chocolates.", movie: "Forrest Gump" },
-  { quote: "I feel the need... the need for speed!", movie: "Top Gun" },
-  { quote: "Show me the money!", movie: "Jerry Maguire" },
-  { quote: "After all this time? Always.", movie: "Harry Potter" },
-  { quote: "Why so serious?", movie: "The Dark Knight" },
-  { quote: "I am inevitable.", movie: "Avengers: Endgame" },
-];
-
-interface Friend {
-  username: string;
-  displayName?: string;
-  watchlistCount?: number;
-  profileImageUrl?: string;
-}
-
-interface Movie {
-  id: number;
-  title: string;
-  year: number;
-  poster_path?: string;
-  overview?: string;
-  vote_average?: number;
-  director?: string;
-  runtime?: number;
-  genres?: string[]; // Array of genre names
-  letterboxdSlug?: string;
-  friendCount: number;
-  friendList: string[];
-}
-
-interface EnhancementProgress {
-  completed: number;
-  total: number;
-  status: string;
-}
-
-type PageType = "setup" | "friend-selection" | "results";
+  currentQuoteIndex: 0,
+};
 
 function App() {
-  const [page, setPage] = useState<PageType>("setup");
-  const [username, setUsername] = useState("");
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
-  const [friendsLoadingProgress, setFriendsLoadingProgress] = useState(0);
-  const [isComparing, setIsComparing] = useState(false);
-  const [isLoadingWatchlistCounts, setIsLoadingWatchlistCounts] =
-    useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [enhancementProgress, setEnhancementProgress] =
-    useState<EnhancementProgress>({
-      completed: 0,
-      total: 100,
-      status: "Starting...",
+  // Performance Optimization: Consolidated State Management with useReducer
+  const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Extract state values for easier access
+  const {
+    page,
+    username,
+    friends,
+    selectedFriends,
+    movies,
+    isLoading,
+    isLoadingFriends,
+    friendsLoadingProgress,
+    isComparing,
+    isLoadingWatchlistCounts,
+    error,
+    enhancementProgress,
+    currentQuoteIndex,
+  } = state;
+
+  // Performance Optimization: Efficient Quote Rotation with useCallback
+  const rotateQuote = useCallback(() => {
+    dispatch({
+      type: "SET_CURRENT_QUOTE_INDEX",
+      payload: (currentQuoteIndex + 1) % FAMOUS_MOVIE_QUOTES.length,
     });
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  }, [currentQuoteIndex]);
 
   // Rotate movie quotes during comparison
   useEffect(() => {
     let quoteInterval: ReturnType<typeof setInterval>;
 
     if (isComparing) {
-      quoteInterval = setInterval(() => {
-        setCurrentQuoteIndex((prev) => (prev + 1) % FAMOUS_MOVIE_QUOTES.length);
-      }, 4000); // Change quote every 4 seconds
+      quoteInterval = setInterval(rotateQuote, 4000); // Change quote every 4 seconds
     }
 
     return () => {
@@ -227,27 +155,32 @@ function App() {
         clearInterval(quoteInterval);
       }
     };
-  }, [isComparing]);
+  }, [isComparing, rotateQuote]);
 
   const handleUserSetup = async () => {
     if (!username.trim()) {
-      setError("Please enter your Letterboxd username");
+      dispatch({
+        type: "SET_ERROR",
+        payload: "Please enter your Letterboxd username",
+      });
       return;
     }
 
-    setIsLoading(true);
-    setIsLoadingFriends(true);
-    setFriendsLoadingProgress(0);
-    setError(null);
+    dispatch({ type: "SET_LOADING", payload: true });
+    dispatch({ type: "SET_LOADING_FRIENDS", payload: true });
+    dispatch({ type: "SET_FRIENDS_LOADING_PROGRESS", payload: 0 });
+    dispatch({ type: "SET_ERROR", payload: null });
 
     try {
       // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
       // Start progress simulation for friends loading with deterministic increments
       const progressInterval = setInterval(() => {
-        setFriendsLoadingProgress((prev) => {
-          // Use deterministic progress increments instead of random for better UX
-          const increment = 8 + prev / 10; // Gradual slowdown as we approach completion
-          return Math.min(prev + increment, 95); // Cap at 95% until actual completion
+        dispatch({
+          type: "SET_FRIENDS_LOADING_PROGRESS",
+          payload: Math.min(
+            friendsLoadingProgress + 8 + friendsLoadingProgress / 10,
+            95
+          ),
         });
       }, 800);
 
@@ -266,7 +199,7 @@ function App() {
 
       // Clear progress interval and set to 100%
       clearInterval(progressInterval);
-      setFriendsLoadingProgress(100);
+      dispatch({ type: "SET_FRIENDS_LOADING_PROGRESS", payload: 100 });
 
       if (!response.ok) {
         const errorData = await response
@@ -280,9 +213,9 @@ function App() {
       // Delay slightly to show 100% completion
       setTimeout(async () => {
         const friendsData = data.friends || [];
-        setFriends(friendsData);
-        setIsLoadingFriends(false);
-        setPage("friend-selection");
+        dispatch({ type: "SET_FRIENDS", payload: friendsData });
+        dispatch({ type: "SET_LOADING_FRIENDS", payload: false });
+        dispatch({ type: "SET_PAGE", payload: "friend-selection" });
 
         // Fetch watchlist counts for friends (async, doesn't block UI)
         if (friendsData.length > 0) {
@@ -291,11 +224,15 @@ function App() {
       }, 300);
     } catch (err) {
       console.error("User setup failed:", err);
-      setError(err instanceof Error ? err.message : "Failed to load user data");
-      setIsLoadingFriends(false);
-      setFriendsLoadingProgress(0);
+      dispatch({
+        type: "SET_ERROR",
+        payload:
+          err instanceof Error ? err.message : "Failed to load user data",
+      });
+      dispatch({ type: "SET_LOADING_FRIENDS", payload: false });
+      dispatch({ type: "SET_FRIENDS_LOADING_PROGRESS", payload: 0 });
     } finally {
-      setIsLoading(false);
+      dispatch({ type: "SET_LOADING", payload: false });
     }
   };
 
@@ -303,7 +240,7 @@ function App() {
   // Fetch watchlist counts for friends in the background
   const fetchWatchlistCounts = async (friendsData: Friend[]) => {
     try {
-      setIsLoadingWatchlistCounts(true);
+      dispatch({ type: "SET_LOADING_WATCHLIST_COUNTS", payload: true });
       const usernames = friendsData.map((f) => f.username);
 
       const response = await window.fetch(
@@ -323,17 +260,18 @@ function App() {
       if (response.ok) {
         const data = await response.json();
 
-        // Update friends with watchlist counts
-        setFriends((prev) =>
-          prev.map((friend) => {
+        // Update friends with watchlist counts using functional update
+        dispatch({
+          type: "SET_FRIENDS",
+          payload: friendsData.map((friend) => {
             const count = data.results[friend.username];
             if (count !== undefined) {
               return { ...friend, watchlistCount: count };
             }
             // If no result for this friend, keep existing value (might be undefined)
             return friend;
-          })
-        );
+          }),
+        });
       } else {
         console.error(
           "Watchlist count API failed:",
@@ -345,53 +283,55 @@ function App() {
       console.error("Failed to fetch watchlist counts:", error);
       // Don't show error to user - this is a nice-to-have feature
     } finally {
-      setIsLoadingWatchlistCounts(false);
+      dispatch({ type: "SET_LOADING_WATCHLIST_COUNTS", payload: false });
     }
   };
 
   const toggleFriend = (friend: Friend) => {
-    setSelectedFriends((prev) => {
-      const isSelected = prev.some((f) => f.username === friend.username);
-      if (isSelected) {
-        return prev.filter((f) => f.username !== friend.username);
-      } else {
-        return [...prev, friend];
-      }
-    });
+    dispatch({ type: "TOGGLE_FRIEND", payload: friend });
   };
 
   const handleCompareWatchlists = async () => {
     if (selectedFriends.length === 0) {
-      setError("Please select at least one friend to compare with");
+      dispatch({
+        type: "SET_ERROR",
+        payload: "Please select at least one friend to compare with",
+      });
       return;
     }
 
-    setIsComparing(true);
-    setError(null);
-    setEnhancementProgress({
-      completed: 0,
-      total: 100,
-      status: "Starting comparison...",
+    dispatch({ type: "SET_COMPARING", payload: true });
+    dispatch({ type: "SET_ERROR", payload: null });
+    dispatch({
+      type: "SET_ENHANCEMENT_PROGRESS",
+      payload: {
+        completed: 0,
+        total: 100,
+        status: "Starting comparison...",
+      },
     });
 
     // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-    // Deterministic progress simulation for better UX
+    // Performance Optimization: Efficient Progress Simulation
     let progress = 0;
     const progressInterval = setInterval(() => {
       if (progress < 85) {
         // Use deterministic increment instead of random for smoother progress
         progress += 3 + progress / 20; // Gradual slowdown
-        setEnhancementProgress({
-          completed: Math.round(progress),
-          total: 100,
-          status:
-            progress < 25
-              ? "Scraping user watchlist..."
-              : progress < 50
-                ? "Scraping friends' watchlists..."
-                : progress < 75
-                  ? "Finding common movies..."
-                  : "Enhancing with TMDB data...",
+        dispatch({
+          type: "SET_ENHANCEMENT_PROGRESS",
+          payload: {
+            completed: Math.round(progress),
+            total: 100,
+            status:
+              progress < 25
+                ? "Scraping user watchlist..."
+                : progress < 50
+                  ? "Scraping friends' watchlists..."
+                  : progress < 75
+                    ? "Finding common movies..."
+                    : "Enhancing with TMDB data...",
+          },
         });
       }
     }, 300);
@@ -417,37 +357,72 @@ function App() {
 
       const data = await response.json();
 
+      // Display debug information if available
+      if (data.debug) {
+        console.error("🔍 Watchlist Comparison Debug Info");
+        console.error("📡 Request:", data.debug.requestReceived);
+        console.error("📊 Movie Counts:", data.debug.movieCounts);
+        console.error("🎬 Sample Movies:", data.debug.sampleMovies);
+        console.error("🔗 Matching Results:", data.debug.matchingInfo);
+        console.error("🧩 Enrichment Sources:", data.debug.enrichment);
+
+        // Show detailed scraping results
+        console.error("📋 Scraping Results Details:");
+        Object.entries(data.debug.scrapingResults).forEach(
+          ([username, result]) => {
+            console.error(`  ${username}:`, result);
+            // Also log the JSON string to ensure it's visible
+            console.error(
+              `  ${username} (JSON):`,
+              JSON.stringify(result, null, 2)
+            );
+          }
+        );
+      }
+
       clearInterval(progressInterval);
-      setEnhancementProgress({
-        completed: 100,
-        total: 100,
-        status: "Complete!",
+      dispatch({
+        type: "SET_ENHANCEMENT_PROGRESS",
+        payload: {
+          completed: 100,
+          total: 100,
+          status: "Complete!",
+        },
       });
 
-      setMovies(data.movies || []);
-      setPage("results");
+      dispatch({ type: "SET_MOVIES", payload: data.movies || [] });
+      dispatch({ type: "SET_PAGE", payload: "results" });
     } catch (err) {
       clearInterval(progressInterval);
       console.error("Comparison failed:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to compare watchlists"
-      );
+      dispatch({
+        type: "SET_ERROR",
+        payload:
+          err instanceof Error ? err.message : "Failed to compare watchlists",
+      });
     } finally {
-      setIsComparing(false);
+      dispatch({ type: "SET_COMPARING", payload: false });
     }
   };
 
   const handleBackToFriends = () => {
-    setPage("friend-selection");
-    setMovies([]);
-    setEnhancementProgress({ completed: 0, total: 0, status: "" });
+    dispatch({ type: "SET_PAGE", payload: "friend-selection" });
+    dispatch({ type: "SET_MOVIES", payload: [] });
+    dispatch({
+      type: "SET_ENHANCEMENT_PROGRESS",
+      payload: { completed: 0, total: 0, status: "" },
+    });
+  };
+
+  const handleUsernameChange = (value: string) => {
+    dispatch({ type: "SET_USERNAME", payload: value });
   };
 
   const handleBackToSetup = () => {
-    setPage("setup");
-    setFriends([]);
-    setSelectedFriends([]);
-    setMovies([]);
+    dispatch({ type: "SET_PAGE", payload: "setup" });
+    dispatch({ type: "SET_FRIENDS", payload: [] });
+    dispatch({ type: "SET_SELECTED_FRIENDS", payload: [] });
+    dispatch({ type: "SET_MOVIES", payload: [] });
   };
 
   const renderCurrentPage = () => {
@@ -456,7 +431,7 @@ function App() {
         return (
           <SetupPage
             username={username}
-            setUsername={setUsername}
+            setUsername={handleUsernameChange}
             onSetup={handleUserSetup}
             isLoading={isLoading}
             isLoadingFriends={isLoadingFriends}
@@ -543,396 +518,13 @@ function App() {
   );
 }
 
-// Setup Page Component
-interface SetupPageProps {
-  username: string;
-  setUsername: (value: string) => void;
-  onSetup: () => void;
-  isLoading: boolean;
-  isLoadingFriends: boolean;
-  friendsLoadingProgress: number;
-  error: string | null;
-}
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed inline SetupPageProps interface
 
-function SetupPage({
-  username,
-  setUsername,
-  onSetup,
-  isLoading,
-  isLoadingFriends,
-  friendsLoadingProgress,
-  error,
-}: SetupPageProps) {
-  return (
-    <section className="page setup-page">
-      <div className="page-content">
-        <div className="setup-card">
-          <h2>Get Started</h2>
-          <p>
-            Enter your Letterboxd username to load your friends and compare
-            watchlists
-          </p>
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed inline SetupPage component
 
-          <div className="form-group">
-            <label htmlFor="username">Your Letterboxd Username</label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Your Letterboxd Username"
-              disabled={isLoading}
-              onKeyDown={(e) => e.key === "Enter" && onSetup()}
-            />
-          </div>
-
-          {error && (
-            <div className="error-message">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-
-          {isLoadingFriends && (
-            <div className="loading-progress">
-              <div className="progress-message">Loading your friends...</div>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${friendsLoadingProgress}%` }}
-                ></div>
-              </div>
-              <div className="progress-percentage">
-                {Math.round(friendsLoadingProgress)}%
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={onSetup}
-            disabled={isLoading || !username.trim()}
-            className="btn btn-primary"
-          >
-            {isLoading ? "Loading friends..." : "Continue"}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Friend Selection Page Component
-interface FriendSelectionPageProps {
-  friends: Friend[];
-  selectedFriends: Friend[];
-  onToggleFriend: (friend: Friend) => void;
-  onCompareWatchlists: () => void;
-  onBackToSetup: () => void;
-  isComparing: boolean;
-  isLoadingWatchlistCounts: boolean;
-  enhancementProgress: EnhancementProgress;
-  currentQuoteIndex: number;
-  error: string | null;
-}
-
-function FriendSelectionPage({
-  friends,
-  selectedFriends,
-  onToggleFriend,
-  onCompareWatchlists,
-  onBackToSetup,
-  isComparing,
-  isLoadingWatchlistCounts,
-  enhancementProgress,
-  currentQuoteIndex,
-  error,
-}: FriendSelectionPageProps) {
-  const progressPercent = Math.round(
-    (enhancementProgress.completed / enhancementProgress.total) * 100
-  );
-
-  return (
-    <section className="page friends-page">
-      <div className="page-header">
-        <button onClick={onBackToSetup} className="btn btn-secondary btn-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Setup
-        </button>
-        <h2>Select Friends</h2>
-      </div>
-
-      <div className="page-content">
-        {friends.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">👥</div>
-            <h3>No friends found</h3>
-            <p>
-              Make sure your Letterboxd profile is public and you have added
-              some friends!
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="friends-grid">
-              {friends.map((friend, index) => (
-                <div
-                  key={friend.username}
-                  className={`friend-card fade-in ${selectedFriends.some((f) => f.username === friend.username) ? "selected" : ""}`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={() => onToggleFriend(friend)}
-                >
-                  <div className="friend-avatar">
-                    <FriendAvatar friend={friend} />
-                  </div>
-                  <div className="friend-info">
-                    <h3>{friend.displayName || friend.username}</h3>
-                    <p>@{friend.username}</p>
-                    {friend.watchlistCount !== undefined ? (
-                      <p className="watchlist-count">
-                        {friend.watchlistCount === 0
-                          ? "Watchlist: NA"
-                          : `Watchlist: ${friend.watchlistCount} Film${friend.watchlistCount === 1 ? "" : "s"}`}
-                      </p>
-                    ) : isLoadingWatchlistCounts ? (
-                      <p className="watchlist-count">
-                        <span className="loading-dots">
-                          Loading watchlist...
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="compare-actions">
-              {error && (
-                <div className="error-message">
-                  <strong>Error:</strong> {error}
-                </div>
-              )}
-
-              {isComparing ? (
-                <div className="progress-button-container">
-                  <div className="progress-info">
-                    <h3>Comparing Watchlists...</h3>
-                    <div className="progress-details">
-                      <p>Progress: {progressPercent}% complete</p>
-                      <p className="progress-status">
-                        {enhancementProgress.status}
-                      </p>
-                    </div>
-                    <div className="movie-quote-display">
-                      <p className="movie-quote">
-                        "{FAMOUS_MOVIE_QUOTES[currentQuoteIndex].quote}"
-                      </p>
-                      <p className="movie-source">
-                        — {FAMOUS_MOVIE_QUOTES[currentQuoteIndex].movie}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="progress-bar-modern">
-                    <div
-                      className="progress-bar-fill-modern"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                    <div className="progress-percentage-modern">
-                      {progressPercent}%
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="friends-selected-text">
-                    {selectedFriends.length} friend
-                    {selectedFriends.length !== 1 ? "s" : ""} selected
-                  </p>
-                  <button
-                    onClick={onCompareWatchlists}
-                    disabled={selectedFriends.length === 0}
-                    className="btn btn-primary"
-                  >
-                    Compare Watchlists
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
-
-// Results Page Component
-interface ResultsPageProps {
-  movies: Movie[];
-  selectedFriends: Friend[];
-  onBack: () => void;
-  onNewComparison: () => void;
-}
-
-function ResultsPage({ movies, onBack }: ResultsPageProps) {
-  return (
-    <section className="page results-page">
-      <div className="page-header">
-        <button onClick={onBack} className="btn btn-secondary btn-icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Friends
-        </button>
-        <h2>
-          <span className="movie-count">{movies.length}</span>
-          <span className="movie-label">
-            Movie Match{movies.length !== 1 ? "es" : ""}
-          </span>
-        </h2>
-      </div>
-
-      <div className="page-content">
-        {movies.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              <img
-                src="/buddio.svg"
-                alt="Buddio"
-                className="buddio-empty-state"
-              />
-            </div>
-            <h3>No common movies found</h3>
-            <p>
-              Try selecting different friends or check if watchlists are public
-            </p>
-          </div>
-        ) : (
-          <div className="movies-grid">
-            {movies.map((movie, index) => (
-              <a
-                key={movie.id}
-                href={`https://letterboxd.com/film/${movie.letterboxdSlug}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="movie-card fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="movie-poster-section has-poster">
-                  {movie.poster_path &&
-                  movie.poster_path !== "/placeholder-poster.jpg" ? (
-                    <img
-                      src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-                      alt={`${movie.title} poster`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/200x300/1a1f24/9ab?text=No+Poster";
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
-                      alt={`${movie.title} placeholder`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div className="movie-info">
-                  <div className="movie-content">
-                    <div className="movie-title-section">
-                      <h3>
-                        {movie.title}
-                        {movie.year && movie.year > 0 ? ` (${movie.year})` : ""}
-                      </h3>
-                    </div>
-
-                    <div className="movie-details-list">
-                      {movie.vote_average && movie.vote_average > 0 && (
-                        <div className="movie-detail-item">
-                          <span className="detail-icon movie-rating-stars">
-                            ⭐
-                          </span>
-                          <span>{movie.vote_average.toFixed(1)}/10</span>
-                        </div>
-                      )}
-
-                      {movie.genres && movie.genres.length > 0 && (
-                        <div className="movie-detail-item">
-                          <span className="detail-icon">🎭</span>
-                          <span>{movie.genres.slice(0, 2).join(", ")}</span>
-                        </div>
-                      )}
-
-                      {movie.runtime && movie.runtime > 0 && (
-                        <div className="movie-detail-item">
-                          <span className="detail-icon">⏱️</span>
-                          <span>{movie.runtime}m</span>
-                        </div>
-                      )}
-
-                      {movie.director && movie.director !== "Unknown" && (
-                        <div className="movie-detail-item">
-                          <span className="detail-icon">🎬</span>
-                          <span>{movie.director}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="movie-friends">
-                    <div className="friends-inline-container">
-                      {movie.friendList && movie.friendList.length > 0 && (
-                        <div className="friend-list-expanded">
-                          {movie.friendList.map(
-                            (friendName: string, idx: number) => {
-                              const friendColors = getUserColors(friendName);
-                              return (
-                                <span
-                                  key={idx}
-                                  className="friend-tag"
-                                  style={{
-                                    borderColor: friendColors.borderColor,
-                                    backgroundColor:
-                                      friendColors.backgroundColor,
-                                    color: "#fff",
-                                  }}
-                                >
-                                  {friendName}
-                                </span>
-                              );
-                            }
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
+// AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
+// Performance Optimization: Component Splitting - Removed inline FriendSelectionPage and ResultsPage components
 
 export default App;

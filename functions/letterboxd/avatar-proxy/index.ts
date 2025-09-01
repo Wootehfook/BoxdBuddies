@@ -6,8 +6,8 @@
  * Proxies Letterboxd avatar images to bypass CORS restrictions
  */
 
-// AI Generated: GitHub Copilot - 2025-08-17T04:20:00Z
-// Enhanced secure URL validation function to prevent domain spoofing attacks
+// AI Generated: GitHub Copilot - 2025-08-29T10:45:00Z
+// Fixed secure URL validation function for Letterboxd images
 function isValidLetterboxdUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
@@ -17,12 +17,12 @@ function isValidLetterboxdUrl(url: string): boolean {
       return false;
     }
 
-    // Prevent percent-encoding attacks and path traversal
-    if (url.includes("%") || url.includes("..") || url.includes("//")) {
+    // Prevent path traversal in pathname only (not entire URL)
+    if (parsedUrl.pathname.includes("..")) {
       return false;
     }
 
-    // Ensure the hostname ends with .ltrbxd.com (not just contains it)
+    // Ensure the hostname is a valid Letterboxd domain
     const validHosts = ["ltrbxd.com", "a.ltrbxd.com", "s.ltrbxd.com"];
 
     return validHosts.some(
