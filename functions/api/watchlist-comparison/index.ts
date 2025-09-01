@@ -292,6 +292,22 @@ function findCommonMovies(
   return commonMovies;
 }
 
+// AI Generated: GitHub Copilot - 2025-08-30
+// Helpers for TMDB data processing
+const normalizeTitle = (t: string) =>
+  t
+    .toLowerCase()
+    .trim()
+    .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "") // quotes
+    .replace(/[:.,!\-–—()\[\]{}]/g, " ") // punctuation
+    .replace(/\s+/g, " ");
+
+const parseYear = (date?: string | null): number => {
+  if (!date) return 0;
+  const m = /^(\d{4})/.exec(date);
+  return m ? parseInt(m[1]) : 0;
+};
+
 // AI Generated: GitHub Copilot - 2025-08-29T12:00:00Z
 // Performance Optimization: Parallel Processing - Enhanced TMDB data processing with batch queries and concurrency control
 
@@ -304,22 +320,6 @@ async function enhanceWithTMDBData(
 
   const BATCH_SIZE = 10; // Process 10 movies concurrently
   const enhancedMovies: Movie[] = [];
-
-  // AI Generated: GitHub Copilot - 2025-08-30
-  // Helpers
-  const normalizeTitle = (t: string) =>
-    t
-      .toLowerCase()
-      .trim()
-      .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "") // quotes
-      .replace(/[:.,!\-–—()\[\]{}]/g, " ") // punctuation
-      .replace(/\s+/g, " ");
-
-  const parseYear = (date?: string | null): number => {
-    if (!date) return 0;
-    const m = /^(\d{4})/.exec(date);
-    return m ? parseInt(m[1]) : 0;
-  };
 
   const mapTmdbRowToMovie = (
     tmdb: any,
