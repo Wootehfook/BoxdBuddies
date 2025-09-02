@@ -45,9 +45,10 @@ export const tmdbService = {
   },
 
   async searchMovies(query: string, page = 1): Promise<SearchResult> {
-    // Prefer a typed access to import.meta.env to keep TypeScript happy
+    // Prefer a simpler feature-detect for import.meta.env
     const isBackend =
-      import.meta.env?.VITE_TMDB_BACKEND === "true";
+      typeof import.meta.env !== "undefined" &&
+      import.meta.env.VITE_TMDB_BACKEND === "true";
 
     // When VITE_TMDB_BACKEND is enabled, use the web-compatible backend API
     if (isBackend) {
