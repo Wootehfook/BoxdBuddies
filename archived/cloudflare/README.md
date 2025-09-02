@@ -1,0 +1,5 @@
+- archived_path: remove_dead_code.py, scripts/dead-code-scan.ps1
+- original_path: remove_dead_code.py, scripts/dead-code-scan.ps1
+- reason: dead-code tooling (scan + helper); archived per cleanup task
+- date: 2025-09-01
+- author: automation
