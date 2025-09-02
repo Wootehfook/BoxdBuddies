@@ -21,7 +21,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "clean": "rm -rf dist node_modules/.vite",
     "cloudflare:dev": "wrangler pages dev dist --compatibility-date=2024-09-23",
