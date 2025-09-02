@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 Write-Host "🚀 Running Rust dead code scan (clippy -D dead_code)..." -ForegroundColor Cyan
-Push-Location "$PSScriptRoot\..\src-tauri"
+Push-Location "$PSScriptRoot\..\..\..\src-tauri"
 try {
     cargo clippy --all-targets --all-features -- -D dead_code
     Write-Host "✅ No dead Rust code detected." -ForegroundColor Green
