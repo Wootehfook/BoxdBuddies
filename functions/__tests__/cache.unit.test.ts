@@ -15,14 +15,18 @@ const mockRedisClient = {
   expire: vi.fn(),
 };
 
-const mockD1Database = {
-  prepare: vi.fn(() => ({
-    bind: vi.fn(() => ({
-      first: vi.fn(),
-      run: vi.fn(),
+let mockD1Database: any;
+
+beforeEach(() => {
+  mockD1Database = {
+    prepare: vi.fn(() => ({
+      bind: vi.fn(() => ({
+        first: vi.fn().mockResolvedValue(null),
+        run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }),
+      })),
     })),
-  })),
-};
+  };
+});
 
 // Mock fetch for Redis requests
 vi.stubGlobal("fetch", vi.fn());
@@ -186,7 +190,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
       expect(result).toBeNull();
@@ -200,7 +205,8 @@ describe("Cache Module", () => {
       const env = {
         FEATURE_SERVER_WATCHLIST_CACHE: "false",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const payload = {
         count: 42,
@@ -228,7 +234,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const payload = {
         count: 42,
@@ -307,7 +314,8 @@ describe("Cache Module", () => {
       const env = {
         FEATURE_SERVER_WATCHLIST_CACHE: "false",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await acquireLock("testuser", 60000, env);
       expect(result).toBe(true);
@@ -335,7 +343,7 @@ describe("Cache Module", () => {
       expect(fetch).toHaveBeenCalledWith(
         "https://test-redis.upstash.io",
         expect.objectContaining({
-          body: expect.stringContaining("SETNX"),
+          body: expect.stringContaining("SET"),
         })
       );
     });
@@ -363,27 +371,25 @@ describe("Cache Module", () => {
     it("should use D1 fallback for locking", async () => {
       const { acquireLock } = await import("../letterboxd/cache/index.js");
 
-      // Mock D1 to return no existing lock (first call) then successful insert
-      const mockFirst = vi
-        .fn()
-        .mockResolvedValueOnce(null) // No existing lock
-        .mockResolvedValueOnce({}); // Successful insert
-
-      const mockRun = vi.fn().mockResolvedValue({});
+      // Mock D1 to return successful insert with changes > 0
+      const mockRun = vi.fn().mockResolvedValue({
+        meta: { changes: 1 }, // Successfully inserted (lock acquired)
+      });
 
       mockD1Database.prepare.mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          first: mockFirst,
           run: mockRun,
         }),
       });
 
       const env = {
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await acquireLock("testuser", 60000, env);
       expect(result).toBe(true);
+      expect(mockRun).toHaveBeenCalled();
     });
   });
 
@@ -394,7 +400,8 @@ describe("Cache Module", () => {
       const env = {
         FEATURE_SERVER_WATCHLIST_CACHE: "false",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       await releaseLock("testuser", env);
 
@@ -416,7 +423,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       await releaseLock("testuser", env);
 
@@ -437,7 +445,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       await expect(releaseLock("testuser", env)).resolves.not.toThrow();
     });

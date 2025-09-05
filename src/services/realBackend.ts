@@ -26,6 +26,9 @@
 declare const localStorage: Storage;
 declare const fetch: typeof globalThis.fetch;
 
+import { logger } from "../utils/logger";
+import { WebCacheService } from "./cacheService";
+
 export interface Movie {
   id: number;
   title: string;
@@ -75,6 +78,118 @@ export const realBackendAPI = {
     return stored ? JSON.parse(stored) : null;
   },
 
+  // Fetch friends from API
+  fetchFriends: async (
+    username: string
+  ): Promise<{ friends: Friend[]; cached: boolean; count: number }> => {
+    try {
+      // Get watchlist cache to attach to request and for telemetry
+      const watchlistCache = WebCacheService.getAllWatchlistCounts();
+
+      const response = await fetch(`${API_BASE}/letterboxd/friends`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          ...(Object.keys(watchlistCache).length > 0 ? { watchlistCache } : {}),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch friends: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Only perform cache telemetry if we have cache data and friends
+      if (
+        Object.keys(watchlistCache).length > 0 &&
+        data.friends &&
+        data.friends.length > 0
+      ) {
+        let hits = 0;
+        let misses = 0;
+
+        // Check each friend against cache
+        data.friends.forEach((friend: Friend) => {
+          if (watchlistCache[friend.username]) {
+            logger.logCacheHit(friend.username);
+            hits++;
+          } else {
+            logger.logCacheMiss(friend.username);
+            misses++;
+          }
+        });
+
+        // Emit telemetry summary
+        if (hits > 0 || misses > 0) {
+          logger.info(
+            `Friends cache telemetry: ${hits} hits, ${misses} misses`
+          );
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+      throw error;
+    }
+  },
+
+  // Fetch watchlist count from API
+  fetchWatchlistCount: async (
+    username: string
+  ): Promise<{ count: number; cached: boolean }> => {
+    try {
+      // Get watchlist cache to attach to request and for telemetry
+      const watchlistCache = WebCacheService.getAllWatchlistCounts();
+
+      const response = await fetch(`${API_BASE}/letterboxd/watchlist-count`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          ...(Object.keys(watchlistCache).length > 0 ? { watchlistCache } : {}),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch watchlist count: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Check cache for telemetry
+      const isInCache = watchlistCache[username] !== undefined;
+      let hits = 0;
+      let misses = 0;
+
+      if (isInCache) {
+        logger.logCacheHit(username);
+        hits = 1;
+      } else {
+        logger.logCacheMiss(username);
+        misses = 1;
+      }
+
+      // Emit telemetry summary
+      const missText = misses === 1 ? "miss" : "misses";
+      const hitText = hits === 1 ? "hit" : "hits";
+      logger.info(
+        `Watchlist count cache telemetry: ${hits} ${hitText}, ${misses} ${missText}`
+      );
+
+      return data;
+    } catch (error) {
+      console.error("Error fetching watchlist count:", error);
+      throw error;
+    }
+  },
+
   // Scrape Letterboxd friends (placeholder - would need separate API endpoint)
   scrapeLetterboxdFriends: async (username: string): Promise<Friend[]> => {
     // For now, return empty array - this would need a separate scraping endpoint
@@ -101,7 +216,13 @@ export const realBackendAPI = {
         request.friendUsernames
       );
 
-      const response = await fetch(`${API_BASE}/letterboxd/compare`, {
+      // Get watchlist cache for telemetry
+      const watchlistCache = WebCacheService.getAllWatchlistCounts();
+
+      // All usernames involved in comparison
+      const allUsernames = [request.mainUsername, ...request.friendUsernames];
+
+      const response = await fetch(`${API_BASE}/api/watchlist-comparison`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,6 +230,7 @@ export const realBackendAPI = {
         body: JSON.stringify({
           username: request.mainUsername,
           friends: request.friendUsernames,
+          ...(Object.keys(watchlistCache).length > 0 ? { watchlistCache } : {}),
         }),
       });
 
@@ -120,6 +242,25 @@ export const realBackendAPI = {
       }
 
       const data = await response.json();
+
+      // Perform cache telemetry for all users involved
+      let hits = 0;
+      let misses = 0;
+
+      allUsernames.forEach((username) => {
+        if (watchlistCache[username]) {
+          logger.logCacheHit(username);
+          hits++;
+        } else {
+          logger.logCacheMiss(username);
+          misses++;
+        }
+      });
+
+      // Emit telemetry summary
+      if (hits > 0 || misses > 0) {
+        logger.info(`Compare cache telemetry: ${hits} hits, ${misses} misses`);
+      }
 
       // Log API response for debugging (allowed console method)
       console.error(`✅ API response:`, {
