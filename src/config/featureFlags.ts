@@ -13,13 +13,13 @@
 
 export const FEATURE_FLAGS = {
   // Master toggle - disables all cache functionality
-  WATCHLIST_CACHE_ENABLED: true, // Enabled for release branch manual QA
+  WATCHLIST_CACHE_ENABLED: false, // Disabled for initial release - Phase 1
 
   // Granular feature controls for phased rollout
-  CLIENT_CACHE_READS: true, // Enable reading from IndexedDB/localStorage
+  CLIENT_CACHE_READS: false, // Keep reads disabled for Phase 1
   CLIENT_CACHE_WRITES: false, // Keep writes disabled for this release
-  BACKGROUND_FETCHER: true, // Enable background conditional fetching
-  SERVER_CACHE_FALLBACK: true, // Use server Redis/D1 cache (prefer Redis via envs)
+  BACKGROUND_FETCHER: false, // Keep fetcher disabled for Phase 1
+  SERVER_CACHE_FALLBACK: false, // Keep server cache disabled for Phase 1
   CACHE_UPDATE_NOTIFICATIONS: false, // Keep notifications disabled for this release
 
   // Development and testing toggles
