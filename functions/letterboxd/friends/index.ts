@@ -4,9 +4,13 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
+// Import cache functions
+import { getCount } from "../cache/index.js";
+
 interface Env {
   MOVIES_DB: any; // D1Database type
   TMDB_API_KEY: string;
+  FEATURE_SERVER_WATCHLIST_CACHE?: string;
 }
 
 interface Friend {
@@ -196,7 +200,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   };
 
   try {
-    const { username, forceRefresh = false } = await context.request.json();
+    const {
+      username,
+      forceRefresh = false,
+      watchlistCache,
+    } = await context.request.json();
 
     if (!username || typeof username !== "string") {
       return new Response(JSON.stringify({ error: "Username is required" }), {
@@ -219,9 +227,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         console.log(
           `Returning cached friends for ${cleanUsername} (${cached.friends.length} friends)`
         );
+
+        // Attach watchlist counts to cached friends
+        const friendsWithCounts = await attachWatchlistCounts(
+          cached.friends,
+          watchlistCache,
+          context.env
+        );
+
         return new Response(
           JSON.stringify({
-            friends: cached.friends,
+            friends: friendsWithCounts,
             cached: true,
             lastUpdated: new Date(cached.lastUpdated).toISOString(),
           }),
@@ -247,13 +263,24 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     const friends = await scrapeLetterboxdFriends(cleanUsername);
 
+    // Attach watchlist counts to fresh friends
+    const friendsWithCounts = await attachWatchlistCounts(
+      friends,
+      watchlistCache,
+      context.env
+    );
+
     // Cache the results
-    await setCachedFriends(context.env.MOVIES_DB, cleanUsername, friends);
+    await setCachedFriends(
+      context.env.MOVIES_DB,
+      cleanUsername,
+      friendsWithCounts
+    );
 
     return new Response(
       JSON.stringify({
-        friends,
-        count: friends.length,
+        friends: friendsWithCounts,
+        count: friendsWithCounts.length,
         cached: false,
         lastUpdated: new Date().toISOString(),
       }),
@@ -277,6 +304,47 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       }
     );
   }
+}
+
+// Watchlist count attachment logic
+async function attachWatchlistCounts(
+  friends: Friend[],
+  clientWatchlistCache: any,
+  env: Env
+): Promise<Friend[]> {
+  const friendsWithCounts = [];
+
+  for (const friend of friends) {
+    const friendWithCount = { ...friend };
+
+    // First try client cache
+    if (clientWatchlistCache && clientWatchlistCache[friend.username]) {
+      const clientEntry = clientWatchlistCache[friend.username];
+      if (typeof clientEntry.count === "number") {
+        friendWithCount.watchlistCount = clientEntry.count;
+        friendsWithCounts.push(friendWithCount);
+        continue;
+      }
+    }
+
+    // Fall back to server cache if no client cache available
+    try {
+      const serverEntry = await getCount(friend.username, env);
+      if (serverEntry && typeof serverEntry.count === "number") {
+        friendWithCount.watchlistCount = serverEntry.count;
+      }
+    } catch (error) {
+      console.error(
+        `Error getting server cache for ${friend.username}:`,
+        error
+      );
+      // Continue without watchlist count if server cache fails
+    }
+
+    friendsWithCounts.push(friendWithCount);
+  }
+
+  return friendsWithCounts;
 }
 
 // Cache management functions

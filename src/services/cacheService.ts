@@ -18,6 +18,8 @@
 
 // AI Generated: GitHub Copilot - 2025-08-16
 
+import { incrementMetric } from "../utils/logger";
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -29,6 +31,7 @@ interface UserCache {
   friends?: CacheEntry<string[]>;
   watchlists?: Record<string, CacheEntry<MovieData[]>>;
   comparisons?: Record<string, CacheEntry<ComparisonResult>>;
+  watchlistCounts?: Record<string, WatchlistCountEntry>;
 }
 
 interface MovieData {
@@ -50,6 +53,13 @@ interface ComparisonResult {
   common_movies: MovieData[];
   unique_to: Record<string, MovieData[]>;
   timestamp: number;
+}
+
+interface WatchlistCountEntry {
+  count: number;
+  etag?: string;
+  lastFetchedAt?: number;
+  version?: string;
 }
 
 export class WebCacheService {
@@ -198,5 +208,74 @@ export class WebCacheService {
     }
 
     this.saveCache(cache);
+  }
+
+  // Watchlist count methods
+  static setWatchlistCountEntry(
+    username: string,
+    entry: WatchlistCountEntry
+  ): void {
+    const cache = this.getCache();
+    if (!cache.watchlistCounts) cache.watchlistCounts = {};
+
+    cache.watchlistCounts[username] = {
+      ...entry,
+      version: this.CACHE_VERSION,
+    };
+    this.saveCache(cache);
+  }
+
+  static getWatchlistCountEntry(username: string): WatchlistCountEntry | null {
+    const cache = this.getCache();
+    const entry = cache.watchlistCounts?.[username];
+
+    if (!entry || entry.version !== this.CACHE_VERSION) {
+      incrementMetric("cache.miss");
+      return null;
+    }
+
+    incrementMetric("cache.hit");
+    return entry;
+  }
+
+  static getAllWatchlistCounts(): Record<string, WatchlistCountEntry> {
+    const cache = this.getCache();
+    const counts = cache.watchlistCounts || {};
+
+    // Filter out corrupted entries
+    const validCounts: Record<string, WatchlistCountEntry> = {};
+    for (const [username, entry] of Object.entries(counts)) {
+      if (
+        entry &&
+        typeof entry.count === "number" &&
+        entry.count >= 0 &&
+        entry.version === this.CACHE_VERSION
+      ) {
+        validCounts[username] = entry;
+      }
+    }
+
+    return validCounts;
+  }
+
+  static async readAllWatchlistCache(): Promise<
+    Record<string, WatchlistCountEntry>
+  > {
+    // For now, just return the synchronous version
+    // In a real implementation, this might check IndexedDB first
+    return this.getAllWatchlistCounts();
+  }
+
+  static clearWatchlistCounts(): void {
+    const cache = this.getCache();
+    if (cache.watchlistCounts) {
+      cache.watchlistCounts = {};
+      this.saveCache(cache);
+    }
+  }
+
+  // IndexedDB availability check (mock for now)
+  static isIDBAvailable(): boolean {
+    return typeof window !== "undefined" && "indexedDB" in window;
   }
 }
