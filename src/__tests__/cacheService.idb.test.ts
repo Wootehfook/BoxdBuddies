@@ -68,6 +68,12 @@ class MockIDBFactory {
   deleteDatabase(name: string) {
     delete this.databases[name];
   }
+
+  cmp(first: any, second: any): number {
+    if (first < second) return -1;
+    if (first > second) return 1;
+    return 0;
+  }
 }
 
 // Minimal localStorage mock for test environment
@@ -95,9 +101,9 @@ describe("WebCacheService - IndexedDB Integration", () => {
     globalThis.localStorage = new LocalStorageMock();
 
     mockIDBFactory = new MockIDBFactory();
-    // @ts-expect-error - mock window.indexedDB
+    // @ts-expect-error - mock window.indexedDB with proper types
     globalThis.window = {
-      indexedDB: mockIDBFactory,
+      indexedDB: mockIDBFactory as any,
       localStorage: globalThis.localStorage,
     };
 
@@ -139,9 +145,9 @@ describe("WebCacheService - IndexedDB Integration", () => {
 
   it("should fall back to localStorage when IndexedDB operations fail", async () => {
     // Mock IndexedDB to fail
-    // @ts-expect-error - mock failing IndexedDB
+    // @ts-expect-error - mock failing IndexedDB with proper types
     globalThis.window = {
-      indexedDB: null,
+      indexedDB: null as any,
       localStorage: globalThis.localStorage,
     };
 

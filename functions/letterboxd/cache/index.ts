@@ -168,8 +168,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const { scrapeLetterboxdFriends } = await import("../friends/index.js");
     const friends = await scrapeLetterboxdFriends(cleanUsername);
 
-    // Cache the results
-    await setCachedFriends(context.env.MOVIES_DB, cleanUsername, friends);
+    // Cache the results - convert Friend[] to CachedFriend[] by adding lastUpdated
+    const now = Date.now();
+    const cachedFriends: CachedFriend[] = friends.map((friend) => ({
+      ...friend,
+      lastUpdated: now,
+    }));
+    await setCachedFriends(context.env.MOVIES_DB, cleanUsername, cachedFriends);
 
     return new Response(
       JSON.stringify({

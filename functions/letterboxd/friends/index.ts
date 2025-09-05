@@ -35,7 +35,9 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
-async function scrapeLetterboxdFriends(username: string): Promise<Friend[]> {
+export async function scrapeLetterboxdFriends(
+  username: string
+): Promise<Friend[]> {
   try {
     await rateLimit();
 

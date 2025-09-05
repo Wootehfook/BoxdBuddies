@@ -24,9 +24,9 @@ describe("WebCacheService - watchlistCounts", () => {
   beforeEach(() => {
     // @ts-expect-error - provide a minimal localStorage in test env
     globalThis.localStorage = new LocalStorageMock();
-    // @ts-expect-error - mock window object
+    // @ts-expect-error - mock window object with proper IDBFactory type
     globalThis.window = {
-      indexedDB: null,
+      indexedDB: null as any,
       localStorage: globalThis.localStorage,
     };
     WebCacheService.clearCache();

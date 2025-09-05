@@ -12,6 +12,7 @@ export { setCount };
 
 interface Env {
   MOVIES_DB: any; // D1Database type
+  TMDB_API_KEY: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
   ADMIN_SECRET?: string;
