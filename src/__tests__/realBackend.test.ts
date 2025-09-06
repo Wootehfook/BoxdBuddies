@@ -87,7 +87,7 @@ describe("realBackendAPI", () => {
       const result = await realBackendAPI.fetchFriends("testuser");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:3000/letterboxd/friends",
+        "/letterboxd/friends",
         expect.objectContaining({
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,7 +119,7 @@ describe("realBackendAPI", () => {
       const result = await realBackendAPI.fetchFriends("testuser");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:3000/letterboxd/friends",
+        "/letterboxd/friends",
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining('"username":"testuser"'),
@@ -160,7 +160,7 @@ describe("realBackendAPI", () => {
       const result = await realBackendAPI.fetchWatchlistCount("testuser");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:3000/letterboxd/watchlist-count",
+        "/letterboxd/watchlist-count",
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining('"username":"testuser"'),
@@ -227,7 +227,7 @@ describe("realBackendAPI", () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:3000/api/watchlist-comparison",
+        "/api/watchlist-comparison",
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining('"username":"mainuser"'),
