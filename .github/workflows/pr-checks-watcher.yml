@@ -1,0 +1,44 @@
+name: PR Checks Watcher
+
+on:
+  workflow_run:
+    workflows: ["Build Application", "Debug Pages Build", "Test Suite", "CodeQL Analysis (Custom)"]
+    types:
+      - completed
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  post-pr-comment:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find PR for this commit
+        id: find_pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const runs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            const sha = context.payload.workflow_run.head_sha;
+            const pr = runs.data.find(p => p.head.sha === sha);
+            if (!pr) return { prNumber: null };
+            return { prNumber: pr.number };
+
+      - name: Post PR comment when all checks pass
+        if: steps.find_pr.outputs.prNumber
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = parseInt(${steps.find_pr.outputs.prNumber});
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: 'Automated: All requested CI workflows completed successfully for this commit. Please review the checks and consider merging when ready.'
+            });
