@@ -88,3 +88,25 @@ export function toYear(d) {
   const date = new Date(d);
   return !Number.isNaN(date.getTime()) ? date.getFullYear() : null;
 }
+
+// AI Generated: GitHub Copilot - 2025-09-06
+// Debug logging helper - keep logging controlled in production environments.
+export function isDebug(env) {
+  try {
+    if (!env) return false;
+    // Accept string 'true' for DEBUG or non-production NODE_ENV
+    if (String(env.DEBUG).toLowerCase() === 'true') return true;
+    if (env.NODE_ENV && String(env.NODE_ENV).toLowerCase() !== 'production') return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function debugLog(env, ...args) {
+  try {
+    if (isDebug(env)) console.log(...args);
+  } catch {
+    // best-effort logging only
+  }
+}
