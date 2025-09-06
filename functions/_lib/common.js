@@ -107,7 +107,10 @@ export function debugLog(env, ...args) {
   try {
     // Intentionally use console.log here; debug gating happens via isDebug(env)
     if (isDebug(env)) console.log(...args);
-  } catch {
-    // best-effort logging only
+  } catch (err) {
+    // Log logging errors only if debugging is enabled
+    if (isDebug(env) && typeof console !== "undefined" && typeof console.error === "function") {
+      console.error("debugLog error:", err);
+    }
   }
 }
