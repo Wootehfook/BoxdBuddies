@@ -4,7 +4,7 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-import { debugLog } from "../../_lib/common.js";
+import { debugLog } from "../../_lib/common";
 
 interface Env {
   MOVIES_DB: any; // D1Database type
@@ -335,7 +335,7 @@ async function updateRecentMovies(
 }
 
 export default {
-  async scheduled(event: any, env: Env, _ctx: any): Promise<void> {
+  async scheduled(_event: any, env: Env, _ctx: any): Promise<void> {
     debugLog(
       env,
       `🕐 Daily TMDB update job triggered at ${new Date().toISOString()}`

@@ -4,9 +4,11 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-interface Env {
+import { debugLog } from "../../_lib/common";
+
+export interface Env {
   MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY: string;
+  TMDB_API_KEY?: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
   FEATURE_SERVER_WATCHLIST_CACHE?: string;
@@ -58,7 +60,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const now = Date.now();
 
     if (cached && cached.expiresAt > now) {
-      console.log(
+      debugLog(
+        context.env,
         `Serving cached friends for ${cleanUsername} (${cached.friends.length} friends)`
       );
       return new Response(
@@ -75,7 +78,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 
     // If cache is stale but exists, serve it while we update in background
     if (cached && cached.expiresAt + STALE_CACHE_DURATION_MS > now) {
-      console.log(
+      debugLog(
+        context.env,
         `Serving stale cache for ${cleanUsername}, will update in background`
       );
 
@@ -148,7 +152,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       const now = Date.now();
 
       if (cached && cached.expiresAt > now) {
-        console.log(`Returning cached friends for ${cleanUsername}`);
+        debugLog(context.env, `Returning cached friends for ${cleanUsername}`);
         return new Response(
           JSON.stringify({
             friends: cached.friends,
@@ -162,7 +166,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       }
     }
 
-    console.log(`Fetching fresh friends data for ${cleanUsername}`);
+    debugLog(context.env, `Fetching fresh friends data for ${cleanUsername}`);
 
     // Import and use the scraping function directly
     const { scrapeLetterboxdFriends } = await import("../friends/index.js");
@@ -174,7 +178,12 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       ...friend,
       lastUpdated: now,
     }));
-    await setCachedFriends(context.env.MOVIES_DB, cleanUsername, cachedFriends);
+    await setCachedFriends(
+      context.env.MOVIES_DB,
+      cleanUsername,
+      cachedFriends,
+      context.env
+    );
 
     return new Response(
       JSON.stringify({
@@ -235,7 +244,8 @@ async function getCachedFriends(
 async function setCachedFriends(
   database: any,
   username: string,
-  friends: CachedFriend[]
+  friends: CachedFriend[],
+  env?: Env
 ): Promise<void> {
   try {
     const now = Date.now();
@@ -252,7 +262,7 @@ async function setCachedFriends(
       .bind(username, JSON.stringify(friends), now, expiresAt)
       .run();
 
-    console.log(`Cached ${friends.length} friends for ${username}`);
+    debugLog(env, `Cached ${friends.length} friends for ${username}`);
   } catch (error) {
     console.error("Error caching friends:", error);
     // Don't throw - caching is not critical
@@ -276,7 +286,8 @@ interface WatchlistCountEntry {
   count: number;
   etag?: string;
   lastFetchedAt: number;
-  source: "client" | "server";
+  // allow flexible sources in tests and external data
+  source?: string;
 }
 
 const WATCHLIST_CACHE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -284,7 +295,7 @@ const WATCHLIST_CACHE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
 // Get cached watchlist count
 export async function getCount(
   username: string,
-  env: Env
+  env: any
 ): Promise<WatchlistCountEntry | null> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -313,7 +324,7 @@ export async function getCount(
 export async function setCount(
   username: string,
   payload: WatchlistCountEntry,
-  env: Env
+  env: any
 ): Promise<void> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -345,7 +356,7 @@ export async function setCount(
 export async function acquireLock(
   username: string,
   timeoutMs: number,
-  env: Env
+  env: any
 ): Promise<boolean> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -390,7 +401,7 @@ export async function acquireLock(
 }
 
 // Release lock
-export async function releaseLock(username: string, env: Env): Promise<void> {
+export async function releaseLock(username: string, env: any): Promise<void> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
   if (!featureEnabled) {

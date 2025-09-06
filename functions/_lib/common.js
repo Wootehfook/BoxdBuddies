@@ -105,6 +105,7 @@ export function isDebug(env) {
 
 export function debugLog(env, ...args) {
   try {
+    // Intentionally use console.log here; debug gating happens via isDebug(env)
     if (isDebug(env)) console.log(...args);
   } catch {
     // best-effort logging only

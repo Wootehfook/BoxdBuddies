@@ -6,6 +6,7 @@
 
 // Import cache function
 import { setCount } from "../../letterboxd/cache/index.js";
+import { debugLog } from "../../_lib/common";
 
 // Export for testing
 export { setCount };
@@ -182,7 +183,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Authentication
     if (!authenticateRequest(request, env)) {
-      console.warn("Unauthorized watchlist count update attempt");
+      debugLog(env, "Unauthorized watchlist count update attempt");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -233,7 +234,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Rate limiting
     const rateCheck = checkRateLimit(request, username);
     if (!rateCheck.allowed) {
-      console.warn(`Rate limit exceeded for ${username}`);
+      debugLog(env, `Rate limit exceeded for ${username}`);
       return new Response(
         JSON.stringify({
           error: "Rate limit exceeded",
@@ -267,8 +268,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     try {
       await cacheSetCount(username, cachePayload, env);
 
-      // Log successful update
-      console.log(
+      // Log successful update (gated)
+      debugLog(
+        env,
         `Watchlist count update accepted for ${username}: count=${payload.count}, source=${cachePayload.source}`
       );
 

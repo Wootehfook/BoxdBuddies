@@ -6,6 +6,7 @@
 
 // Import cache functions
 import { getCount } from "../cache/index.js";
+import { debugLog } from "../../_lib/common";
 
 interface Env {
   MOVIES_DB: any; // D1Database type
@@ -36,13 +37,14 @@ async function rateLimit() {
 }
 
 export async function scrapeLetterboxdFriends(
-  username: string
+  username: string,
+  env?: Env
 ): Promise<Friend[]> {
   try {
     await rateLimit();
 
     const url = `https://letterboxd.com/${username}/following/`;
-    console.log(`Scraping friends from: ${url}`);
+    debugLog(env, `Scraping friends from: ${url}`);
 
     const response = await fetch(url, {
       headers: {
@@ -59,9 +61,7 @@ export async function scrapeLetterboxdFriends(
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error(
-          `User "${username}" not found on Letterboxd. Please check the username and ensure the profile is public.`
-        );
+        throw new Error();
       }
       throw new Error(`Failed to fetch friends page: HTTP ${response.status}`);
     }
@@ -104,14 +104,18 @@ export async function scrapeLetterboxdFriends(
         // Extract display name
         let displayName: string | undefined;
         const namePatterns = [
-          /<a[^>]+href="\/[^\/]+\/"[^>]*>([^<]+)<\/a>/i,
+          /<a[^>]+href=\"\/[^\/]+\/\"[^>]*>([^<]+)<\/a>/i,
           /<h3[^>]*>([^<]+)<\/h3>/i,
-          /<span[^>]*class="[^"]*name[^"]*"[^>]*>([^<]+)<\/span>/i,
+          /<span[^>]*class=\"[^\"]*name[^\"]*\"[^>]*>([^<]+)<\/span>/i,
         ];
 
         for (const namePattern of namePatterns) {
           const nameMatch = elementHtml.match(namePattern);
-          if (nameMatch && nameMatch[1].trim() !== friendUsername) {
+          if (
+            nameMatch &&
+            nameMatch[1] &&
+            nameMatch[1].trim() !== friendUsername
+          ) {
             displayName = nameMatch[1].trim();
             break;
           }
@@ -158,7 +162,8 @@ export async function scrapeLetterboxdFriends(
               profileImageUrl &&
               /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(profileImageUrl)
             ) {
-              console.log(
+              debugLog(
+                env,
                 `Found avatar for ${friendUsername}: ${profileImageUrl}`
               );
               break;
@@ -185,7 +190,7 @@ export async function scrapeLetterboxdFriends(
       }
     }
 
-    console.log(`Found ${friends.length} friends for ${username}`);
+    debugLog(env, `Found ${friends.length} friends for ${username}`);
     return friends;
   } catch (error) {
     console.error("Error scraping Letterboxd friends:", error);
@@ -226,7 +231,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       const now = Date.now();
 
       if (cached && cached.expiresAt > now) {
-        console.log(
+        debugLog(
+          context.env,
           `Returning cached friends for ${cleanUsername} (${cached.friends.length} friends)`
         );
 
@@ -261,9 +267,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     }
 
-    console.log(`Fetching fresh friends for user: ${cleanUsername}`);
+    debugLog(context.env, `Fetching fresh friends for user: ${cleanUsername}`);
 
-    const friends = await scrapeLetterboxdFriends(cleanUsername);
+    const friends = await scrapeLetterboxdFriends(cleanUsername, context.env);
 
     // Attach watchlist counts to fresh friends
     const friendsWithCounts = await attachWatchlistCounts(
@@ -276,7 +282,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     await setCachedFriends(
       context.env.MOVIES_DB,
       cleanUsername,
-      friendsWithCounts
+      friendsWithCounts,
+      context.env
     );
 
     return new Response(
@@ -390,7 +397,8 @@ async function getCachedFriends(
 async function setCachedFriends(
   database: any,
   username: string,
-  friends: Friend[]
+  friends: Friend[],
+  env?: Env
 ): Promise<void> {
   try {
     const now = Date.now();
@@ -407,7 +415,7 @@ async function setCachedFriends(
       .bind(username, JSON.stringify(friends), now, expiresAt)
       .run();
 
-    console.log(`Cached ${friends.length} friends for ${username}`);
+    debugLog(env, `Cached ${friends.length} friends for ${username}`);
   } catch (error) {
     console.error("Error caching friends:", error);
     // Don't throw - caching is not critical

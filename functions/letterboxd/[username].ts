@@ -26,7 +26,7 @@ interface LetterboxdMovie {
   letterboxd_slug: string;
 }
 
-import { debugLog } from "../_lib/common.js";
+import { debugLog } from "../_lib/common";
 
 interface Env {
   MOVIES_DB: D1Database;

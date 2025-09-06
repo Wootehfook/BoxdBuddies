@@ -18,7 +18,7 @@ interface D1Result {
   results?: unknown[];
 }
 
-import { debugLog } from "../../_lib/common.js";
+import { debugLog } from "../../_lib/common";
 
 interface Env {
   MOVIES_DB: D1Database;
@@ -86,7 +86,8 @@ async function scrapeLetterboxdWatchlist(
 
       if (!response.ok) {
         if (response.status === 404 && page > 1) {
-          console.log(
+          debugLog(
+            env,
             `Page ${page} not found for ${username}, stopping pagination`
           );
           break;
@@ -147,7 +148,7 @@ async function scrapeLetterboxdWatchlist(
 
       // If no movies found on this page, we've reached the end
       if (pageMovieCount === 0) {
-        console.log(`No movies found on page ${page}, stopping pagination`);
+        debugLog(env, `No movies found on page ${page}, stopping pagination`);
         break;
       }
 
@@ -188,7 +189,8 @@ interface CommonMovie extends LetterboxdMovie {
 
 // Find movies that appear in multiple watchlists using efficient set operations
 function findCommonMovies(
-  watchlists: { username: string; movies: LetterboxdMovie[] }[]
+  watchlists: { username: string; movies: LetterboxdMovie[] }[],
+  env?: Env
 ): CommonMovie[] {
   if (watchlists.length < 2) return [];
 
@@ -202,7 +204,8 @@ function findCommonMovies(
 
   // Process each watchlist and build the movie map
   for (const watchlist of watchlists) {
-    console.log(
+    debugLog(
+      env,
       `Processing ${watchlist.username} with ${watchlist.movies.length} movies`
     );
 
@@ -225,7 +228,8 @@ function findCommonMovies(
         if (!existing.users.includes(watchlist.username)) {
           existing.users.push(watchlist.username);
         }
-        console.log(
+        debugLog(
+          env,
           `Found common movie: "${movie.title}" (${movie.year}) slug="${movie.slug}" - now with users: ${existing.users.join(", ")}`
         );
       } else {
@@ -241,25 +245,27 @@ function findCommonMovies(
     }
   }
 
-  console.log(`Total unique movies in map: ${movieMap.size}`);
+  debugLog(env, `Total unique movies in map: ${movieMap.size}`);
   const moviesWithMultipleUsers = Array.from(movieMap.values()).filter(
     (m) => m.count >= 2
   );
-  console.log(`Movies with count >= 2: ${moviesWithMultipleUsers.length}`);
+  debugLog(env, `Movies with count >= 2: ${moviesWithMultipleUsers.length}`);
 
   // Debug: Show some sample movies with counts
-  console.log("Sample movie map entries (slug-based keys):");
+  debugLog(env, "Sample movie map entries (slug-based keys):");
   const sampleEntries = Array.from(movieMap.entries()).slice(0, 5);
   sampleEntries.forEach(([key, data]) => {
-    console.log(
+    debugLog(
+      env,
       `  slug="${key}": "${data.movie.title}" (${data.movie.year}) count=${data.count}, users=[${data.users.join(", ")}]`
     );
   });
 
   if (moviesWithMultipleUsers.length > 0) {
-    console.log("Movies with multiple users:");
+    debugLog(env, "Movies with multiple users:");
     moviesWithMultipleUsers.slice(0, 3).forEach((data) => {
-      console.log(
+      debugLog(
+        env,
         `  "${data.movie.title}" (${data.movie.year}): count=${data.count}, users=[${data.users.join(", ")}]`
       );
     });
@@ -290,7 +296,8 @@ function findCommonMovies(
   });
 
   const duration = Date.now() - startTime;
-  console.log(
+  debugLog(
+    env,
     `Found ${commonMovies.length} common movies in ${duration}ms using simplified algorithm`
   );
 
@@ -522,7 +529,8 @@ async function enhanceWithTMDBData(
     }
   }
 
-  console.log(
+  debugLog(
+    env,
     `Enhanced ${enhancedMovies.length} movies with TMDB data using parallel processing`
   );
   return enhancedMovies;

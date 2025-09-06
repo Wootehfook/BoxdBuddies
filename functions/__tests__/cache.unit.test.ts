@@ -4,16 +4,9 @@
  * AI Generated: Claude Sonnet 4 - 2025-01-02
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+// Tests use flexible env fixtures during cleanup; keep types by including TMDB_API_KEY where needed
 
-// Mock the cache module
-const mockRedisClient = {
-  get: vi.fn(),
-  setex: vi.fn(),
-  setnx: vi.fn(),
-  del: vi.fn(),
-  expire: vi.fn(),
-};
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 let mockD1Database: any;
 
@@ -26,6 +19,7 @@ beforeEach(() => {
       })),
     })),
   };
+  // Note: redis client mocked via global fetch
 });
 
 // Mock fetch for Redis requests
@@ -33,8 +27,9 @@ vi.stubGlobal("fetch", vi.fn());
 
 describe("Cache Module", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.resetModules();
+    // Ensure global mocks (like fetch) have no lingering call history between tests
+    vi.clearAllMocks();
   });
 
   describe("getCount", () => {
@@ -44,7 +39,8 @@ describe("Cache Module", () => {
       const env = {
         FEATURE_SERVER_WATCHLIST_CACHE: "false",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
       expect(result).toBeNull();
@@ -72,7 +68,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
 
@@ -116,7 +113,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
       expect(result).toBeNull();
@@ -142,7 +140,8 @@ describe("Cache Module", () => {
 
       const env = {
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
 
@@ -175,7 +174,8 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
-      };
+        TMDB_API_KEY: "test-key",
+      } as any;
 
       const result = await getCount("testuser", env);
       expect(result).toBeNull();
@@ -268,6 +268,7 @@ describe("Cache Module", () => {
 
       const env = {
         MOVIES_DB: mockD1Database,
+        TMDB_API_KEY: "test-key",
       };
 
       const payload = {
@@ -291,12 +292,14 @@ describe("Cache Module", () => {
         UPSTASH_REDIS_REST_URL: "https://test-redis.upstash.io",
         UPSTASH_REDIS_REST_TOKEN: "test-token",
         MOVIES_DB: mockD1Database,
+        TMDB_API_KEY: "test-key",
       };
 
       // Test invalid count
       const invalidPayload = {
         count: -5, // Invalid negative count
         lastFetchedAt: Date.now(),
+        source: "client",
       };
 
       await expect(
