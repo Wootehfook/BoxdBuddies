@@ -57,12 +57,15 @@ describe("WatchlistFetcher Integration", () => {
     // Set up localStorage mock
     // @ts-expect-error - provide a minimal localStorage in test env
     globalThis.localStorage = new LocalStorageMock();
-    // @ts-expect-error - mock window object with proper IDBFactory type
-    globalThis.window = {
-      ...globalThis.window,
-      indexedDB: null as any,
-      localStorage: globalThis.localStorage,
-    };
+    // Provide a minimal window shape for tests without using `any`
+    Object.defineProperty(globalThis, "window", {
+      value: {
+        ...(globalThis.window as unknown as Record<string, unknown>),
+        indexedDB: null,
+        localStorage: globalThis.localStorage,
+      },
+      writable: true,
+    });
 
     // Clear cache
     WebCacheService.clearCache();

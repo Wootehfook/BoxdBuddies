@@ -40,9 +40,10 @@ vi.mock("../utils/logger", () => ({
 }));
 
 // Set up window mock before importing modules
-(globalThis as any).window = {
-  location: { origin: "http://localhost:3000" },
-};
+Object.defineProperty(globalThis, "window", {
+  value: { location: { origin: "http://localhost:3000" } },
+  writable: true,
+});
 
 // Import modules - no longer mocking realBackend since we want to test actual implementation
 import { WebCacheService } from "../services/cacheService";
@@ -66,7 +67,9 @@ describe("realBackendAPI", () => {
   describe("fetchFriends", () => {
     it("should attach watchlistCache to POST body when cache exists", async () => {
       const mockCache = { alice: { count: 5 }, bob: { count: 10 } };
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue(mockCache);
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue(
+        mockCache
+      );
 
       const mockResponse = {
         friends: [
@@ -101,7 +104,7 @@ describe("realBackendAPI", () => {
     });
 
     it("should not attach watchlistCache when cache is empty", async () => {
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue({});
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue({});
 
       const mockResponse = {
         friends: [{ username: "alice", displayName: "Alice" }],
@@ -129,7 +132,7 @@ describe("realBackendAPI", () => {
     });
 
     it("should handle API errors", async () => {
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue({});
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue({});
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -144,7 +147,9 @@ describe("realBackendAPI", () => {
   describe("fetchWatchlistCount", () => {
     it("should attach watchlistCache and emit telemetry for cache hit", async () => {
       const mockCache = { testuser: { count: 15 } };
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue(mockCache);
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue(
+        mockCache
+      );
 
       const mockResponse = { count: 15, cached: true };
       mockFetch.mockResolvedValueOnce({
@@ -171,7 +176,9 @@ describe("realBackendAPI", () => {
 
     it("should emit telemetry for cache miss", async () => {
       const mockCache = { otheruser: { count: 5 } };
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue(mockCache);
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue(
+        mockCache
+      );
 
       const mockResponse = { count: 20, cached: false };
       mockFetch.mockResolvedValueOnce({
@@ -192,7 +199,9 @@ describe("realBackendAPI", () => {
   describe("compareWatchlists", () => {
     it("should attach watchlistCache and emit telemetry for multiple users", async () => {
       const mockCache = { mainuser: { count: 10 }, friend1: { count: 8 } };
-      (WebCacheService.getAllWatchlistCounts as any).mockReturnValue(mockCache);
+      vi.spyOn(WebCacheService, "getAllWatchlistCounts").mockReturnValue(
+        mockCache
+      );
 
       const mockResponse = {
         movies: [
