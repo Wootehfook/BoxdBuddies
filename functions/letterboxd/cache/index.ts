@@ -22,6 +22,15 @@ interface CachedFriend {
   lastUpdated: number;
 }
 
+// Minimal friend shape used by scrapers and other modules. We intentionally
+// keep this local to avoid circular imports between `friends` and `cache`.
+interface FriendLike {
+  username: string;
+  displayName?: string;
+  watchlistCount?: number;
+  profileImageUrl?: string;
+}
+
 interface FriendsCache {
   username: string;
   friends: CachedFriend[];
@@ -172,16 +181,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const { scrapeLetterboxdFriends } = await import("../friends/index.js");
     const friends = await scrapeLetterboxdFriends(cleanUsername);
 
-    // Cache the results - convert Friend[] to CachedFriend[] by adding lastUpdated
-    const now = Date.now();
-    const cachedFriends: CachedFriend[] = friends.map((friend) => ({
-      ...friend,
-      lastUpdated: now,
-    }));
+    // Cache the results - `setCachedFriends` will add the lastUpdated field
+    // so callers can pass the plain scraped friend shape. This avoids
+    // duplication and keeps the DB write logic centralized.
     await setCachedFriends(
       context.env.MOVIES_DB,
       cleanUsername,
-      cachedFriends,
+      friends,
       context.env
     );
 
@@ -244,12 +250,25 @@ async function getCachedFriends(
 async function setCachedFriends(
   database: any,
   username: string,
-  friends: CachedFriend[],
+  friends: FriendLike[] | CachedFriend[],
   env?: Env
 ): Promise<void> {
   try {
     const now = Date.now();
     const expiresAt = now + CACHE_DURATION_MS;
+
+    // Normalize to CachedFriend[] by ensuring lastUpdated is present. This
+    // allows callers to pass either the raw scraped friend objects or already
+    // annotated CachedFriend objects.
+    const normalizedFriends: CachedFriend[] = (
+      friends as (FriendLike | CachedFriend)[]
+    ).map((f) => ({
+      username: f.username,
+      displayName: (f as any).displayName,
+      watchlistCount: (f as any).watchlistCount,
+      profileImageUrl: (f as any).profileImageUrl,
+      lastUpdated: (f as any).lastUpdated ?? now,
+    }));
 
     await database
       .prepare(
@@ -259,10 +278,10 @@ async function setCachedFriends(
       VALUES (?, ?, ?, ?)
     `
       )
-      .bind(username, JSON.stringify(friends), now, expiresAt)
+      .bind(username, JSON.stringify(normalizedFriends), now, expiresAt)
       .run();
 
-    debugLog(env, `Cached ${friends.length} friends for ${username}`);
+    debugLog(env, `Cached ${normalizedFriends.length} friends for ${username}`);
   } catch (error) {
     console.error("Error caching friends:", error);
     // Don't throw - caching is not critical
