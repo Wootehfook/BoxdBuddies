@@ -22,9 +22,17 @@ interface Friend {
 }
 
 // Rate limiting - 1 second between requests
+// Internal helper: ensures we don't flood Letterboxd with requests when
+// scraping multiple users in quick succession. This function is intentionally
+// kept module-private to avoid creating a public surface area for the
+// functions API.
 let lastRequestTime = 0;
 const RATE_LIMIT_MS = 1000;
 
+/**
+ * Internal rate limiter for scrapers.
+ * @internal
+ */
 async function rateLimit() {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
