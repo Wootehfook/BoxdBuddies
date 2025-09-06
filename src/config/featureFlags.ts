@@ -32,6 +32,9 @@ export const FEATURE_FLAGS = {
 export const FEATURE_WATCHLIST_CACHE = FEATURE_FLAGS.WATCHLIST_CACHE_ENABLED;
 export const FEATURE_WATCHLIST_FETCHER = FEATURE_FLAGS.BACKGROUND_FETCHER;
 
+// Prefer centralized logger for runtime messages
+import logger from "../utils/logger";
+
 /**
  * Runtime feature check with hierarchical dependencies
  * @param feature - Feature to check
@@ -71,7 +74,8 @@ export function isFeatureEnabled(feature: keyof typeof FEATURE_FLAGS): boolean {
  */
 export function emergencyDisableCache(): void {
   // Cast to mutable to allow runtime modification
-  const flags = FEATURE_FLAGS as any;
+  type MutableFlags = { -readonly [K in keyof typeof FEATURE_FLAGS]: boolean };
+  const flags = FEATURE_FLAGS as unknown as MutableFlags;
 
   flags.WATCHLIST_CACHE_ENABLED = false;
   flags.CLIENT_CACHE_READS = false;
@@ -80,7 +84,9 @@ export function emergencyDisableCache(): void {
   flags.SERVER_CACHE_FALLBACK = false;
   flags.CACHE_UPDATE_NOTIFICATIONS = false;
 
-  console.warn(
+  // Prefer centralized logger to keep console usage in one place (utils/logger.ts)
+  // AI Generated: GitHub Copilot - 2025-09-06
+  logger.error(
     "🚨 Emergency cache rollback activated - all cache features disabled"
   );
 }
@@ -91,7 +97,7 @@ export function emergencyDisableCache(): void {
 export function getFeatureFlagStatus(): Record<string, boolean> {
   const status: Record<string, boolean> = {};
 
-  for (const [key, _value] of Object.entries(FEATURE_FLAGS)) {
+  for (const [key] of Object.entries(FEATURE_FLAGS)) {
     status[key] = isFeatureEnabled(key as keyof typeof FEATURE_FLAGS);
   }
 
