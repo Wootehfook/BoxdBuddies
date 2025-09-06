@@ -4,6 +4,8 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
+import { debugLog } from "../../_lib/common.js";
+
 interface Env {
   MOVIES_DB: any; // D1Database type
 }
@@ -35,7 +37,10 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
 
     // First try the profile page which often has more reliable stats
     const profileUrl = `https://letterboxd.com/${username}/`;
-    console.log(`Checking profile page for watchlist count: ${profileUrl}`);
+    debugLog(
+      undefined,
+      `Checking profile page for watchlist count: ${profileUrl}`
+    );
 
     const profileResponse = await fetch(profileUrl, {
       headers: {
@@ -69,7 +74,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         const match = profileHtml.match(pattern);
         if (match) {
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            undefined,
             `Found watchlist count for ${username} from profile: ${count}`
           );
           return count;
@@ -80,7 +86,7 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
     // Fallback to watchlist page if profile doesn't have the info
     await rateLimit();
     const watchlistUrl = `https://letterboxd.com/${username}/watchlist/`;
-    console.log(`Scraping watchlist count from: ${watchlistUrl}`);
+    debugLog(undefined, `Scraping watchlist count from: ${watchlistUrl}`);
 
     const response = await fetch(watchlistUrl, {
       headers: {
@@ -137,7 +143,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
           const numberMatch = match[1].match(/(\d+(?:,\d+)*)/);
           if (numberMatch) {
             const count = parseInt(numberMatch[1].replace(/,/g, ""));
-            console.log(
+            debugLog(
+              undefined,
               `Found watchlist count for ${username} in metadata: ${count}`
             );
             return count;
@@ -145,7 +152,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         } else {
           // For direct number patterns
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            undefined,
             `Found watchlist count for ${username} in content: ${count}`
           );
           return count;
@@ -162,7 +170,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         const jsonData = JSON.parse(jsonLdMatch[1]);
         if (jsonData.numberOfItems || jsonData.totalCount) {
           const count = jsonData.numberOfItems || jsonData.totalCount;
-          console.log(
+          debugLog(
+            undefined,
             `Found watchlist count for ${username} in JSON-LD: ${count}`
           );
           return count;
@@ -188,7 +197,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         if (pattern.source.includes("of")) {
           // Direct total count
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            undefined,
             `Found watchlist count for ${username} from pagination: ${count}`
           );
           return count;
@@ -196,7 +206,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
           // Estimate from last page (assume 72 items per page, Letterboxd standard)
           const lastPage = parseInt(match[1]);
           const estimatedCount = lastPage * 72;
-          console.log(
+          debugLog(
+            undefined,
             `Estimated watchlist count for ${username} from pagination: ~${estimatedCount}`
           );
           return estimatedCount;
@@ -229,12 +240,13 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
       );
       if (posterMatches) {
         const count = posterMatches.length;
-        console.log(`Counted ${count} film posters for ${username}`);
+        debugLog(undefined, `Counted ${count} film posters for ${username}`);
         return count;
       }
     }
 
-    console.log(
+    debugLog(
+      undefined,
       `Could not determine watchlist count for ${username}, defaulting to 0`
     );
     return 0;

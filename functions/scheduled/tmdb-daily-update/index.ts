@@ -4,6 +4,8 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
+import { debugLog } from "../../_lib/common.js";
+
 interface Env {
   MOVIES_DB: any; // D1Database type
   TMDB_API_KEY: string;
@@ -47,7 +49,7 @@ let windowStart = Date.now();
 const MAX_REQUESTS_PER_WINDOW = 35;
 const WINDOW_MS = 10000;
 
-async function rateLimit() {
+async function rateLimit(env?: any) {
   const now = Date.now();
 
   if (now - windowStart >= WINDOW_MS) {
@@ -57,7 +59,7 @@ async function rateLimit() {
 
   if (requestCount >= MAX_REQUESTS_PER_WINDOW) {
     const waitTime = WINDOW_MS - (now - windowStart);
-    console.log(`⏳ Rate limit reached, waiting ${waitTime}ms`);
+    debugLog(env, `⏳ Rate limit reached, waiting ${waitTime}ms`);
     await new Promise((resolve) => setTimeout(resolve, waitTime));
     requestCount = 0;
     windowStart = Date.now();
@@ -66,8 +68,12 @@ async function rateLimit() {
   requestCount++;
 }
 
-async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
-  await rateLimit();
+async function fetchTMDBData(
+  url: string,
+  apiKey: string,
+  env?: any
+): Promise<any> {
+  await rateLimit(env);
 
   const response = await fetch(
     `https://api.themoviedb.org/3${url}${url.includes("?") ? "&" : "?"}api_key=${apiKey}`
@@ -84,12 +90,14 @@ async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
 
 async function getMovieDetails(
   movieId: number,
-  apiKey: string
+  apiKey: string,
+  env?: any
 ): Promise<{ movie: any; director: string }> {
-  const movie = await fetchTMDBData(`/movie/${movieId}`, apiKey);
+  const movie = await fetchTMDBData(`/movie/${movieId}`, apiKey, env);
   const credits: TMDBCredits = await fetchTMDBData(
     `/movie/${movieId}/credits`,
-    apiKey
+    apiKey,
+    env
   );
   const director =
     credits.crew.find((person) => person.job === "Director")?.name || "Unknown";
@@ -99,9 +107,10 @@ async function getMovieDetails(
 
 async function updateRecentMovies(
   database: any,
-  apiKey: string
+  apiKey: string,
+  env?: any
 ): Promise<{ updated: number; new: number; errors: number }> {
-  console.log(`🔄 Starting daily TMDB update job`);
+  debugLog(env, `🔄 Starting daily TMDB update job`);
 
   let updatedCount = 0;
   let newCount = 0;
@@ -117,11 +126,12 @@ async function updateRecentMovies(
 
     // Get latest popular movies (first 5 pages to catch new releases)
     for (let page = 1; page <= 5; page++) {
-      console.log(`📄 Processing recent movies page ${page}/5`);
+      debugLog(env, `📄 Processing recent movies page ${page}/5`);
 
       const response = await fetchTMDBData(
         `/movie/popular?page=${page}`,
-        apiKey
+        apiKey,
+        env
       );
 
       for (const tmdbMovie of response.results) {
@@ -152,7 +162,8 @@ async function updateRecentMovies(
           // Get detailed movie information
           const { movie: movieDetails, director } = await getMovieDetails(
             tmdbMovie.id,
-            apiKey
+            apiKey,
+            env
           );
 
           // Convert genre IDs to names
@@ -219,14 +230,16 @@ async function updateRecentMovies(
       .split("T")[0];
     const today = new Date().toISOString().split("T")[0];
 
-    console.log(
+    debugLog(
+      env,
       `🆕 Checking for new releases from ${thirtyDaysAgo} to ${today}`
     );
 
     for (let page = 1; page <= 3; page++) {
       const newReleases = await fetchTMDBData(
         `/discover/movie?primary_release_date.gte=${thirtyDaysAgo}&primary_release_date.lte=${today}&sort_by=popularity.desc&page=${page}`,
-        apiKey
+        apiKey,
+        env
       );
 
       for (const tmdbMovie of newReleases.results) {
@@ -245,7 +258,8 @@ async function updateRecentMovies(
           if (!existingMovie) {
             const { movie: movieDetails, director } = await getMovieDetails(
               tmdbMovie.id,
-              apiKey
+              apiKey,
+              env
             );
             const movieGenres = tmdbMovie.genre_ids
               .map((id: number) => genres.get(id))
@@ -309,7 +323,8 @@ async function updateRecentMovies(
       .bind(new Date().toISOString())
       .run();
 
-    console.log(
+    debugLog(
+      env,
       `✅ Daily update complete! Updated: ${updatedCount}, New: ${newCount}, Errors: ${errorCount}`
     );
     return { updated: updatedCount, new: newCount, errors: errorCount };
@@ -321,14 +336,19 @@ async function updateRecentMovies(
 
 export default {
   async scheduled(event: any, env: Env, _ctx: any): Promise<void> {
-    console.log(
+    debugLog(
+      env,
       `🕐 Daily TMDB update job triggered at ${new Date().toISOString()}`
     );
 
     try {
-      const result = await updateRecentMovies(env.MOVIES_DB, env.TMDB_API_KEY);
+      const result = await updateRecentMovies(
+        env.MOVIES_DB,
+        env.TMDB_API_KEY,
+        env
+      );
 
-      console.log(`🎉 Daily update completed successfully:`, result);
+      debugLog(env, `🎉 Daily update completed successfully:`, result);
     } catch (error) {
       console.error("❌ Daily update job failed:", error);
 
@@ -348,9 +368,13 @@ export default {
     }
 
     try {
-      console.log(`🔄 Manual daily update triggered`);
+      debugLog(env, `🔄 Manual daily update triggered`);
 
-      const result = await updateRecentMovies(env.MOVIES_DB, env.TMDB_API_KEY);
+      const result = await updateRecentMovies(
+        env.MOVIES_DB,
+        env.TMDB_API_KEY,
+        env
+      );
 
       return new Response(
         JSON.stringify({

@@ -18,6 +18,8 @@ interface D1Result {
   results?: unknown[];
 }
 
+import { debugLog } from "../../_lib/common.js";
+
 interface Env {
   MOVIES_DB: D1Database;
   TMDB_API_KEY: string;
@@ -51,13 +53,14 @@ interface Movie {
 
 // Simple Letterboxd scraper with pagination support
 async function scrapeLetterboxdWatchlist(
-  username: string
+  username: string,
+  env?: Env
 ): Promise<LetterboxdMovie[]> {
   const allMovies: LetterboxdMovie[] = [];
   let page = 1;
   const maxPages = 10; // Safety limit to prevent infinite loops
 
-  console.log(`Starting scrape for ${username}`);
+  debugLog(env, `Starting scrape for ${username}`);
 
   while (page <= maxPages) {
     const url =
@@ -65,7 +68,7 @@ async function scrapeLetterboxdWatchlist(
         ? `https://letterboxd.com/${username}/watchlist/`
         : `https://letterboxd.com/${username}/watchlist/page/${page}/`;
 
-    console.log(`Scraping page ${page} for ${username}: ${url}`);
+    debugLog(env, `Scraping page ${page} for ${username}: ${url}`);
 
     try {
       const response = await fetch(url, {
@@ -92,7 +95,7 @@ async function scrapeLetterboxdWatchlist(
       }
 
       const html = await response.text();
-      console.log(`Page ${page} HTML length: ${html.length}`);
+      debugLog(env, `Page ${page} HTML length: ${html.length}`);
 
       // AI Generated: GitHub Copilot - 2025-08-30
       // Improved parsing: find all griditem elements first, then extract attributes
@@ -132,14 +135,15 @@ async function scrapeLetterboxdWatchlist(
 
           // Debug: Log first few matches from first page
           if (page === 1 && pageMovieCount <= 3) {
-            console.log(
+            debugLog(
+              env,
               `Page ${page} Match ${pageMovieCount}: slug="${slug}", title="${titleWithYear}"`
             );
           }
         }
       }
 
-      console.log(`Page ${page}: found ${pageMovieCount} movies`);
+      debugLog(env, `Page ${page}: found ${pageMovieCount} movies`);
 
       // If no movies found on this page, we've reached the end
       if (pageMovieCount === 0) {
@@ -160,13 +164,14 @@ async function scrapeLetterboxdWatchlist(
         throw error;
       } else {
         // For subsequent pages, just stop pagination
-        console.log(`Stopping pagination due to error on page ${page}`);
+        debugLog(env, `Stopping pagination due to error on page ${page}`);
         break;
       }
     }
   }
 
-  console.log(
+  debugLog(
+    env,
     `Scraped ${allMovies.length} total movies from ${username}'s watchlist across ${page - 1} pages`
   );
   return allMovies;
@@ -567,7 +572,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     }
 
-    console.log(`Starting comparison for: ${usernames.join(", ")}`);
+    debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
     // Create debug data structure for troubleshooting
     const debugInfo: any = {
@@ -599,9 +604,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
       const startTime = Date.now();
       try {
-        const movies = await scrapeLetterboxdWatchlist(username);
+        const movies = await scrapeLetterboxdWatchlist(username, env);
         const duration = Date.now() - startTime;
-        console.log(
+        debugLog(
+          env,
           `Scraped ${username}: ${movies.length} movies in ${duration}ms`
         );
 
@@ -652,7 +658,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       ),
     ]);
 
-    console.log(
+    debugLog(
+      env,
       "Watchlist scraping completed:",
       watchlists.map(
         (w) => `${w.username}: ${w.movies.length} movies (${w.duration}ms)`
@@ -661,13 +668,15 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Add debug logging for the first few movies from each user
     watchlists.forEach((watchlist) => {
-      console.log(
+      debugLog(
+        env,
         `${watchlist.username} sample movies:`,
         watchlist.movies.slice(0, 5).map((m) => `"${m.title}" (${m.year})`)
       );
 
       // Also show normalized versions to help debug matching issues
-      console.log(
+      debugLog(
+        env,
         `${watchlist.username} normalized samples:`,
         watchlist.movies.slice(0, 3).map((m) => {
           const normalized = normalizeTitle(m.title);
@@ -690,9 +699,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       users: m.friendList,
     }));
 
-    console.log(`Common movies found: ${commonMovies.length}`);
+    debugLog(env, `Common movies found: ${commonMovies.length}`);
     if (commonMovies.length > 0) {
-      console.log(
+      debugLog(
+        env,
         "Sample common movies:",
         commonMovies
           .slice(0, 3)
