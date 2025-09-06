@@ -4,6 +4,8 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
+import { debugLog } from "../../_lib/common";
+
 interface Env {
   MOVIES_DB: any; // D1Database type
 }
@@ -29,13 +31,16 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
-async function scrapeWatchlistCount(username: string): Promise<number> {
+async function scrapeWatchlistCount(
+  username: string,
+  env?: Env
+): Promise<number> {
   try {
     await rateLimit();
 
     // First try the profile page which often has more reliable stats
     const profileUrl = `https://letterboxd.com/${username}/`;
-    console.log(`Checking profile page for watchlist count: ${profileUrl}`);
+    debugLog(env, `Checking profile page for watchlist count: ${profileUrl}`);
 
     const profileResponse = await fetch(profileUrl, {
       headers: {
@@ -69,7 +74,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         const match = profileHtml.match(pattern);
         if (match) {
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            env,
             `Found watchlist count for ${username} from profile: ${count}`
           );
           return count;
@@ -80,7 +86,7 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
     // Fallback to watchlist page if profile doesn't have the info
     await rateLimit();
     const watchlistUrl = `https://letterboxd.com/${username}/watchlist/`;
-    console.log(`Scraping watchlist count from: ${watchlistUrl}`);
+    debugLog(env, `Scraping watchlist count from: ${watchlistUrl}`);
 
     const response = await fetch(watchlistUrl, {
       headers: {
@@ -97,7 +103,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(
+        debugLog(
+          env,
           `User "${username}" watchlist not found (private or doesn't exist)`
         );
         return 0;
@@ -137,7 +144,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
           const numberMatch = match[1].match(/(\d+(?:,\d+)*)/);
           if (numberMatch) {
             const count = parseInt(numberMatch[1].replace(/,/g, ""));
-            console.log(
+            debugLog(
+              env,
               `Found watchlist count for ${username} in metadata: ${count}`
             );
             return count;
@@ -145,7 +153,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         } else {
           // For direct number patterns
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            env,
             `Found watchlist count for ${username} in content: ${count}`
           );
           return count;
@@ -162,7 +171,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         const jsonData = JSON.parse(jsonLdMatch[1]);
         if (jsonData.numberOfItems || jsonData.totalCount) {
           const count = jsonData.numberOfItems || jsonData.totalCount;
-          console.log(
+          debugLog(
+            env,
             `Found watchlist count for ${username} in JSON-LD: ${count}`
           );
           return count;
@@ -188,7 +198,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
         if (pattern.source.includes("of")) {
           // Direct total count
           const count = parseInt(match[1].replace(/,/g, ""));
-          console.log(
+          debugLog(
+            env,
             `Found watchlist count for ${username} from pagination: ${count}`
           );
           return count;
@@ -196,7 +207,8 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
           // Estimate from last page (assume 72 items per page, Letterboxd standard)
           const lastPage = parseInt(match[1]);
           const estimatedCount = lastPage * 72;
-          console.log(
+          debugLog(
+            env,
             `Estimated watchlist count for ${username} from pagination: ~${estimatedCount}`
           );
           return estimatedCount;
@@ -213,7 +225,7 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
 
     for (const pattern of emptyPatterns) {
       if (html.match(pattern)) {
-        console.log(`Found empty watchlist for ${username}`);
+        debugLog(env, `Found empty watchlist for ${username}`);
         return 0;
       }
     }
@@ -229,12 +241,13 @@ async function scrapeWatchlistCount(username: string): Promise<number> {
       );
       if (posterMatches) {
         const count = posterMatches.length;
-        console.log(`Counted ${count} film posters for ${username}`);
+        debugLog(env, `Counted ${count} film posters for ${username}`);
         return count;
       }
     }
 
-    console.log(
+    debugLog(
+      env,
       `Could not determine watchlist count for ${username}, defaulting to 0`
     );
     return 0;
@@ -293,7 +306,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 
           if (cached && cached.lastUpdated > now - CACHE_DURATION) {
-            console.log(
+            debugLog(
+              context.env,
               `Using cached watchlist count for ${cleanUsername}: ${cached.count}`
             );
             results[cleanUsername] = cached.count;
@@ -302,14 +316,15 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         }
 
         // Scrape fresh count
-        const count = await scrapeWatchlistCount(cleanUsername);
+        const count = await scrapeWatchlistCount(cleanUsername, context.env);
         results[cleanUsername] = count;
 
         // Cache the result
         await setCachedWatchlistCount(
           context.env.MOVIES_DB,
           cleanUsername,
-          count
+          count,
+          context.env
         );
       } catch (error) {
         const errorMessage =
@@ -385,7 +400,8 @@ async function getCachedWatchlistCount(
 async function setCachedWatchlistCount(
   database: any,
   username: string,
-  count: number
+  count: number,
+  env?: Env
 ): Promise<void> {
   try {
     const now = Date.now();
@@ -401,7 +417,7 @@ async function setCachedWatchlistCount(
       .bind(username, count, now)
       .run();
 
-    console.log(`Cached watchlist count for ${username}: ${count}`);
+    debugLog(env, `Cached watchlist count for ${username}: ${count}`);
   } catch (error) {
     console.error("Error caching watchlist count:", error);
     // Don't throw - caching is not critical

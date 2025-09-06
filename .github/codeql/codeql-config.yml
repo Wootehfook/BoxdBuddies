@@ -3,6 +3,11 @@
 
 name: "BoxdBuddies Web App CodeQL Configuration"
 
+# Restrict analysis to our JS/TS source roots (default setup reads this file automatically)
+paths:
+  - src/
+  - functions/
+
 # Global paths to exclude from all analysis
 paths-ignore:
   - node_modules/
@@ -15,22 +20,8 @@ paths-ignore:
   - "**/*.spec.js"
   - "**/*.d.ts"
 
-# Disable default queries that might be too aggressive
+# Keep default queries enabled and add extended security+quality suites
 disable-default-queries: false
-
-# Enable additional query suites for comprehensive analysis
 queries:
   - uses: security-extended
   - uses: security-and-quality
-
-# Language-specific configurations
-javascript:
-  # Paths for JavaScript/TypeScript analysis
-  paths:
-    - src/
-    - functions/
-  # Include TypeScript files
-  extractor-options:
-    typescript:
-      - "--include-types"
-      - "--include-imports"

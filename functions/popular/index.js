@@ -1,5 +1,5 @@
 // AI Generated: GitHub Copilot - 2025-08-17
-import { jsonResponse, getCache, kvGetJson, kvPutJson, tmdbFetch, reduceMovie } from "../_lib/common.js";
+import { jsonResponse, getCache, kvGetJson, kvPutJson, tmdbFetch, reduceMovie } from "../_lib/common";
 
 export async function onRequestGet(context) {
   const { request, env } = context;

@@ -26,6 +26,8 @@ interface LetterboxdMovie {
   letterboxd_slug: string;
 }
 
+import { debugLog } from "../_lib/common";
+
 interface Env {
   MOVIES_DB: D1Database;
 }
@@ -43,7 +45,7 @@ export async function onRequestGet(context: {
   }
 
   try {
-    console.log(`🔥 Fetching watchlist for user: ${username}`);
+    debugLog(env, `🔥 Fetching watchlist for user: ${username}`);
 
     // Check cache first
     const cacheKey = `watchlist_${username}`;
@@ -55,7 +57,7 @@ export async function onRequestGet(context: {
       .first();
 
     if (cached) {
-      console.log(`🔥 Using cached watchlist for ${username}`);
+      debugLog(env, `🔥 Using cached watchlist for ${username}`);
       const movies = JSON.parse(cached.data as string);
       return Response.json(
         {
@@ -75,8 +77,8 @@ export async function onRequestGet(context: {
     }
 
     // If not cached, scrape from Letterboxd
-    console.log(`🔥 Scraping fresh watchlist for ${username}`);
-    const movies = await scrapeUserWatchlist(username);
+    debugLog(env, `🔥 Scraping fresh watchlist for ${username}`);
+    const movies = await scrapeUserWatchlist(username, env);
 
     // Cache the results for 24 hours
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -123,14 +125,15 @@ export async function onRequestGet(context: {
 }
 
 async function scrapeUserWatchlist(
-  username: string
+  username: string,
+  env?: Env
 ): Promise<LetterboxdMovie[]> {
   const movies: LetterboxdMovie[] = [];
   let page = 1;
   const maxPages = 50; // Safety limit
 
   while (page <= maxPages) {
-    console.log(`🔥 Scraping page ${page} for ${username}`);
+    debugLog(env, `🔥 Scraping page ${page} for ${username}`);
 
     const url = `https://letterboxd.com/${username}/watchlist/page/${page}/`;
     const response = await fetch(url, {
@@ -143,7 +146,7 @@ async function scrapeUserWatchlist(
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`🔥 Reached end of watchlist at page ${page}`);
+        debugLog(env, `🔥 Reached end of watchlist at page ${page}`);
         break;
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -153,7 +156,7 @@ async function scrapeUserWatchlist(
 
     // Check if we've reached the end (no more movies)
     if (!html.includes("data-film-slug=")) {
-      console.log(`🔥 No more movies found at page ${page}`);
+      debugLog(env, `🔥 No more movies found at page ${page}`);
       break;
     }
 
@@ -180,10 +183,10 @@ async function scrapeUserWatchlist(
       pageMovieCount++;
     }
 
-    console.log(`🔥 Found ${pageMovieCount} movies on page ${page}`);
+    debugLog(env, `🔥 Found ${pageMovieCount} movies on page ${page}`);
 
     if (pageMovieCount === 0) {
-      console.log(`🔥 No movies found on page ${page}, stopping`);
+      debugLog(env, `🔥 No movies found on page ${page}, stopping`);
       break;
     }
 
@@ -193,7 +196,7 @@ async function scrapeUserWatchlist(
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  console.log(`🔥 Total movies scraped for ${username}: ${movies.length}`);
+  debugLog(env, `🔥 Total movies scraped for ${username}: ${movies.length}`);
   return movies;
 }
 

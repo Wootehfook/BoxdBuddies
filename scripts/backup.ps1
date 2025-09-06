@@ -10,9 +10,8 @@ Write-Host "Creating backup in: $BackupDir"
 # Create backup directory
 New-Item -ItemType Directory -Path "$ProjectRoot\$BackupDir" -Force
 
-# Copy important files
+# Copy important files (web-only)
 Copy-Item "$ProjectRoot\src" "$ProjectRoot\$BackupDir\src" -Recurse
-Copy-Item "$ProjectRoot\src-tauri\src" "$ProjectRoot\$BackupDir\src-tauri-src" -Recurse
 Copy-Item "$ProjectRoot\package.json" "$ProjectRoot\$BackupDir\"
 Copy-Item "$ProjectRoot\*.md" "$ProjectRoot\$BackupDir\"
 

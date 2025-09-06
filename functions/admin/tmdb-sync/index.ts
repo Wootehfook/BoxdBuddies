@@ -9,6 +9,8 @@ interface Env {
   TMDB_API_KEY: string;
 }
 
+import { debugLog } from "../../_lib/common";
+
 interface TMDBMovie {
   id: number;
   title: string;
@@ -64,7 +66,7 @@ async function rateLimit() {
   // If we've hit the limit, wait for the window to reset
   if (requestCount >= MAX_REQUESTS_PER_WINDOW) {
     const waitTime = WINDOW_MS - (now - windowStart);
-    console.log(`⏳ Rate limit reached, waiting ${waitTime}ms`);
+    debugLog(undefined, `⏳ Rate limit reached, waiting ${waitTime}ms`);
     await new Promise((resolve) => setTimeout(resolve, waitTime));
     requestCount = 0;
     windowStart = Date.now();
@@ -113,7 +115,8 @@ async function syncTMDBMoviesByID(
   startMovieId: number,
   maxMovies: number = 100
 ): Promise<{ synced: number; errors: number; highestId: number }> {
-  console.log(
+  debugLog(
+    undefined,
     `🎬 Starting TMDB incremental sync from movie ID ${startMovieId} (max ${maxMovies} movies)`
   );
 
@@ -129,11 +132,11 @@ async function syncTMDBMoviesByID(
     genres.set(genre.id, genre.name);
   });
 
-  console.log(`📚 Loaded ${genres.size} genres`);
+  debugLog(undefined, `📚 Loaded ${genres.size} genres`);
 
   while (syncedCount < maxMovies) {
     try {
-      console.log(`🎯 Processing movie ID ${currentId}`);
+      debugLog(undefined, `🎯 Processing movie ID ${currentId}`);
 
       // Get movie details
       const { movie: movieDetails, director } = await getMovieDetails(
@@ -143,7 +146,7 @@ async function syncTMDBMoviesByID(
 
       // Skip adult content
       if (movieDetails.adult) {
-        console.log(`⏭️ Skipping adult content: ${movieDetails.title}`);
+        debugLog(undefined, `⏭️ Skipping adult content: ${movieDetails.title}`);
         currentId++;
         highestProcessedId = currentId - 1;
         continue;
@@ -197,7 +200,8 @@ async function syncTMDBMoviesByID(
       highestProcessedId = currentId;
 
       if (syncedCount % 25 === 0) {
-        console.log(
+        debugLog(
+          undefined,
           `✅ Synced ${syncedCount} movies so far (current ID: ${currentId})...`
         );
       }
@@ -207,7 +211,10 @@ async function syncTMDBMoviesByID(
 
       // If movie doesn't exist (404), it might be deleted or doesn't exist yet
       if (movieError instanceof Error && movieError.message.includes("404")) {
-        console.log(`⏭️ Movie ID ${currentId} not found, continuing...`);
+        debugLog(
+          undefined,
+          `⏭️ Movie ID ${currentId} not found, continuing...`
+        );
       }
     }
 
@@ -225,7 +232,8 @@ async function syncTMDBMoviesByID(
     .bind(highestProcessedId.toString())
     .run();
 
-  console.log(
+  debugLog(
+    undefined,
     `🎉 Incremental sync complete! Synced: ${syncedCount}, Errors: ${errorCount}, Highest ID: ${highestProcessedId}`
   );
   return {
@@ -240,7 +248,8 @@ async function syncTMDBChanges(
   apiKey: string,
   startDate?: string
 ): Promise<{ synced: number; errors: number }> {
-  console.log(
+  debugLog(
+    undefined,
     `🔄 Starting TMDB changes sync from ${startDate || "last 24 hours"}`
   );
 
@@ -257,7 +266,10 @@ async function syncTMDBChanges(
     const changesResponse = await fetchTMDBData(changesUrl, apiKey);
     const changedMovieIds = changesResponse.results.map((item: any) => item.id);
 
-    console.log(`📋 Found ${changedMovieIds.length} changed movies to sync`);
+    debugLog(
+      undefined,
+      `📋 Found ${changedMovieIds.length} changed movies to sync`
+    );
 
     // Get genre list
     const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
@@ -347,7 +359,8 @@ async function syncTMDBChanges(
     errorCount++;
   }
 
-  console.log(
+  debugLog(
+    undefined,
     `🎉 Changes sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
   );
   return { synced: syncedCount, errors: errorCount };
@@ -359,13 +372,17 @@ async function syncTMDBMovies(
   startPage: number = 1,
   maxPages: number = 10
 ): Promise<{ synced: number; errors: number }> {
-  console.log(`🎬 Starting TMDB sync from page ${startPage} to ${maxPages}`);
+  debugLog(
+    undefined,
+    `🎬 Starting TMDB sync from page ${startPage} to ${maxPages}`
+  );
 
   // Limit pages per execution to avoid timeout (Cloudflare Pages has 30s limit)
   const maxPagesPerExecution = Math.min(maxPages - startPage + 1, 10);
   const actualMaxPages = startPage + maxPagesPerExecution - 1;
 
-  console.log(
+  debugLog(
+    undefined,
     `⏰ Limited to ${maxPagesPerExecution} pages per execution (${startPage} to ${actualMaxPages}) to avoid timeout`
   );
 
@@ -379,11 +396,11 @@ async function syncTMDBMovies(
     genres.set(genre.id, genre.name);
   });
 
-  console.log(`📚 Loaded ${genres.size} genres`);
+  debugLog(undefined, `📚 Loaded ${genres.size} genres`);
 
   for (let page = startPage; page <= actualMaxPages; page++) {
     try {
-      console.log(`📄 Processing page ${page}/${actualMaxPages}`);
+      debugLog(undefined, `📄 Processing page ${page}/${actualMaxPages}`);
 
       // Get popular movies for this page
       const response: TMDBResponse = await fetchTMDBData(
@@ -392,7 +409,7 @@ async function syncTMDBMovies(
       );
 
       if (!response.results || response.results.length === 0) {
-        console.log(`⚠️ No results on page ${page}, ending sync`);
+        debugLog(undefined, `⚠️ No results on page ${page}, ending sync`);
         break;
       }
 
@@ -460,7 +477,7 @@ async function syncTMDBMovies(
             syncedCount++;
 
             if (syncedCount % 50 === 0) {
-              console.log(`✅ Synced ${syncedCount} movies so far...`);
+              debugLog(undefined, `✅ Synced ${syncedCount} movies so far...`);
             }
           } catch (movieError) {
             console.error(
@@ -474,7 +491,8 @@ async function syncTMDBMovies(
 
       // If we've processed all pages available
       if (page >= response.total_pages) {
-        console.log(
+        debugLog(
+          undefined,
           `🏁 Reached end of available pages (${response.total_pages})`
         );
         break;
@@ -506,7 +524,8 @@ async function syncTMDBMovies(
     .bind(syncedCount.toString())
     .run();
 
-  console.log(
+  debugLog(
+    undefined,
     `🎉 Sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
   );
   return { synced: syncedCount, errors: errorCount };
@@ -536,7 +555,8 @@ export async function onRequestPost(context: {
 
   // Basic authentication check - allow both admin-sync-token and bypass for testing
   const authHeader = request.headers.get("Authorization");
-  console.log(
+  debugLog(
+    undefined,
     `🔑 Auth header received: ${authHeader ? "Bearer token present" : "No auth header"}`
   );
 
@@ -569,7 +589,7 @@ export async function onRequestPost(context: {
       startDate,
     } = await request.json().catch(() => ({}));
 
-    console.log(`🚀 Starting TMDB sync - Type: ${syncType}`);
+    debugLog(undefined, `🚀 Starting TMDB sync - Type: ${syncType}`);
 
     let result;
 

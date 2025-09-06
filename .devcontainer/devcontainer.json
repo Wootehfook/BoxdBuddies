@@ -1,7 +1,6 @@
 {
-  "name": "BoxdBuddies Tauri Development",
-  "image": "mcr.microsoft.com/vscode/devcontainers/rust:1-bookworm",
-
+  "name": "BoxdBuddies Web DevContainer",
+  "image": "mcr.microsoft.com/devcontainers/node:lts-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
@@ -12,28 +11,15 @@
       "installOhMyZsh": true
     }
   },
-
-  "postCreateCommand": ".devcontainer/setup.sh",
-
+  "postCreateCommand": ".devcontainer/setup-with-mcp.sh",
   "customizations": {
     "vscode": {
       "extensions": [
-        "rust-lang.rust-analyzer",
-        "tauri-apps.tauri-vscode",
-        "vadimcn.vscode-lldb",
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss"
-      ],
-      "settings": {
-        "rust-analyzer.checkOnSave.command": "clippy",
-        "rust-analyzer.cargo.features": "all"
-      }
+      ]
     }
   },
-
-  "forwardPorts": [1420, 3000],
-  "mounts": [
-    "source=${localWorkspaceFolder}/.cargo,target=/usr/local/cargo,type=bind"
-  ]
+  "forwardPorts": [1420, 3000]
 }

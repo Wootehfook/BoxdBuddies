@@ -22,6 +22,8 @@ interface Env {
   TMDB_API_KEY: string;
 }
 
+import { debugLog } from "../_lib/common";
+
 interface LetterboxdMovie {
   title: string;
   year: number;
@@ -94,7 +96,10 @@ async function scrapeLetterboxdWatchlist(
       }
     }
 
-    console.log(`Scraped ${movies.length} movies from ${username}'s watchlist`);
+    debugLog(
+      undefined,
+      `Scraped ${movies.length} movies from ${username}'s watchlist`
+    );
     return movies;
   } catch (error) {
     console.error(`Error scraping ${username}:`, error);
@@ -129,7 +134,8 @@ function findCommonMovies(
 
   // Process each watchlist and build the movie map
   for (const watchlist of watchlists) {
-    console.log(
+    debugLog(
+      undefined,
       `Processing ${watchlist.username} with ${watchlist.movies.length} movies`
     );
 
@@ -151,7 +157,8 @@ function findCommonMovies(
         if (!existing.users.includes(watchlist.username)) {
           existing.users.push(watchlist.username);
         }
-        console.log(
+        debugLog(
+          undefined,
           `Found common movie: "${movie.title}" (${movie.year}) - now with users: ${existing.users.join(", ")}`
         );
       } else {
@@ -165,8 +172,9 @@ function findCommonMovies(
     }
   }
 
-  console.log(`Total unique movies in map: ${movieMap.size}`);
-  console.log(
+  debugLog(undefined, `Total unique movies in map: ${movieMap.size}`);
+  debugLog(
+    undefined,
     `Movies with count >= 2: ${Array.from(movieMap.values()).filter((m) => m.count >= 2).length}`
   );
 
@@ -195,7 +203,8 @@ function findCommonMovies(
   });
 
   const duration = Date.now() - startTime;
-  console.log(
+  debugLog(
+    undefined,
     `Found ${commonMovies.length} common movies in ${duration}ms using optimized algorithm`
   );
 
@@ -283,7 +292,8 @@ async function enhanceWithTMDBData(
     }
   }
 
-  console.log(
+  debugLog(
+    undefined,
     `Enhanced ${enhancedMovies.length} movies with TMDB data using parallel processing`
   );
   return enhancedMovies;
@@ -333,7 +343,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     }
 
-    console.log(`Starting comparison for: ${usernames.join(", ")}`);
+    debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
     // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
     // Performance Optimization: Smart Rate Limiting - Optimized parallel scraping with intelligent delays
@@ -351,7 +361,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       try {
         const movies = await scrapeLetterboxdWatchlist(username);
         const duration = Date.now() - startTime;
-        console.log(
+        debugLog(
+          env,
           `Scraped ${username}: ${movies.length} movies in ${duration}ms`
         );
         return { username, movies, duration };
@@ -377,7 +388,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       ),
     ]);
 
-    console.log(
+    debugLog(
+      env,
       "Watchlist scraping completed:",
       watchlists.map(
         (w) => `${w.username}: ${w.movies.length} movies (${w.duration}ms)`
@@ -386,7 +398,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Add debug logging for the first few movies from each user
     watchlists.forEach((watchlist) => {
-      console.log(
+      debugLog(
+        env,
         `${watchlist.username} sample movies:`,
         watchlist.movies.slice(0, 3).map((m) => `"${m.title}" (${m.year})`)
       );
@@ -395,9 +408,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Find common movies
     const commonMovies = findCommonMovies(watchlists);
 
-    console.log(`Common movies found: ${commonMovies.length}`);
+    debugLog(env, `Common movies found: ${commonMovies.length}`);
     if (commonMovies.length > 0) {
-      console.log(
+      debugLog(
+        env,
         "Sample common movies:",
         commonMovies
           .slice(0, 3)
