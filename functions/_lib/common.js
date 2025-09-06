@@ -106,23 +106,17 @@ export function isDebug(env) {
 export function debugLog(env, ...args) {
   try {
     // Intentionally use console.log here; debug gating happens via isDebug(env)
-    if (isDebug(env)) console.log(...args);
-<<<<<<< HEAD
+    if (isDebug(env) && typeof console !== 'undefined' && typeof console.log === 'function') {
+      console.log(...args);
+    }
   } catch (err) {
-    // Log logging errors only if debugging is enabled
-    if (isDebug(env) && typeof console !== "undefined" && typeof console.error === "function") {
-      console.error("debugLog error:", err);
-=======
-  } catch {
-    // Log logging errors only if debugging is enabled and console.error exists
+    // Avoid throwing from logging; only surface secondary logging errors when debugging
     try {
-      const err = new Error("debugLog failure");
-      if (isDebug(env) && typeof console !== "undefined" && typeof console.error === "function") {
-        console.error("debugLog error:", err);
+      if (isDebug(env) && typeof console !== 'undefined' && typeof console.error === 'function') {
+        console.error('debugLog error:', err);
       }
     } catch {
-      // swallow secondary logging failures
->>>>>>> a6b0121 (chore(review): address reviewer suggestions - use API_ENDPOINTS, add JSDoc, and harden debugLog)
+      // swallow any errors from error logging to ensure debugLog never throws
     }
   }
 }
