@@ -7,6 +7,7 @@ when the platform triggers Python scans. This file is intentionally
 no-op and must not be imported or required at runtime.
 """
 
+
 def _codeql_placeholder() -> None:
     """A no-op placeholder function for CodeQL language detection."""
     return None

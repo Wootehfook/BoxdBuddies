@@ -2,7 +2,13 @@ name: PR Checks Watcher
 
 on:
   workflow_run:
-    workflows: ["Build Application", "Debug Pages Build", "Test Suite", "CodeQL Analysis (Custom)"]
+    workflows:
+      [
+        "Build Application",
+        "Debug Pages Build",
+        "Test Suite",
+        "CodeQL Analysis (Custom)",
+      ]
     types:
       - completed
 
