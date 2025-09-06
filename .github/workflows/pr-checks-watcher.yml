@@ -15,30 +15,26 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Find PR for this commit
-        id: find_pr
+      - name: Find PR by commit and post comment
         uses: actions/github-script@v6
         with:
           script: |
-            const runs = await github.rest.pulls.list({
+            const sha = context.payload.workflow_run.head_sha;
+            const pulls = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              state: 'open'
+              state: 'open',
+              per_page: 100
             });
-            const sha = context.payload.workflow_run.head_sha;
-            const pr = runs.data.find(p => p.head.sha === sha);
-            if (!pr) return { prNumber: null };
-            return { prNumber: pr.number };
-
-      - name: Post PR comment when all checks pass
-        if: steps.find_pr.outputs.prNumber
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const prNumber = parseInt(${steps.find_pr.outputs.prNumber});
+            const pr = pulls.data.find(p => p.head?.sha === sha);
+            if (!pr) {
+              core.info(`No open PR found with head sha ${sha}`);
+              return;
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: prNumber,
+              issue_number: pr.number,
               body: 'Automated: All requested CI workflows completed successfully for this commit. Please review the checks and consider merging when ready.'
             });
+            core.info(`Posted comment on PR #${pr.number}`);
