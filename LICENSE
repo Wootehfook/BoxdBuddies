@@ -28,7 +28,7 @@ from the copyright holder.
 DATA SOURCE COMPLIANCE:
 This software scrapes publicly available data from Letterboxd and uses
 the TMDB API. Users must comply with the terms of service of these
-platforms and obtain their own API keys where required.
+platforms. The author is not responsible for any violations of these terms.
 
 The full text of the GNU Affero General Public License v3.0 can be found at:
 https://www.gnu.org/licenses/agpl-3.0.html
