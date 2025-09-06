@@ -26,16 +26,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies (CI)
         run: |
           npm ci --prefer-offline --no-audit
 
-      - name: Run build
+      - name: Run pages build (simulate Cloudflare Pages)
         run: |
-          npm run build
+          npm run pages:build
 
       - name: List dist contents
         if: always()
