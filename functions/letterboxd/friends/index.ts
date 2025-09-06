@@ -44,6 +44,19 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
+/**
+ * Scrape the list of friends (users followed) for a given Letterboxd username.
+ *
+ * This function is exported as part of the Functions API and may be used by
+ * other modules (for example, the friends cache endpoint). It performs HTML
+ * parsing of the Letterboxd following page and returns a normalized list of
+ * friends. Rate limiting is applied internally to avoid excessive requests.
+ *
+ * @param username - The Letterboxd username whose friends should be scraped
+ * @param env - Optional environment object (used for logging and config)
+ * @returns A Promise that resolves to an array of Friend objects
+ * @throws Error when the user cannot be fetched (404) or parsing fails
+ */
 export async function scrapeLetterboxdFriends(
   username: string,
   env?: Env
