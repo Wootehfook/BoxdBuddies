@@ -1,3 +1,4 @@
+# AI Generated: GitHub Copilot - 2025-09-06
 name: Background Quality Checks Resolver
 
 # Temporary workflow to emit a quick passing check named "Background Quality Checks".
@@ -9,6 +10,12 @@ name: Background Quality Checks Resolver
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+
+# Minimal permissions to satisfy repo policy and the PR conversation handler.
+# This job performs no privileged operations; grant the least privileges needed.
+permissions:
+  contents: read
+  checks: write
 
 jobs:
   background-quality-checks:
