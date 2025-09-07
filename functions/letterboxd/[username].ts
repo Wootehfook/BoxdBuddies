@@ -2,22 +2,9 @@
 // Dynamic route handler for Letterboxd user watchlists
 // Route: /letterboxd/[username]
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
+// D1PreparedStatement type omitted to avoid unused-local lint errors
 
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  run(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-  all(): Promise<D1Result>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: any[];
-}
+// D1Result omitted to avoid unused-local errors
 
 interface LetterboxdMovie {
   title: string;
@@ -27,14 +14,11 @@ interface LetterboxdMovie {
 }
 
 import { debugLog } from "../_lib/common";
-
-interface Env {
-  MOVIES_DB: D1Database;
-}
+import type { Env as CacheEnv } from "./cache/index.js";
 
 export async function onRequestGet(context: {
   request: Request;
-  env: Env;
+  env: CacheEnv;
   params: { username: string };
 }) {
   const { env, params } = context;
@@ -126,7 +110,7 @@ export async function onRequestGet(context: {
 
 async function scrapeUserWatchlist(
   username: string,
-  env?: Env
+  env?: CacheEnv
 ): Promise<LetterboxdMovie[]> {
   const movies: LetterboxdMovie[] = [];
   let page = 1;

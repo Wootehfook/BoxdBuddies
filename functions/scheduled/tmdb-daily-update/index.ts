@@ -6,10 +6,8 @@
 
 import { debugLog } from "../../_lib/common";
 
-interface Env {
-  MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY: string;
-}
+import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
+type Env = CacheEnv;
 
 // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 // Temporarily unused interface - commenting out to fix lint warnings

@@ -8,7 +8,7 @@ import { debugLog } from "../../_lib/common";
 
 export interface Env {
   MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY?: string;
+  TMDB_API_KEY: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
   FEATURE_SERVER_WATCHLIST_CACHE?: string;
@@ -242,7 +242,10 @@ async function getCachedFriends(
       expiresAt: result.expires_at,
     };
   } catch (error) {
-    console.error("Error getting cached friends:", error);
+    debugLog(
+      undefined as any,
+      `Error getting cached friends: ${String(error)}`
+    );
     return null;
   }
 }
@@ -283,7 +286,7 @@ async function setCachedFriends(
 
     debugLog(env, `Cached ${normalizedFriends.length} friends for ${username}`);
   } catch (error) {
-    console.error("Error caching friends:", error);
+    debugLog(env as any, `Error caching friends: ${String(error)}`);
     // Don't throw - caching is not critical
   }
 }
@@ -314,7 +317,7 @@ const WATCHLIST_CACHE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
 // Get cached watchlist count
 export async function getCount(
   username: string,
-  env: any
+  env: Env
 ): Promise<WatchlistCountEntry | null> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -334,7 +337,7 @@ export async function getCount(
     // Fallback to D1
     return await getCountFromD1(username, env);
   } catch (error) {
-    console.error("Error getting cached count:", error);
+    debugLog(env as any, `Error getting cached count: ${String(error)}`);
     return null;
   }
 }
@@ -343,7 +346,7 @@ export async function getCount(
 export async function setCount(
   username: string,
   payload: WatchlistCountEntry,
-  env: any
+  env: Env
 ): Promise<void> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -366,7 +369,7 @@ export async function setCount(
     // Also store in D1 as backup
     await setCountInD1(username, payload, env);
   } catch (error) {
-    console.error("Error setting cached count:", error);
+    debugLog(env as any, `Error setting cached count: ${String(error)}`);
     throw error;
   }
 }
@@ -375,7 +378,7 @@ export async function setCount(
 export async function acquireLock(
   username: string,
   timeoutMs: number,
-  env: any
+  env: Env
 ): Promise<boolean> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
@@ -413,14 +416,14 @@ export async function acquireLock(
     // Handle both "OK" response and numeric response (1 for success, 0 for failure)
     return result.result === "OK" || result.result === 1;
   } catch (error) {
-    console.error("Error acquiring Redis lock:", error);
+    debugLog(env as any, `Error acquiring Redis lock: ${String(error)}`);
     // Fallback to D1
     return await acquireLockD1(username, timeoutMs, env);
   }
 }
 
 // Release lock
-export async function releaseLock(username: string, env: any): Promise<void> {
+export async function releaseLock(username: string, env: Env): Promise<void> {
   // Check feature flag - use env var if set, otherwise assume enabled for testing
   const featureEnabled = env.FEATURE_SERVER_WATCHLIST_CACHE !== "false";
   if (!featureEnabled) {
@@ -446,7 +449,7 @@ export async function releaseLock(username: string, env: any): Promise<void> {
       throw new Error(`Redis request failed: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error releasing Redis lock:", error);
+    debugLog(env as any, `Error releasing Redis lock: ${String(error)}`);
     // Fallback to D1
     await releaseLockD1(username, env);
   }
@@ -495,7 +498,7 @@ async function getCountFromRedis(
 
     return data;
   } catch (error) {
-    console.error("Error getting count from Redis:", error);
+    debugLog(env as any, `Error getting count from Redis: ${String(error)}`);
     return null;
   }
 }
@@ -524,7 +527,7 @@ async function setCountInRedis(
       throw new Error(`Redis set failed: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error setting count in Redis:", error);
+    debugLog(env as any, `Error setting count in Redis: ${String(error)}`);
     throw error;
   }
 }
@@ -552,10 +555,13 @@ async function getCountFromD1(
 
     return JSON.parse(result.value);
   } catch (error) {
-    console.error("Error getting count from D1:", error);
+    debugLog(env as any, `Error getting count from D1: ${String(error)}`);
     return null;
   }
 }
+
+// Helpers removed: previously tried coercion helpers were unused and produced
+// TypeScript errors; keep conversions inline where needed.
 
 async function setCountInD1(
   username: string,
@@ -571,7 +577,7 @@ async function setCountInD1(
       .bind(username, JSON.stringify(payload), expiresAt)
       .run();
   } catch (error) {
-    console.error("Error setting count in D1:", error);
+    debugLog(env as any, `Error setting count in D1: ${String(error)}`);
     throw error;
   }
 }
@@ -593,7 +599,7 @@ async function acquireLockD1(
 
     return result.meta.changes > 0; // True if inserted (lock acquired)
   } catch (error) {
-    console.error("Error acquiring D1 lock:", error);
+    debugLog(env as any, `Error acquiring D1 lock: ${String(error)}`);
     return false;
   }
 }
@@ -606,6 +612,6 @@ async function releaseLockD1(username: string, env: Env): Promise<void> {
       .bind(lockKey)
       .run();
   } catch (error) {
-    console.error("Error releasing D1 lock:", error);
+    debugLog(env as any, `Error releasing D1 lock: ${String(error)}`);
   }
 }

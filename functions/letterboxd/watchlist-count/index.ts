@@ -5,10 +5,7 @@
  */
 
 import { debugLog } from "../../_lib/common";
-
-interface Env {
-  MOVIES_DB: any; // D1Database type
-}
+import type { Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
   username: string;
@@ -33,7 +30,7 @@ async function rateLimit() {
 
 async function scrapeWatchlistCount(
   username: string,
-  env?: Env
+  env?: CacheEnv
 ): Promise<number> {
   try {
     await rateLimit();
@@ -257,7 +254,10 @@ async function scrapeWatchlistCount(
   }
 }
 
-export async function onRequestPost(context: { request: Request; env: Env }) {
+export async function onRequestPost(context: {
+  request: Request;
+  env: CacheEnv;
+}) {
   // Set CORS headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -401,7 +401,7 @@ async function setCachedWatchlistCount(
   database: any,
   username: string,
   count: number,
-  env?: Env
+  env?: CacheEnv
 ): Promise<void> {
   try {
     const now = Date.now();

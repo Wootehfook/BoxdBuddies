@@ -51,11 +51,8 @@ interface TMDBChangeResult {
   id: number;
 }
 
-interface Env {
-  MOVIES_DB: D1Database;
-  TMDB_API_KEY: string;
-  ADMIN_SECRET: string;
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv & { ADMIN_SECRET: string };
 
 import { debugLog } from "../_lib/common";
 

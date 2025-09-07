@@ -4,10 +4,8 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-interface Env {
-  MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY: string;
-}
+import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
+type Env = CacheEnv & { ADMIN_SECRET?: string };
 
 import { debugLog } from "../../_lib/common";
 

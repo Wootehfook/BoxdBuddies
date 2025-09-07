@@ -1,25 +1,9 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
+// D1 types omitted to avoid unused-local errors
 
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  run(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: unknown[];
-}
-
-interface Env {
-  MOVIES_DB: D1Database;
-  TMDB_API_KEY: string;
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv;
 
 // Scheduled trigger for daily TMDB delta updates
 export async function onRequestGet(context: { request: Request; env: Env }) {

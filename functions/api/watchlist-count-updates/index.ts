@@ -7,18 +7,13 @@
 // Import cache function
 import { setCount } from "../../letterboxd/cache/index.js";
 import { debugLog } from "../../_lib/common";
+import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
+
+// Extend canonical CacheEnv with function-specific secrets
+type Env = CacheEnv & { ADMIN_SECRET?: string };
 
 // Export for testing
 export { setCount };
-
-interface Env {
-  MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY: string;
-  UPSTASH_REDIS_REST_URL?: string;
-  UPSTASH_REDIS_REST_TOKEN?: string;
-  ADMIN_SECRET?: string;
-  FEATURE_SERVER_WATCHLIST_CACHE?: string;
-}
 
 // Allow dependency injection for testing
 let cacheSetCount = setCount;

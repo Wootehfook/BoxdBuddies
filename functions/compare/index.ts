@@ -1,28 +1,9 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 // Letterboxd Watchlist Comparison API
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
-
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  all(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: unknown[];
-}
-
-interface Env {
-  MOVIES_DB: D1Database;
-  TMDB_API_KEY: string;
-}
-
 import { debugLog } from "../_lib/common";
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv;
 
 interface LetterboxdMovie {
   title: string;

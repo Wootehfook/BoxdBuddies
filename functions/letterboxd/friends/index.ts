@@ -4,15 +4,10 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-// Import cache functions
+// Import cache functions and shared Env type to keep types consistent
 import { getCount } from "../cache/index.js";
 import { debugLog } from "../../_lib/common";
-
-interface Env {
-  MOVIES_DB: any; // D1Database type
-  TMDB_API_KEY: string;
-  FEATURE_SERVER_WATCHLIST_CACHE?: string;
-}
+import type { Env as CacheEnv } from "../cache/index.js";
 
 interface Friend {
   username: string;
@@ -44,22 +39,9 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
-/**
- * Scrape the list of friends (users followed) for a given Letterboxd username.
- *
- * This function is exported as part of the Functions API and may be used by
- * other modules (for example, the friends cache endpoint). It performs HTML
- * parsing of the Letterboxd following page and returns a normalized list of
- * friends. Rate limiting is applied internally to avoid excessive requests.
- *
- * @param username - The Letterboxd username whose friends should be scraped
- * @param env - Optional environment object (used for logging and config)
- * @returns A Promise that resolves to an array of Friend objects
- * @throws Error when the user cannot be fetched (404) or parsing fails
- */
 export async function scrapeLetterboxdFriends(
   username: string,
-  env?: Env
+  env?: CacheEnv
 ): Promise<Friend[]> {
   try {
     await rateLimit();
@@ -214,12 +196,15 @@ export async function scrapeLetterboxdFriends(
     debugLog(env, `Found ${friends.length} friends for ${username}`);
     return friends;
   } catch (error) {
-    console.error("Error scraping Letterboxd friends:", error);
+    debugLog(env as any, `Error scraping Letterboxd friends: ${String(error)}`);
     throw error;
   }
 }
 
-export async function onRequestPost(context: { request: Request; env: Env }) {
+export async function onRequestPost(context: {
+  request: Request;
+  env: CacheEnv;
+}) {
   // Set CORS headers
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -299,7 +284,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       context.env
     );
 
-    // Cache the results
+    // Cache the results (setCachedFriends will add lastUpdated)
     await setCachedFriends(
       context.env.MOVIES_DB,
       cleanUsername,
@@ -340,7 +325,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 async function attachWatchlistCounts(
   friends: Friend[],
   clientWatchlistCache: any,
-  env: Env
+  env: CacheEnv
 ): Promise<Friend[]> {
   const friendsWithCounts = [];
 
@@ -419,7 +404,7 @@ async function setCachedFriends(
   database: any,
   username: string,
   friends: Friend[],
-  env?: Env
+  env?: CacheEnv
 ): Promise<void> {
   try {
     const now = Date.now();

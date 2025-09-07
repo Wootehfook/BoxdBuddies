@@ -143,3 +143,17 @@ a
 .ai-internal/
 memory.json
 *.memory.json
+
+# Transient artifacts (generated files, logs, temp files)
+mcp_output.json
+mcp_messages.jsonl
+out_auth.json
+out_noauth.json
+pr_response.json
+pr_ci_logs/
+resp*.json
+resp_headers*.txt
+http_code*.txt
+logs.txt
+tail.err
+temp_*.ps1

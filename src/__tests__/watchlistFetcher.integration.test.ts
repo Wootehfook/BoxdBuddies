@@ -57,6 +57,7 @@ describe("WatchlistFetcher Integration", () => {
     // Set up localStorage mock
     // @ts-expect-error - provide a minimal localStorage in test env
     globalThis.localStorage = new LocalStorageMock();
+
     // Provide a minimal window shape for tests without using `any`
     Object.defineProperty(globalThis, "window", {
       value: {

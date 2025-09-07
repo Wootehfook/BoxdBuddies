@@ -3,9 +3,8 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-interface Env {
-  MOVIES_DB: any; // D1Database type
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv;
 
 export async function onRequestGet(context: { env: Env }) {
   const corsHeaders = {

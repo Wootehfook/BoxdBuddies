@@ -31,10 +31,8 @@ export const FEATURE_FLAGS = {
 // Legacy exports for backward compatibility
 export const FEATURE_WATCHLIST_CACHE = FEATURE_FLAGS.WATCHLIST_CACHE_ENABLED;
 export const FEATURE_WATCHLIST_FETCHER = FEATURE_FLAGS.BACKGROUND_FETCHER;
-
 // Prefer centralized logger for runtime messages
 import logger from "../utils/logger";
-
 /**
  * Runtime feature check with hierarchical dependencies
  * @param feature - Feature to check
@@ -74,21 +72,7 @@ export function isFeatureEnabled(feature: keyof typeof FEATURE_FLAGS): boolean {
  */
 export function emergencyDisableCache(): void {
   // Cast to mutable to allow runtime modification.
-  //
-  // Rationale / Safety:
-  // - This function is intended as an emergency administrative action only
-  //   (e.g. to quickly disable caching across running instances) and is not
-  //   used in normal application flow.
-  // - The cast is intentionally narrow and local: it only affects the
-  //   in-memory `FEATURE_FLAGS` object during current process runtime; no
-  //   configuration or source files are modified on disk.
-  // - We log the action and restrict access to callers with administrative
-  //   privileges; using a small, well-documented cast here is safer than
-  //   introducing a broader mutation API surface or special-case checks
-  //   throughout the codebase.
-  // - If you prefer a stricter approach, we can replace this with an
-  //   explicit runtime configuration store (env var / secret-backed toggle)
-  //   but that is a larger change and beyond the scope of this cleanup.
+  // See rationale in code comments above for safety considerations.
   type MutableFlags = { -readonly [K in keyof typeof FEATURE_FLAGS]: boolean };
   const flags = FEATURE_FLAGS as unknown as MutableFlags;
 
