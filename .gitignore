@@ -137,7 +137,7 @@ http_code*.txt
 logs.txt
 tail.err
 temp_*.ps1
-a
+
 # MCP Memory Storage (contains AI context and knowledge graph)
 .mcp-memory/
 .ai-internal/
@@ -157,3 +157,4 @@ http_code*.txt
 logs.txt
 tail.err
 temp_*.ps1
+pr-comment.md

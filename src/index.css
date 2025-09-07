@@ -73,7 +73,7 @@ body {
 
 /* App Header */
 .app-header {
-  padding: 2rem 1rem;
+  padding: 0.5rem 0.75rem; /* Further reduced to make header much tighter */
   background-color: #14181c;
   border-bottom: 1px solid #2c3440;
 }
@@ -93,18 +93,17 @@ body {
 
 .app-header h1 {
   color: #ff8000;
-  font-size: 2.5rem;
+  font-size: 2.5rem; /* restore original font size */
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  line-height: 1.1; /* tighter line box without changing font size */
+  margin-bottom: 0.25rem; /* was 0.5rem */
+  /* title is simple text now; layout is handled by .header-content */
 }
 
 .app-header p {
   color: #9ab;
-  font-size: 1.1rem;
+  font-size: 1.1rem; /* restore original font size */
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -227,7 +226,7 @@ body {
 
   .app-header {
     position: relative;
-    padding-top: 3rem;
+    padding-top: 0.75rem; /* was 1.5rem */
   }
 }
 
@@ -621,9 +620,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0 1.5rem 0;
+  padding: 0.5rem 0 1rem 0; /* Reduced vertical padding */
   border-bottom: 1px solid #2c3440;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem; /* Reduced bottom margin */
   position: relative;
 }
 
