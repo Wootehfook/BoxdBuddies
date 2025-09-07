@@ -1,8 +1,5 @@
 // AI Generated: GitHub Copilot - 2025-09-06
 // Type declarations for functions/_lib/common.js - ES module matching runtime helper
-export const corsHeaders: Record<string, string>;
-// AI Generated: GitHub Copilot - 2025-09-06
-// Type declarations for functions/_lib/common.js - ES module matching runtime helper
 // These are ambient declarations used by Cloudflare Pages Functions build.
 
 export declare const corsHeaders: Record<string, string>;
@@ -37,5 +34,4 @@ export declare function isDebug(env?: any): boolean;
 
 export declare function debugLog(env: any, ...args: any[]): void;
 
-// Neutralized duplicate declarations in functions/_lib to avoid conflicts.
-// Canonical declarations live in functions/_types/*.d.ts
+// Canonical declarations live in functions/_types/*.d.ts — keep these lightweight
