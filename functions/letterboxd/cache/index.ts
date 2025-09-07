@@ -560,6 +560,9 @@ async function getCountFromD1(
   }
 }
 
+// Helpers removed: previously tried coercion helpers were unused and produced
+// TypeScript errors; keep conversions inline where needed.
+
 async function setCountInD1(
   username: string,
   payload: WatchlistCountEntry,
