@@ -45,7 +45,7 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 All rulesets are configured with your exact CI/CD workflow job names:
 
 1. **Frontend Quality Checks** - TypeScript compilation, linting, formatting
-2. **Backend Quality Checks** - Rust formatting, clippy linting, testing
+2. **Backend Quality Checks** - (legacy) Rust formatting and testing
 3. **Security Audit** - NPM and Cargo security vulnerability scanning
 4. **Code Quality Analysis** - Codacy CLI analysis and pre-commit hook verification
 5. **Build Application** - Cross-platform Tauri builds (Windows, macOS, Linux)

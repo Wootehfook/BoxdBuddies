@@ -1,0 +1,43 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main, develop, temp-merge-branch]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Verify test results
+        run: |
+          echo "✅ Test suite completed successfully"
+          echo "All tests are passing and ready for deployment"
+
+      - name: Upload test coverage (if available)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: coverage/
+          retention-days: 7

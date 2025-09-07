@@ -44,6 +44,34 @@ export const logger = {
     // Always log errors, even in production
     console.error(`❌ ${message}`, ...args);
   },
+
+  logCacheHit: (username: string) => {
+    logger.debug(`Cache hit for ${username}`);
+  },
+
+  logCacheMiss: (username: string) => {
+    logger.debug(`Cache miss for ${username}`);
+  },
 };
+
+// Metrics storage
+const metrics = new Map<string, number>();
+
+export function incrementMetric(name: string, value: number = 1): void {
+  const current = metrics.get(name) || 0;
+  metrics.set(name, current + value);
+}
+
+export function getMetric(name: string): number {
+  return metrics.get(name) || 0;
+}
+
+export function resetMetric(name?: string): void {
+  if (name) {
+    metrics.delete(name);
+  } else {
+    metrics.clear();
+  }
+}
 
 export default logger;
