@@ -30,6 +30,23 @@ import { FEATURE_WATCHLIST_FETCHER } from "../config/featureFlags";
 declare const fetch: typeof globalThis.fetch;
 declare const navigator: typeof globalThis.navigator;
 
+// Minimal type for objects that expose add/remove event listener methods
+interface WindowEventTarget {
+  addEventListener(type: string, listener: (...args: unknown[]) => void): void;
+  removeEventListener(
+    type: string,
+    listener: (...args: unknown[]) => void
+  ): void;
+}
+
+function isWindowEventTarget(x: unknown): x is WindowEventTarget {
+  const maybe = x as Partial<WindowEventTarget>;
+  return (
+    typeof maybe.addEventListener === "function" &&
+    typeof maybe.removeEventListener === "function"
+  );
+}
+
 interface WatchlistFetcherConfig {
   refreshWindowMs?: number;
   batchWindowMs?: number;
@@ -54,9 +71,9 @@ const DEFAULT_CONFIG: Required<WatchlistFetcherConfig> = {
 class WatchlistFetcher {
   private config: Required<WatchlistFetcherConfig> = DEFAULT_CONFIG;
   private isRunning = false;
-  private pendingQueue: Set<string> = new Set();
-  private activeLocks: Set<string> = new Set();
-  private backoffState: Map<string, BackoffState> = new Map();
+  private readonly pendingQueue: Set<string> = new Set();
+  private readonly activeLocks: Set<string> = new Set();
+  private readonly backoffState: Map<string, BackoffState> = new Map();
   private batchTimer: ReturnType<typeof setTimeout> | null = null;
   private offlineQueue: string[] = [];
 
@@ -74,11 +91,8 @@ class WatchlistFetcher {
     logger.info("Watchlist fetcher started");
 
     // Listen for online events to process offline queue
-    if (
-      typeof window !== "undefined" &&
-      typeof (window as any).addEventListener === "function"
-    ) {
-      (window as any).addEventListener("online", this.handleOnline);
+    if (typeof window !== "undefined" && isWindowEventTarget(window)) {
+      window.addEventListener("online", this.handleOnline);
     }
   }
 
@@ -92,11 +106,8 @@ class WatchlistFetcher {
       clearTimeout(this.batchTimer);
       this.batchTimer = null;
     }
-    if (
-      typeof window !== "undefined" &&
-      typeof (window as any).removeEventListener === "function"
-    ) {
-      (window as any).removeEventListener("online", this.handleOnline);
+    if (typeof window !== "undefined" && isWindowEventTarget(window)) {
+      window.removeEventListener("online", this.handleOnline);
     }
 
     logger.info("Watchlist fetcher stopped");
@@ -129,8 +140,7 @@ class WatchlistFetcher {
       // Check cache freshness
       const entry = WebCacheService.getWatchlistCountEntry(cleanUsername);
       if (
-        entry &&
-        entry.lastFetchedAt &&
+        entry?.lastFetchedAt &&
         now - entry.lastFetchedAt < this.config.refreshWindowMs
       ) {
         logger.debug(`Cache hit for ${cleanUsername}, skipping schedule`);

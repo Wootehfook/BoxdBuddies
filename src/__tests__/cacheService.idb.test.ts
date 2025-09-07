@@ -1,25 +1,35 @@
 import { describe, it, beforeEach, expect, vi } from "vitest";
 import { WebCacheService } from "../services/cacheService";
 
+// Small mock types to approximate IDB request objects used in tests
+type IDBRequestMock<T = unknown> = {
+  result: T;
+  onsuccess: ((ev?: unknown) => void) | null;
+  onerror: ((ev?: unknown) => void) | null;
+  onupgradeneeded?: ((ev?: unknown) => void) | null;
+};
+
 // Minimal in-memory IndexedDB mock for testing
 class MockIDBDatabase {
   objectStoreNames = { contains: () => true };
-  stores: Record<string, Record<string, any>> = {};
+  stores: Record<string, Record<string, unknown>> = {};
 
   transaction(_storeNames: string[], _mode: string) {
     return new MockIDBTransaction(this.stores);
   }
 
-  createObjectStore(name: string, _options?: any) {
+  createObjectStore(name: string, _options?: unknown) {
     this.stores[name] = {};
     return new MockIDBObjectStore(this.stores[name]);
   }
 
-  close() {}
+  close(): void {
+    return; // noop implemented to satisfy linter
+  }
 }
 
 class MockIDBTransaction {
-  constructor(private stores: Record<string, Record<string, any>>) {}
+  constructor(private stores: Record<string, Record<string, unknown>>) {}
 
   objectStore(name: string) {
     if (!this.stores[name]) this.stores[name] = {};
@@ -28,22 +38,23 @@ class MockIDBTransaction {
 }
 
 class MockIDBObjectStore {
-  constructor(private store: Record<string, any>) {}
+  constructor(private store: Record<string, unknown>) {}
 
-  get(key: string) {
+  get(key: string): IDBRequestMock<unknown> {
     const value = this.store[key];
     return {
       result: value,
-      onsuccess: null as any,
-      onerror: null as any,
+      onsuccess: null,
+      onerror: null,
     };
   }
 
-  put(value: any) {
+  put(value: { key: string; [k: string]: unknown }): IDBRequestMock<void> {
     this.store[value.key] = value;
     return {
-      onsuccess: null as any,
-      onerror: null as any,
+      onsuccess: null,
+      onerror: null,
+      result: undefined,
     };
   }
 }
@@ -57,12 +68,20 @@ class MockIDBFactory {
     }
     const db = this.databases[name];
 
-    return {
+    const request: IDBRequestMock<MockIDBDatabase> = {
       result: db,
-      onsuccess: null as any,
-      onerror: null as any,
-      onupgradeneeded: null as any,
+      onsuccess: null,
+      onerror: null,
     };
+
+    // Attach optional onupgradeneeded for tests that expect it
+    (
+      request as unknown as {
+        onupgradeneeded?: ((ev?: unknown) => void) | null;
+      }
+    ).onupgradeneeded = null;
+
+    return request;
   }
 
   deleteDatabase(name: string) {
@@ -70,9 +89,10 @@ class MockIDBFactory {
   }
 
   // Minimal comparator to satisfy IDBFactory interface in lib.dom
-  cmp(first: any, second: any) {
+  cmp(first: unknown, second: unknown) {
     if (first === second) return 0;
-    return first > second ? 1 : -1;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (first as any) > (second as any) ? 1 : -1;
   }
 }
 
@@ -97,15 +117,20 @@ describe("WebCacheService - IndexedDB Integration", () => {
   let mockIDBFactory: MockIDBFactory;
 
   beforeEach(() => {
-    // Provide mocks for test env (cast to any to avoid DOM lib types)
-    (globalThis as any).localStorage = new LocalStorageMock();
+    // Provide mocks for test env
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new LocalStorageMock(),
+      configurable: true,
+    });
 
     mockIDBFactory = new MockIDBFactory();
-    (globalThis as any).window = {
-      indexedDB: mockIDBFactory,
-      localStorage: (globalThis as any).localStorage,
-    };
-
+    Object.defineProperty(globalThis, "window", {
+      value: {
+        indexedDB: mockIDBFactory,
+        localStorage: globalThis.localStorage,
+      },
+      configurable: true,
+    });
     WebCacheService.clearCache();
     vi.clearAllMocks();
   });
@@ -143,12 +168,15 @@ describe("WebCacheService - IndexedDB Integration", () => {
   });
 
   it("should fall back to localStorage when IndexedDB operations fail", async () => {
-    // Mock IndexedDB to fail
-    // Mock failing IndexedDB
-    (globalThis as any).window = {
-      indexedDB: null,
-      localStorage: (globalThis as any).localStorage,
+    // Mock IndexedDB to fail — assign a minimal window-like object
+    const failingWindow = {
+      indexedDB: null as unknown,
+      localStorage: new LocalStorageMock(),
     };
+    Object.defineProperty(globalThis, "window", {
+      value: failingWindow,
+      configurable: true,
+    });
 
     WebCacheService.setWatchlistCountEntry("fallbackuser", { count: 999 });
 
@@ -162,8 +190,10 @@ describe("WebCacheService - IndexedDB Integration", () => {
 
     // Directly corrupt the cache to simulate corruption
     const cache = WebCacheService.getCache();
-    if (!cache.watchlistCounts) cache.watchlistCounts = {};
-    cache.watchlistCounts["corrupted"] = { count: "not-a-number" as any };
+    cache.watchlistCounts ??= {};
+    cache.watchlistCounts["corrupted"] = {
+      count: "not-a-number" as unknown as number,
+    };
     WebCacheService.saveCache(cache);
 
     const result = await WebCacheService.readAllWatchlistCache();
