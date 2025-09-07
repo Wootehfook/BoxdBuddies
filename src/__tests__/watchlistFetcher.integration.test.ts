@@ -57,11 +57,10 @@ describe("WatchlistFetcher Integration", () => {
     // Set up localStorage mock
     // @ts-expect-error - provide a minimal localStorage in test env
     globalThis.localStorage = new LocalStorageMock();
-    // @ts-expect-error - mock window object
-    globalThis.window = {
-      ...globalThis.window,
+    // Mock window object for tests
+    (globalThis as any).window = {
       indexedDB: null,
-      localStorage: globalThis.localStorage,
+      localStorage: (globalThis as any).localStorage,
     };
 
     // Clear cache

@@ -68,6 +68,12 @@ class MockIDBFactory {
   deleteDatabase(name: string) {
     delete this.databases[name];
   }
+
+  // Minimal comparator to satisfy IDBFactory interface in lib.dom
+  cmp(first: any, second: any) {
+    if (first === second) return 0;
+    return first > second ? 1 : -1;
+  }
 }
 
 // Minimal localStorage mock for test environment
@@ -91,14 +97,13 @@ describe("WebCacheService - IndexedDB Integration", () => {
   let mockIDBFactory: MockIDBFactory;
 
   beforeEach(() => {
-    // @ts-expect-error - provide mocks for test env
-    globalThis.localStorage = new LocalStorageMock();
+    // Provide mocks for test env (cast to any to avoid DOM lib types)
+    (globalThis as any).localStorage = new LocalStorageMock();
 
     mockIDBFactory = new MockIDBFactory();
-    // @ts-expect-error - mock window.indexedDB
-    globalThis.window = {
+    (globalThis as any).window = {
       indexedDB: mockIDBFactory,
-      localStorage: globalThis.localStorage,
+      localStorage: (globalThis as any).localStorage,
     };
 
     WebCacheService.clearCache();
@@ -139,10 +144,10 @@ describe("WebCacheService - IndexedDB Integration", () => {
 
   it("should fall back to localStorage when IndexedDB operations fail", async () => {
     // Mock IndexedDB to fail
-    // @ts-expect-error - mock failing IndexedDB
-    globalThis.window = {
+    // Mock failing IndexedDB
+    (globalThis as any).window = {
       indexedDB: null,
-      localStorage: globalThis.localStorage,
+      localStorage: (globalThis as any).localStorage,
     };
 
     WebCacheService.setWatchlistCountEntry("fallbackuser", { count: 999 });

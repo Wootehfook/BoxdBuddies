@@ -74,8 +74,11 @@ class WatchlistFetcher {
     logger.info("Watchlist fetcher started");
 
     // Listen for online events to process offline queue
-    if (typeof window !== "undefined") {
-      window.addEventListener("online", this.handleOnline);
+    if (
+      typeof window !== "undefined" &&
+      typeof (window as any).addEventListener === "function"
+    ) {
+      (window as any).addEventListener("online", this.handleOnline);
     }
   }
 
@@ -90,8 +93,11 @@ class WatchlistFetcher {
       this.batchTimer = null;
     }
 
-    if (typeof window !== "undefined") {
-      window.removeEventListener("online", this.handleOnline);
+    if (
+      typeof window !== "undefined" &&
+      typeof (window as any).removeEventListener === "function"
+    ) {
+      (window as any).removeEventListener("online", this.handleOnline);
     }
 
     logger.info("Watchlist fetcher stopped");

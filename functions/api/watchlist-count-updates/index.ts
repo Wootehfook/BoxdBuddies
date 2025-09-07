@@ -264,7 +264,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Store in cache
     try {
-      await cacheSetCount(username, cachePayload, env);
+      // cacheSetCount expects an Env shape that may include TMDB_API_KEY in
+      // other modules; cast to any here to avoid cross-file Env strictness
+      await cacheSetCount(username, cachePayload, env as any);
 
       // Log successful update
       console.log(
