@@ -28,6 +28,7 @@ declare const fetch: typeof globalThis.fetch;
 
 import { logger } from "../utils/logger";
 import { WebCacheService } from "./cacheService";
+import { API_ENDPOINTS } from "../utils";
 
 export interface Movie {
   id: number;
@@ -57,8 +58,7 @@ export interface UserPreferences {
   always_on_top?: boolean;
 }
 
-// Cloudflare Functions base URL
-const API_BASE = window.location.origin;
+// Use centralized API endpoint configuration
 
 // Real API functions
 export const realBackendAPI = {
@@ -86,7 +86,7 @@ export const realBackendAPI = {
       // Get watchlist cache to attach to request and for telemetry
       const watchlistCache = WebCacheService.getAllWatchlistCounts();
 
-      const response = await fetch(`${API_BASE}/letterboxd/friends`, {
+      const response = await fetch(API_ENDPOINTS.LETTERBOXD_FRIENDS, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +146,7 @@ export const realBackendAPI = {
       // Get watchlist cache to attach to request and for telemetry
       const watchlistCache = WebCacheService.getAllWatchlistCounts();
 
-      const response = await fetch(`${API_BASE}/letterboxd/watchlist-count`, {
+      const response = await fetch(API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -222,7 +222,7 @@ export const realBackendAPI = {
       // All usernames involved in comparison
       const allUsernames = [request.mainUsername, ...request.friendUsernames];
 
-      const response = await fetch(`${API_BASE}/api/watchlist-comparison`, {
+      const response = await fetch(API_ENDPOINTS.LETTERBOXD_COMPARE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

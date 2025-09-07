@@ -22,13 +22,17 @@ class LocalStorageMock {
 
 describe("WebCacheService - watchlistCounts", () => {
   beforeEach(() => {
-    // Provide a minimal localStorage in test env (cast to any)
-    (globalThis as any).localStorage = new LocalStorageMock();
-    // Mock window object for tests
-    (globalThis as any).window = {
-      indexedDB: null,
-      localStorage: (globalThis as any).localStorage,
-    };
+    // @ts-expect-error - provide a minimal localStorage in test env
+    globalThis.localStorage = new LocalStorageMock();
+    // Provide a minimal window shape for tests without using `any`
+    Object.defineProperty(globalThis, "window", {
+      value: {
+        ...(globalThis.window as unknown as Record<string, unknown>),
+        indexedDB: null,
+        localStorage: globalThis.localStorage,
+      },
+      writable: true,
+    });
     WebCacheService.clearCache();
     vi.clearAllMocks();
   });

@@ -2,22 +2,9 @@
 // Dynamic route handler for Letterboxd user watchlists
 // Route: /letterboxd/[username]
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
+// D1PreparedStatement type omitted to avoid unused-local lint errors
 
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  run(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-  all(): Promise<D1Result>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: any[];
-}
+// D1Result omitted to avoid unused-local errors
 
 interface LetterboxdMovie {
   title: string;
@@ -26,13 +13,12 @@ interface LetterboxdMovie {
   letterboxd_slug: string;
 }
 
-interface Env {
-  MOVIES_DB: D1Database;
-}
+import { debugLog } from "../_lib/common";
+import type { Env as CacheEnv } from "./cache/index.js";
 
 export async function onRequestGet(context: {
   request: Request;
-  env: Env;
+  env: CacheEnv;
   params: { username: string };
 }) {
   const { env, params } = context;
@@ -43,7 +29,7 @@ export async function onRequestGet(context: {
   }
 
   try {
-    console.log(`🔥 Fetching watchlist for user: ${username}`);
+    debugLog(env, `🔥 Fetching watchlist for user: ${username}`);
 
     // Check cache first
     const cacheKey = `watchlist_${username}`;
@@ -55,7 +41,7 @@ export async function onRequestGet(context: {
       .first();
 
     if (cached) {
-      console.log(`🔥 Using cached watchlist for ${username}`);
+      debugLog(env, `🔥 Using cached watchlist for ${username}`);
       const movies = JSON.parse(cached.data as string);
       return Response.json(
         {
@@ -75,8 +61,8 @@ export async function onRequestGet(context: {
     }
 
     // If not cached, scrape from Letterboxd
-    console.log(`🔥 Scraping fresh watchlist for ${username}`);
-    const movies = await scrapeUserWatchlist(username);
+    debugLog(env, `🔥 Scraping fresh watchlist for ${username}`);
+    const movies = await scrapeUserWatchlist(username, env);
 
     // Cache the results for 24 hours
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -123,14 +109,15 @@ export async function onRequestGet(context: {
 }
 
 async function scrapeUserWatchlist(
-  username: string
+  username: string,
+  env?: CacheEnv
 ): Promise<LetterboxdMovie[]> {
   const movies: LetterboxdMovie[] = [];
   let page = 1;
   const maxPages = 50; // Safety limit
 
   while (page <= maxPages) {
-    console.log(`🔥 Scraping page ${page} for ${username}`);
+    debugLog(env, `🔥 Scraping page ${page} for ${username}`);
 
     const url = `https://letterboxd.com/${username}/watchlist/page/${page}/`;
     const response = await fetch(url, {
@@ -143,7 +130,7 @@ async function scrapeUserWatchlist(
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`🔥 Reached end of watchlist at page ${page}`);
+        debugLog(env, `🔥 Reached end of watchlist at page ${page}`);
         break;
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -153,7 +140,7 @@ async function scrapeUserWatchlist(
 
     // Check if we've reached the end (no more movies)
     if (!html.includes("data-film-slug=")) {
-      console.log(`🔥 No more movies found at page ${page}`);
+      debugLog(env, `🔥 No more movies found at page ${page}`);
       break;
     }
 
@@ -180,10 +167,10 @@ async function scrapeUserWatchlist(
       pageMovieCount++;
     }
 
-    console.log(`🔥 Found ${pageMovieCount} movies on page ${page}`);
+    debugLog(env, `🔥 Found ${pageMovieCount} movies on page ${page}`);
 
     if (pageMovieCount === 0) {
-      console.log(`🔥 No movies found on page ${page}, stopping`);
+      debugLog(env, `🔥 No movies found on page ${page}, stopping`);
       break;
     }
 
@@ -193,7 +180,7 @@ async function scrapeUserWatchlist(
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  console.log(`🔥 Total movies scraped for ${username}: ${movies.length}`);
+  debugLog(env, `🔥 Total movies scraped for ${username}: ${movies.length}`);
   return movies;
 }
 

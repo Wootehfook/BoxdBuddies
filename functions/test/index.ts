@@ -1,11 +1,8 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 // Simple test endpoint to verify function deployment
 
-interface Env {
-  MOVIES_DB: any;
-  TMDB_API_KEY: string;
-  ADMIN_SECRET: string;
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv & { ADMIN_SECRET?: string };
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { env } = context;

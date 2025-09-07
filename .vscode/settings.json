@@ -20,29 +20,16 @@
       "args": ["-l"]
     }
   },
-  "rust-analyzer.checkOnSave.command": "clippy",
-  "rust-analyzer.cargo.features": "all",
   "eslint.format.enable": true,
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "files.associations": {
-    "*.rs": "rust",
-    "Cargo.toml": "toml",
-    "Cargo.lock": "toml"
-  },
-  "rust-analyzer.lens.enable": true,
-  "rust-analyzer.lens.methodReferences": true,
-  "rust-analyzer.lens.references": true,
-  "rust-analyzer.hover.actions.enable": true,
-  "rust-analyzer.completion.autoimport.enable": true,
-  "tauri.devPath": "../dist",
-  "tauri.distDir": "../dist",
   "search.exclude": {
-    "**/target": true,
     "**/node_modules": true,
     "**/dist": true,
     "**/.git": true
-  }
+  },
+  "github.copilot.chat.alternateGptPrompt.enabled": true,
+  "chat.todoListTool.enabled": true
 }

@@ -92,7 +92,6 @@ class WatchlistFetcher {
       clearTimeout(this.batchTimer);
       this.batchTimer = null;
     }
-
     if (
       typeof window !== "undefined" &&
       typeof (window as any).removeEventListener === "function"
@@ -258,14 +257,17 @@ class WatchlistFetcher {
       ...(Object.keys(conditionalHeaders).length > 0 && { conditionalHeaders }),
     };
 
-    incrementMetric("letterboxd.requests");
-    return fetch(API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT, {
+    const response = await fetch(API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
+
+    // Increment metric only after request completes to avoid counting failed attempts
+    incrementMetric("letterboxd.requests");
+    return response;
   }
 
   private async handleResponse(
@@ -284,7 +286,11 @@ class WatchlistFetcher {
     for (const username of usernames) {
       const currentEntry = WebCacheService.getWatchlistCountEntry(username);
       const newCount = data.results?.[username];
-      const responseEtag = response.headers.get("etag");
+
+      // For batch responses, etags are expected per-user inside the response data
+      // (e.g. data.etags?.[username]). Fall back to a per-response header if present.
+      const perUserEtag =
+        data.etags?.[username] || response.headers.get("etag");
 
       if (response.status === 304 || newCount === undefined) {
         // 304 Not Modified or no data for this user - update timestamp only
@@ -303,7 +309,7 @@ class WatchlistFetcher {
           // Count changed - update everything
           WebCacheService.setWatchlistCountEntry(username, {
             count: newCount,
-            etag: responseEtag || currentEntry?.etag,
+            etag: perUserEtag || currentEntry?.etag,
             lastFetchedAt: now,
             version: "1.0.0",
           });
@@ -312,7 +318,7 @@ class WatchlistFetcher {
           // Count same - update timestamp and etag only
           WebCacheService.setWatchlistCountEntry(username, {
             ...currentEntry,
-            etag: responseEtag || currentEntry.etag,
+            etag: perUserEtag || currentEntry.etag,
             lastFetchedAt: now,
           });
           notModifiedCount++;
@@ -389,7 +395,8 @@ class WatchlistFetcher {
     logger.debug(`Applied backoff to ${username}: ${newBackoffMs}ms`);
   }
 
-  private handleOnline = (): void => {
+  /** Handle browser 'online' events to resume queued work */
+  private readonly handleOnline = (): void => {
     if (this.offlineQueue.length > 0) {
       logger.info(
         `Back online, processing ${this.offlineQueue.length} queued usernames`

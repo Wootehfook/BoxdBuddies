@@ -50,23 +50,29 @@ describe("watchlist-count-updates", () => {
       ADMIN_SECRET: "test-admin-secret",
     };
 
-    // Import the handler function
+    // Import the handler function and wrap it with a local, minimal type
     const { onRequestPost: handler } = await import(
       "../../functions/api/watchlist-count-updates/index.js"
     );
 
+    // Use a locally-typed wrapper so we don't need to reference global Request/Env types
+    const handlerFn = handler as unknown as (ctx: {
+      request: unknown;
+      env: unknown;
+    }) => Promise<unknown>;
+
     // Call the handler
-    const response = await handler({
-      request: mockRequest as any,
-      env: mockEnv as any,
-    });
+    const response = (await handlerFn({
+      request: mockRequest as unknown,
+      env: mockEnv as unknown,
+    })) as { status: number; json: () => Promise<unknown> };
 
     // Verify the response
-    const responseBody = await response.json();
-    if (response.status !== 200) {
-      console.log("Response status:", response.status);
-      console.log("Response body:", responseBody);
-    }
+    const responseBody = (await response.json()) as {
+      success?: boolean;
+      username?: string;
+      count?: number;
+    };
     expect(response.status).toBe(200);
     expect(responseBody).toEqual({
       success: true,
@@ -124,13 +130,18 @@ describe("watchlist-count-updates", () => {
       "../../functions/api/watchlist-count-updates/index.js"
     );
 
-    const response = await handler({
-      request: mockRequest as any,
-      env: mockEnv as any,
-    });
+    const handlerFn = handler as unknown as (ctx: {
+      request: unknown;
+      env: unknown;
+    }) => Promise<unknown>;
+
+    const response = (await handlerFn({
+      request: mockRequest as unknown,
+      env: mockEnv as unknown,
+    })) as { status: number; json: () => Promise<unknown> };
 
     expect(response.status).toBe(400);
-    const responseBody = await response.json();
+    const responseBody = (await response.json()) as { error?: string };
     expect(responseBody.error).toContain("Validation failed");
 
     // setCount should not be called for invalid data
@@ -173,13 +184,18 @@ describe("watchlist-count-updates", () => {
       "../../functions/api/watchlist-count-updates/index.js"
     );
 
-    const response = await handler({
-      request: mockRequest as any,
-      env: mockEnv as any,
-    });
+    const handlerFn = handler as unknown as (ctx: {
+      request: unknown;
+      env: unknown;
+    }) => Promise<unknown>;
+
+    const response = (await handlerFn({
+      request: mockRequest as unknown,
+      env: mockEnv as unknown,
+    })) as { status: number; json: () => Promise<unknown> };
 
     expect(response.status).toBe(400);
-    const responseBody = await response.json();
+    const responseBody = (await response.json()) as { error?: string };
     expect(responseBody.error).toContain("Validation failed");
 
     // setCount should not be called for missing fields

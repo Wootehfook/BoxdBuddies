@@ -5,261 +5,142 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 
-**Find movies all your friends want to watch**
+**Find movies all your friends want to watch.**
 
-BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. Available as a modern web application powered by Cloudflare Pages.
+BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. It's a modern web application powered by Cloudflare Pages and Functions, designed for speed, security, and ease of use.
 
 ## 🚀 Live Application
 
 **[Launch BoxdBuddy →](https://boxdbud.pages.dev)**
 
-- No download or installation required
-- Works on any device with a browser
-- Automatic updates and latest features
-- Secure server-side TMDB integration
+- **No Installation Required**: Instant access from any modern web browser.
+- **Works Everywhere**: Fully responsive for desktop, tablet, and mobile.
+- **Always Up-to-Date**: Automatic updates deliver the latest features.
 
 ## ✨ Features
 
-- � **Letterboxd Integration**: Scrapes complete watchlists with pagination support
-- 👥 **Multi-User Comparison**: Compare watchlists between multiple friends
-- 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and metadata
-- ⚡ **Smart Caching**: D1 database with 2,000+ pre-cached popular movies
-- 📊 **Real-time Progress**: Visual progress tracking during comparisons
-- 🎨 **Responsive Design**: Works seamlessly on desktop and mobile devices
-- � **Secure**: No user API keys required - all external APIs handled server-side
+- ✔️ **Letterboxd Integration**: Scrapes complete watchlists with full pagination support.
+- 👥 **Multi-User Comparison**: Compare watchlists between yourself and up to 4 friends.
+- 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and director info.
+- ⚡ **Intelligent Caching**: Utilizes a Cloudflare D1 database for rapid subsequent comparisons.
+- 📊 **Real-time Progress**: Visual progress tracking during the comparison process.
+- 🎨 **Responsive Design**: A clean, Letterboxd-inspired dark theme that works on any screen size.
+- 🔒 **Secure by Design**: All external API interactions are handled server-side; no user API keys are required or stored.
 
-## 🏆 Performance
+---
 
-- Processes 300+ movies per user in seconds
-- 99.3% TMDB data coverage
-- Sub-second cached responses
-- Handles pagination for large watchlists
-- Global edge computing with Cloudflare
+## 📖 User Guide
 
-## 🚀 Tech Stack
+### Step 1: Access the Application
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Cloudflare Pages Functions
-- **Database**: Cloudflare D1 (SQLite) + KV Storage
-- **APIs**: Letterboxd scraping + TMDB integration
-- **Deployment**: Cloudflare Pages with automated CI/CD
+Navigate to **[boxdbud.pages.dev](https://boxdbud.pages.dev)**.
 
-## 📋 Prerequisites
+### Step 2: Enter Usernames
 
-### Using BoxdBuddy
+1.  **Your Username**: Enter your exact Letterboxd username (it's case-sensitive).
+2.  **Friends' Usernames**: Add up to 4 friends by entering their Letterboxd usernames.
 
-No prerequisites! Simply visit [boxdbuddy.pages.dev](https://boxdbuddy.pages.dev)
+### Step 3: Compare and View Results
 
-### Development Setup
+1.  Click **"Compare Watchlists"**. The app will scan all watchlists and find common movies.
+2.  Results are sorted to show movies that the most friends have on their watchlists.
+3.  Click any movie poster to view detailed information.
+
+---
+
+## 🛠️ Development Setup
+
+Interested in contributing? Here’s how to get the development environment running.
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [Git](https://git-scm.com/)
-- Code editor (VS Code recommended)
+- A code editor (VS Code is recommended)
 
-### Optional: TMDB API Integration
+### Installation
 
-For enhanced movie data with posters, ratings, and descriptions:
+1.  **Clone the repository**:
 
-1. Get a free API key from [TMDB](https://www.themoviedb.org/settings/api)
-2. Copy `.env.example` to `.env.local`
-3. Add your API key: `VITE_TMDB_API_KEY=your_api_key_here`
-4. Or enter it directly in the app interface
+    ```bash
+    git clone https://github.com/your-username/BoxdBuddies.git
+    cd BoxdBuddies
+    ```
 
-Optional backend lookup (experimental):
+2.  **Install dependencies**:
 
-- To route initial title lookups through the Rust backend’s minimal TMDB command, set: - `VITE_TMDB_BACKEND=true` - Keep this off by default; the app will fall back to the frontend TMDB path automatically if disabled or on any backend error.
+    ```bash
+    npm install
+    ```
 
-Note: AI Generated: GitHub Copilot - 2025-08-15
+3.  **Start the development server**:
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173`.
 
-## 🛠️ Installation & Setup
-
-### Option 1: Local Development
-
-1. **Install Rust** (if not already installed):
-
-   ```powershell
-   # Download and install Rust
-   Invoke-WebRequest -Uri "https://win.rustup.rs/x86_64" -OutFile "rustup-init.exe"
-   .\rustup-init.exe
-   ```
-
-2. **Install Node.js dependencies**:
-
-   ```powershell
-
-   ```
-
-### Development Setup
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/Wootehfook/BoxdBuddies.git
-   cd BoxdBuddies
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**:
-
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the application**:
-   - Development server: <http://localhost:5173>
-
-## 📁 Project Structure
+### Project Structure
 
 ```text
 BoxdBuddies/
 ├── src/                    # React frontend source
-│   ├── App.tsx            # Main React component
-│   ├── App.css            # Component styles
-│   ├── main.tsx           # React entry point
-│   ├── services/          # API and cache services
-│   └── components/        # React components
-├── functions/             # Cloudflare Workers backend
-│   ├── letterboxd/        # Letterboxd scraping endpoints
-│   ├── compare/           # Movie comparison logic
-│   └── admin/             # Database management
-├── migrations/            # Database schema files
-├── public/                # Static assets
-├── .github/               # GitHub workflows and configurations
-├── wrangler.toml          # Cloudflare configuration
-├── package.json           # Node.js dependencies
-├── vite.config.ts         # Vite configuration
-├── tsconfig.json          # TypeScript configuration
-└── README.md              # This file
+├── functions/              # Cloudflare Functions (serverless backend)
+├── migrations/             # Cloudflare D1 database schema
+├── public/                 # Static assets
+├── .github/                # GitHub workflows and configurations
+├── wrangler.toml           # Cloudflare configuration
+└── README.md               # This file
 ```
 
-## 🎯 Available Scripts
+---
 
-## 🎯 Available Scripts
+## 🤝 Contributing
 
-### npm scripts
+We welcome contributions! Please follow these guidelines to help us keep the project organized and maintainable.
 
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build the React frontend for production
-- `npm run preview` - Preview the built frontend locally
-- `npm run type-check` - Run TypeScript type checking
-- `npm run lint` - Run ESLint code analysis
+### Git Workflow
 
-### Cloudflare Deployment
+1.  Create a feature branch: `git checkout -b feature/your-feature-name`
+2.  Make your changes and test them locally.
+3.  Format your code: `npm run lint`
+4.  Commit your changes using the [Conventional Commits](https://www.conventionalcommits.org/) format.
+5.  Push to your fork and create a Pull Request.
 
-- `npm run deploy` - Deploy to Cloudflare Pages (main branch)
-- `npm run deploy:preview` - Deploy preview build
+### Code Style
 
-## 🔧 Development
+- **TypeScript/React**: Adheres to the project's ESLint and Prettier configurations.
+- **Cloudflare Functions**: Follow modern TypeScript and Cloudflare Workers best practices.
+- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot - 2025-08-15`).
 
-### Environment Variables
+---
 
-Create a `.env.local` file for development:
+## 🛡️ Security Policy
 
-```env
-# Optional: Set to true to enable development features
-VITE_APP_DEBUG=true
-```
+This project prioritizes security. All API keys are managed via Cloudflare secrets, and no sensitive user data is stored.
 
-### Code Quality
+### Reporting a Vulnerability
 
-The project uses automated quality checks:
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-- **ESLint**: Code style and error detection
-- **TypeScript**: Static type checking
-- **Prettier**: Code formatting
-- **GitHub Actions**: Automated CI/CD pipeline
+- Use the **"Report a vulnerability"** feature under the "Security" tab in the GitHub repository.
+- We aim to acknowledge reports within 48 hours and provide regular updates until resolution.
 
-## 🚀 Building for Production
+### Contributor Best Practices
 
-### Local Build
+- Never commit API keys, passwords, or other sensitive data.
+- Validate all external inputs within your code.
+- Keep dependencies updated and run `npm audit` regularly.
 
-```bash
-npm run build
-```
-
-The built application will be available in the `dist/` directory.
-
-### Deployment
-
-The application is automatically deployed via Cloudflare Pages:
-
-- **Production**: Deploys from `main` branch to [boxdbuddy.pages.dev](https://boxdbuddy.pages.dev)
-- **Preview**: Deploys from feature branches for testing
-
-## 🛡️ Security
-
-BoxdBuddy implements multiple security measures:
-
-- **Server-side API integration**: No user API keys required
-- **Rate limiting**: Prevents abuse of external services
-- **Input validation**: Sanitizes all user inputs
-- **Content Security Policy**: Protects against XSS attacks
-- **HTTPS**: All connections encrypted
-
-## 📝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+---
 
 ## 📄 License
 
 BoxdBuddies is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
-**This means:**
+**In short, this means:**
 
-- ✅ You can use it for personal projects
-- ✅ You can modify and share it
-- ✅ You must share source code of any modifications
-- ❌ You **CANNOT** use it for commercial purposes
-- ❌ You **CANNOT** sell it or charge for access
-- ❌ You **CANNOT** include it in proprietary software
+- ✅ You can use, modify, and share it for personal projects.
+- ✅ You must share the source code of any modifications you distribute.
+- ❌ **Commercial use is strictly prohibited.** You cannot sell it, charge for access, or include it in proprietary software.
 
-### Important Legal Notice
-
-**Commercial Use Prohibition:** This software is provided for personal, non-commercial use only. Any commercial use, including selling the software, using it as part of a paid service, or including it in commercial products, is strictly prohibited.
-
-**Data Source Compliance:** This software respects the terms of service of Letterboxd (data scraped from public profiles) and TMDB API (users must provide their own API key). Users are responsible for ensuring their use complies with all applicable terms of service.
-
-See the [LICENSE](LICENSE) file for full details.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-1. **Development server not starting**: Ensure Node.js is installed and run `npm install`
-2. **Build failures**: Check that all dependencies are installed correctly
-3. **API errors**: Check browser console for network issues
-4. **Cache issues**: Clear browser cache and local storage
-
-### Getting Help
-
-- [React Documentation](https://reactjs.org/)
-- [Vite Documentation](https://vitejs.dev/)
-- [Cloudflare Pages Documentation](https://developers.cloudflare.com/pages/)
-- [GitHub Issues](https://github.com/Wootehfook/BoxdBuddies/issues)
-
-## 🎉 What's Next?
-
-**Web Application Enhancement** - Continuing to improve the user experience:
-
-- ✅ **Core Features Complete** - All watchlist comparison functionality working
-- ✅ **Cloudflare Deployment** - Serverless web application with global CDN
-- ✅ **Advanced Caching** - Multi-layer caching for optimal performance
-- ✅ **Security Implementation** - Server-side API integration without user API keys
-
-**Future Enhancements**:
-
-- Advanced filtering and sorting options
-- Export functionality for comparison results
-- Watchlist synchronization scheduling
-- Social features and sharing capabilities
-- Mobile app development
-- Additional streaming service integrations
+See the `LICENSE` file for full details.

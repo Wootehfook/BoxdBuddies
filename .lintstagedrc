@@ -1,5 +1,4 @@
 {
   "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
-  "*.{css,json,md}": ["prettier --write"],
-  "src-tauri/src/*.rs": ["rustfmt --edition 2021"]
+  "*.{css,json,md}": ["prettier --write"]
 }

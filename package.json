@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "pages:build": "npm install && npm run build",
+    "pages:build": "npm run build",
     "preview": "vite preview",
     "format": "prettier --write src/**/*.{ts,tsx,css,json} functions/**/*.{ts,js} *.{json,md}",
     "format:check": "prettier --check src/**/*.{ts,tsx,css,json} functions/**/*.{ts,js} *.{json,md}",

@@ -1,0 +1,44 @@
+# AI Generated: GitHub Copilot - 2025-09-06
+name: Backend Quality Checks
+
+# Minimal real CI workflow that runs lint, type-check and unit tests on PRs.
+# This replaces a temporary placeholder workflow and provides an actual
+# verification step for the `backend-quality-checks` required status.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Restrict minimal permissions needed for actions run here
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  backend-quality-checks:
+    name: backend-quality-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Run unit tests (Vitest)
+        run: npm test -- --run
+
+      - name: Success
+        if: ${{ success() }}
+        run: echo "backend-quality-checks passing"

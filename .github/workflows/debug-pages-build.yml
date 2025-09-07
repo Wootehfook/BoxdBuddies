@@ -1,0 +1,50 @@
+name: Debug Pages Build
+
+# AI Generated: GitHub Copilot - 2025-09-06
+# Purpose: Run the repository build on GitHub Actions (Ubuntu) to reproduce
+# the Cloudflare Pages build step and capture logs and the produced `dist/`
+# artifact for debugging. This workflow runs on pull requests and can be
+# manually dispatched.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Reproduce build (Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies (CI)
+        run: |
+          npm ci --prefer-offline --no-audit
+
+      - name: Run pages build (simulate Cloudflare Pages)
+        run: |
+          npm run pages:build
+
+      - name: List dist contents
+        if: always()
+        run: |
+          echo "dist contents:" && ls -la dist || echo "dist missing"
+
+      - name: Upload dist artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: dist

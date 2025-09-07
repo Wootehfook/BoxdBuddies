@@ -1,5 +1,5 @@
 // AI Generated: GitHub Copilot - 2025-08-17
-import { jsonResponse, corsHeaders } from "../_lib/common.js";
+import { jsonResponse, corsHeaders } from "../_lib/common";
 
 export async function onRequestGet(context) {
   const { env } = context;

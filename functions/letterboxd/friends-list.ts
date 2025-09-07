@@ -1,20 +1,6 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
-
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  run(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: unknown[];
-}
+// D1PreparedStatement/D1Result omitted to avoid unused-local errors
 
 interface MovieData {
   letterboxd_slug: string;
@@ -23,11 +9,12 @@ interface MovieData {
   letterboxd_url: string;
 }
 
-interface Env {
-  MOVIES_DB: D1Database;
-}
+import type { Env as CacheEnv } from "./cache/index.js";
 
-export async function onRequestGet(context: { request: Request; env: Env }) {
+export async function onRequestGet(context: {
+  request: Request;
+  env: CacheEnv;
+}) {
   const { request, env } = context;
   const url = new URL(request.url);
   const username = url.searchParams.get("username");
@@ -48,7 +35,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   }
 }
 
-async function getWatchlist(env: Env, username: string, countOnly = false) {
+async function getWatchlist(
+  env: CacheEnv,
+  username: string,
+  countOnly = false
+) {
   const cacheKey = `watchlist:${username}`;
 
   // Check cache first
@@ -182,7 +173,7 @@ async function scrapeWatchlist(username: string): Promise<MovieData[]> {
   return movies;
 }
 
-async function getFriends(env: Env, username: string) {
+async function getFriends(env: CacheEnv, username: string) {
   const cacheKey = `friends:${username}`;
 
   const cached = await env.MOVIES_DB.prepare(

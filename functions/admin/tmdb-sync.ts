@@ -51,11 +51,10 @@ interface TMDBChangeResult {
   id: number;
 }
 
-interface Env {
-  MOVIES_DB: D1Database;
-  TMDB_API_KEY: string;
-  ADMIN_SECRET: string;
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+type Env = CacheEnv & { ADMIN_SECRET: string };
+
+import { debugLog } from "../_lib/common";
 
 // Secure admin endpoint for TMDB synchronization
 export async function onRequestPost(context: { request: Request; env: Env }) {
@@ -139,13 +138,13 @@ async function syncPopularMovies(env: Env) {
     if (response.status === 429) {
       const retryAfter = response.headers.get("Retry-After");
       const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 10000;
-      console.log(`Rate limited, waiting ${waitTime}ms before retry`);
+      debugLog(env, `Rate limited, waiting ${waitTime}ms before retry`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       continue; // Retry this page
     }
 
     if (!response.ok) {
-      console.log(`API error for page ${page}: ${response.status}`);
+      debugLog(env, `API error for page ${page}: ${response.status}`);
       continue;
     }
 
@@ -163,14 +162,16 @@ async function syncPopularMovies(env: Env) {
     // Progress logging every 10 pages
     if (page % 10 === 0) {
       const elapsed = (Date.now() - startTime) / 1000;
-      console.log(
+      debugLog(
+        env,
         `Progress: ${page}/${pages} pages, ${totalSynced} movies, ${Math.round(elapsed)}s elapsed`
       );
     }
   }
 
   const totalTime = (Date.now() - startTime) / 1000;
-  console.log(
+  debugLog(
+    env,
     `Sync completed: ${totalSynced} movies, ${apiCallCount} API calls, ${Math.round(totalTime)}s total`
   );
 

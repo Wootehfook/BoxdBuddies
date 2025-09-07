@@ -2,10 +2,15 @@
 // Letterboxd Watchlist Comparison API
 
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
+import { debugLog } from "../../_lib/common";
+import type { Env as CacheEnv } from "../cache/index.js";
+
 // Structured logging utility for production
 const logger = {
   info: (message: string, meta?: any) => {
-    console.log(
+    // Gate informational logs through debugLog so they can be disabled in production
+    debugLog(
+      undefined,
       JSON.stringify({
         level: "info",
         message,
@@ -25,7 +30,9 @@ const logger = {
     );
   },
   warn: (message: string, meta?: any) => {
-    console.warn(
+    // Use debugLog for warnings too; keep errors on console.error
+    debugLog(
+      undefined,
       JSON.stringify({
         level: "warn",
         message,
@@ -36,26 +43,12 @@ const logger = {
   },
 };
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
+// D1 database helper types omitted to avoid unused-local errors
+// D1PreparedStatement omitted to avoid unused-local errors
 
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  all(): Promise<D1Result>;
-  first(): Promise<Record<string, unknown> | null>;
-}
+// D1Result omitted to avoid unused-local errors
 
-interface D1Result {
-  success: boolean;
-  results?: unknown[];
-}
-
-interface Env {
-  MOVIES_DB: D1Database;
-  TMDB_API_KEY: string;
-}
+type Env = CacheEnv;
 
 interface LetterboxdMovie {
   title: string;
@@ -130,7 +123,8 @@ function decodeHTMLEntities(text: string): string {
 
 // Enhanced Letterboxd scraper with pagination
 async function scrapeLetterboxdWatchlist(
-  username: string
+  username: string,
+  env?: Env
 ): Promise<LetterboxdMovie[]> {
   const allMovies: LetterboxdMovie[] = [];
   let currentPage = 1;
@@ -145,7 +139,7 @@ async function scrapeLetterboxdWatchlist(
         ? `https://letterboxd.com/${username}/watchlist/`
         : `https://letterboxd.com/${username}/watchlist/page/${currentPage}/`;
 
-    console.log(`Scraping page ${currentPage}: ${url}`);
+    debugLog(env, `Scraping page ${currentPage}: ${url}`);
 
     try {
       const response = await fetch(url, {
@@ -162,7 +156,8 @@ async function scrapeLetterboxdWatchlist(
           );
         } else {
           // If we can't fetch a page beyond the first, we've likely hit the end
-          console.log(
+          debugLog(
+            env,
             `Page ${currentPage} returned ${response.status}, stopping pagination`
           );
           break;
@@ -199,12 +194,13 @@ async function scrapeLetterboxdWatchlist(
         }
       }
 
-      console.log(`Found ${pageMovies.length} movies on page ${currentPage}`);
+      debugLog(env, `Found ${pageMovies.length} movies on page ${currentPage}`);
 
       if (pageMovies.length === 0) {
         // No movies found on this page, we've reached the end
         hasMorePages = false;
-        console.log(
+        debugLog(
+          env,
           `No movies found on page ${currentPage}, stopping pagination`
         );
       } else {
@@ -216,7 +212,7 @@ async function scrapeLetterboxdWatchlist(
 
         // Safety check: if we're getting too many pages, something might be wrong
         if (currentPage > maxPages) {
-          console.log(`Reached maximum page limit (${maxPages}), stopping`);
+          debugLog(env, `Reached maximum page limit (${maxPages}), stopping`);
           break;
         }
       }
@@ -230,13 +226,17 @@ async function scrapeLetterboxdWatchlist(
         throw error;
       } else {
         // If a later page fails, just stop pagination
-        console.log(`Stopping pagination due to error on page ${currentPage}`);
+        debugLog(
+          env,
+          `Stopping pagination due to error on page ${currentPage}`
+        );
         break;
       }
     }
   }
 
-  console.log(
+  debugLog(
+    env,
     `Completed scraping ${username}: ${allMovies.length} total movies across ${currentPage - 1} pages`
   );
   return allMovies;
@@ -302,6 +302,19 @@ async function enhanceWithTMDBData(
 ): Promise<Movie[]> {
   const enhancedMovies: Movie[] = [];
 
+  // Helper: deterministic fallback ID generator used when TMDB lookup fails
+  const generateFallbackId = (title: string, year: number): number => {
+    let hash = 0;
+    const str = `${title.toLowerCase()}-${year}`;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
+    return Math.abs(hash % 100000) + 900000;
+  };
+
   for (const movie of movies) {
     try {
       // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
@@ -323,14 +336,16 @@ async function enhanceWithTMDBData(
           slugTitle.length > 0 &&
           slugTitle.toLowerCase() !== decodedTitle.toLowerCase()
         ) {
-          console.log(
+          debugLog(
+            env,
             `Using slug-derived title: "${slugTitle}" instead of "${decodedTitle}"`
           );
           searchTitle = slugTitle;
         }
       }
 
-      console.log(
+      debugLog(
+        env,
         `Looking up movie: "${movie.title}" -> "${searchTitle}" (${movie.year}) [slug: ${movie.slug}]`
       );
 
@@ -350,7 +365,8 @@ async function enhanceWithTMDBData(
         (!result.results || result.results.length === 0) &&
         searchTitle !== decodedTitle
       ) {
-        console.log(
+        debugLog(
+          env,
           `No match with slug title, trying original title: "${decodedTitle}"`
         );
         result = await env.MOVIES_DB.prepare(
@@ -369,7 +385,8 @@ async function enhanceWithTMDBData(
         const titleLength = searchTitle.length;
         if (titleLength >= 6) {
           // Lowered threshold but with better logic
-          console.log(
+          debugLog(
+            env,
             `No exact match found, trying precise fuzzy search for "${searchTitle}"`
           );
 
@@ -378,7 +395,8 @@ async function enhanceWithTMDBData(
 
           // For short titles like "The Fall", be extremely strict to prevent false matches
           if (titleLength <= 12) {
-            console.log(
+            debugLog(
+              env,
               `Short title detected, using exact prefix matching to prevent false positives`
             );
 
@@ -406,7 +424,7 @@ async function enhanceWithTMDBData(
                 .all();
 
               if (result.results && result.results.length > 0) {
-                console.log(`Found match with pattern: ${pattern}`);
+                debugLog(env, `Found match with pattern: ${pattern}`);
                 break;
               }
             }
@@ -431,7 +449,7 @@ async function enhanceWithTMDBData(
               .all();
           }
         } else {
-          console.log(`Title "${searchTitle}" too short for fuzzy matching`);
+          debugLog(env, `Title "${searchTitle}" too short for fuzzy matching`);
         }
       }
 
@@ -440,7 +458,7 @@ async function enhanceWithTMDBData(
 
         // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
         // Enhanced logging to help debug movie matching
-        console.log(`✅ Found TMDB match for "${movie.title}":`, {
+        debugLog(env, `✅ Found TMDB match for "${movie.title}":`, {
           letterboxdTitle: movie.title,
           letterboxdSlug: movie.slug,
           letterboxdYear: movie.year,
@@ -465,24 +483,12 @@ async function enhanceWithTMDBData(
       } else {
         // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
         // Enhanced logging for failed matches
-        console.log(
+        debugLog(
+          env,
           `❌ No TMDB match found for "${movie.title}" (${movie.year}) [slug: ${movie.slug}]`
         );
 
-        // AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
-        // Enhanced fallback ID generation using deterministic hash
-        const generateFallbackId = (title: string, year: number): number => {
-          let hash = 0;
-          const str = `${title.toLowerCase()}-${year}`;
-          for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = (hash << 5) - hash + char;
-            hash = hash & hash; // Convert to 32-bit integer
-          }
-          // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
-          return Math.abs(hash % 100000) + 900000;
-        };
-
+        // Use deterministic fallback ID generator
         // Fallback if not found in database
         enhancedMovies.push({
           id: generateFallbackId(movie.title, movie.year),
@@ -494,20 +500,7 @@ async function enhanceWithTMDBData(
         });
       }
     } catch (error) {
-      // AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
-      // Enhanced fallback ID generation using deterministic hash
-      const generateFallbackId = (title: string, year: number): number => {
-        let hash = 0;
-        const str = `${title.toLowerCase()}-${year}`;
-        for (let i = 0; i < str.length; i++) {
-          const char = str.charCodeAt(i);
-          hash = (hash << 5) - hash + char;
-          hash = hash & hash; // Convert to 32-bit integer
-        }
-        // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
-        return Math.abs(hash % 100000) + 900000;
-      };
-
+      // Use deterministic fallback ID generator
       console.error("Error enhancing movie:", error);
       // Add basic movie data as fallback
       enhancedMovies.push({
@@ -558,7 +551,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     }
 
-    console.log(`Comparing watchlists for: ${usernames.join(", ")}`);
+    debugLog(env, `Comparing watchlists for: ${usernames.join(", ")}`);
 
     // Scrape all watchlists in parallel with rate limiting
     const watchlistPromises = usernames.map(async (username, index) => {
@@ -567,13 +560,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
       }
 
-      const movies = await scrapeLetterboxdWatchlist(username);
+      const movies = await scrapeLetterboxdWatchlist(username, env);
       return { username, movies };
     });
 
     const watchlists = await Promise.all(watchlistPromises);
 
-    console.log(
+    debugLog(
+      env,
       "Watchlist sizes:",
       watchlists.map((w) => `${w.username}: ${w.movies.length}`)
     );

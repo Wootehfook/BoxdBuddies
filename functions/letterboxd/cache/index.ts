@@ -4,7 +4,9 @@
  * AI Generated: GitHub Copilot - 2025-08-16
  */
 
-interface Env {
+import { debugLog } from "../../_lib/common";
+
+export interface Env {
   MOVIES_DB: any; // D1Database type
   TMDB_API_KEY: string;
   UPSTASH_REDIS_REST_URL?: string;
@@ -18,6 +20,15 @@ interface CachedFriend {
   watchlistCount?: number;
   profileImageUrl?: string;
   lastUpdated: number;
+}
+
+// Minimal friend shape used by scrapers and other modules. We intentionally
+// keep this local to avoid circular imports between `friends` and `cache`.
+interface FriendLike {
+  username: string;
+  displayName?: string;
+  watchlistCount?: number;
+  profileImageUrl?: string;
 }
 
 interface FriendsCache {
@@ -58,7 +69,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const now = Date.now();
 
     if (cached && cached.expiresAt > now) {
-      console.log(
+      debugLog(
+        context.env,
         `Serving cached friends for ${cleanUsername} (${cached.friends.length} friends)`
       );
       return new Response(
@@ -75,7 +87,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 
     // If cache is stale but exists, serve it while we update in background
     if (cached && cached.expiresAt + STALE_CACHE_DURATION_MS > now) {
-      console.log(
+      debugLog(
+        context.env,
         `Serving stale cache for ${cleanUsername}, will update in background`
       );
 
@@ -148,7 +161,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       const now = Date.now();
 
       if (cached && cached.expiresAt > now) {
-        console.log(`Returning cached friends for ${cleanUsername}`);
+        debugLog(context.env, `Returning cached friends for ${cleanUsername}`);
         return new Response(
           JSON.stringify({
             friends: cached.friends,
@@ -162,20 +175,21 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       }
     }
 
-    console.log(`Fetching fresh friends data for ${cleanUsername}`);
+    debugLog(context.env, `Fetching fresh friends data for ${cleanUsername}`);
 
     // Import and use the scraping function directly
     const { scrapeLetterboxdFriends } = await import("../friends/index.js");
     const friends = await scrapeLetterboxdFriends(cleanUsername);
 
-    // Ensure cached entries include lastUpdated to satisfy schema
-    const cachedFriends: CachedFriend[] = friends.map((f) => ({
-      ...f,
-      lastUpdated: Date.now(),
-    }));
-
-    // Cache the results
-    await setCachedFriends(context.env.MOVIES_DB, cleanUsername, cachedFriends);
+    // Cache the results - `setCachedFriends` will add the lastUpdated field
+    // so callers can pass the plain scraped friend shape. This avoids
+    // duplication and keeps the DB write logic centralized.
+    await setCachedFriends(
+      context.env.MOVIES_DB,
+      cleanUsername,
+      friends,
+      context.env
+    );
 
     return new Response(
       JSON.stringify({
@@ -228,7 +242,10 @@ async function getCachedFriends(
       expiresAt: result.expires_at,
     };
   } catch (error) {
-    console.error("Error getting cached friends:", error);
+    debugLog(
+      undefined as any,
+      `Error getting cached friends: ${String(error)}`
+    );
     return null;
   }
 }
@@ -236,11 +253,25 @@ async function getCachedFriends(
 async function setCachedFriends(
   database: any,
   username: string,
-  friends: CachedFriend[]
+  friends: FriendLike[] | CachedFriend[],
+  env?: Env
 ): Promise<void> {
   try {
     const now = Date.now();
     const expiresAt = now + CACHE_DURATION_MS;
+
+    // Normalize to CachedFriend[] by ensuring lastUpdated is present. This
+    // allows callers to pass either the raw scraped friend objects or already
+    // annotated CachedFriend objects.
+    const normalizedFriends: CachedFriend[] = (
+      friends as (FriendLike | CachedFriend)[]
+    ).map((f) => ({
+      username: f.username,
+      displayName: (f as any).displayName,
+      watchlistCount: (f as any).watchlistCount,
+      profileImageUrl: (f as any).profileImageUrl,
+      lastUpdated: (f as any).lastUpdated ?? now,
+    }));
 
     await database
       .prepare(
@@ -250,12 +281,12 @@ async function setCachedFriends(
       VALUES (?, ?, ?, ?)
     `
       )
-      .bind(username, JSON.stringify(friends), now, expiresAt)
+      .bind(username, JSON.stringify(normalizedFriends), now, expiresAt)
       .run();
 
-    console.log(`Cached ${friends.length} friends for ${username}`);
+    debugLog(env, `Cached ${normalizedFriends.length} friends for ${username}`);
   } catch (error) {
-    console.error("Error caching friends:", error);
+    debugLog(env as any, `Error caching friends: ${String(error)}`);
     // Don't throw - caching is not critical
   }
 }
@@ -277,7 +308,8 @@ interface WatchlistCountEntry {
   count: number;
   etag?: string;
   lastFetchedAt: number;
-  source: "client" | "server";
+  // allow flexible sources in tests and external data
+  source?: string;
 }
 
 const WATCHLIST_CACHE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -305,7 +337,7 @@ export async function getCount(
     // Fallback to D1
     return await getCountFromD1(username, env);
   } catch (error) {
-    console.error("Error getting cached count:", error);
+    debugLog(env as any, `Error getting cached count: ${String(error)}`);
     return null;
   }
 }
@@ -337,7 +369,7 @@ export async function setCount(
     // Also store in D1 as backup
     await setCountInD1(username, payload, env);
   } catch (error) {
-    console.error("Error setting cached count:", error);
+    debugLog(env as any, `Error setting cached count: ${String(error)}`);
     throw error;
   }
 }
@@ -384,7 +416,7 @@ export async function acquireLock(
     // Handle both "OK" response and numeric response (1 for success, 0 for failure)
     return result.result === "OK" || result.result === 1;
   } catch (error) {
-    console.error("Error acquiring Redis lock:", error);
+    debugLog(env as any, `Error acquiring Redis lock: ${String(error)}`);
     // Fallback to D1
     return await acquireLockD1(username, timeoutMs, env);
   }
@@ -417,7 +449,7 @@ export async function releaseLock(username: string, env: Env): Promise<void> {
       throw new Error(`Redis request failed: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error releasing Redis lock:", error);
+    debugLog(env as any, `Error releasing Redis lock: ${String(error)}`);
     // Fallback to D1
     await releaseLockD1(username, env);
   }
@@ -466,7 +498,7 @@ async function getCountFromRedis(
 
     return data;
   } catch (error) {
-    console.error("Error getting count from Redis:", error);
+    debugLog(env as any, `Error getting count from Redis: ${String(error)}`);
     return null;
   }
 }
@@ -495,7 +527,7 @@ async function setCountInRedis(
       throw new Error(`Redis set failed: ${response.status}`);
     }
   } catch (error) {
-    console.error("Error setting count in Redis:", error);
+    debugLog(env as any, `Error setting count in Redis: ${String(error)}`);
     throw error;
   }
 }
@@ -523,7 +555,7 @@ async function getCountFromD1(
 
     return JSON.parse(result.value);
   } catch (error) {
-    console.error("Error getting count from D1:", error);
+    debugLog(env as any, `Error getting count from D1: ${String(error)}`);
     return null;
   }
 }
@@ -542,7 +574,7 @@ async function setCountInD1(
       .bind(username, JSON.stringify(payload), expiresAt)
       .run();
   } catch (error) {
-    console.error("Error setting count in D1:", error);
+    debugLog(env as any, `Error setting count in D1: ${String(error)}`);
     throw error;
   }
 }
@@ -564,7 +596,7 @@ async function acquireLockD1(
 
     return result.meta.changes > 0; // True if inserted (lock acquired)
   } catch (error) {
-    console.error("Error acquiring D1 lock:", error);
+    debugLog(env as any, `Error acquiring D1 lock: ${String(error)}`);
     return false;
   }
 }
@@ -577,6 +609,6 @@ async function releaseLockD1(username: string, env: Env): Promise<void> {
       .bind(lockKey)
       .run();
   } catch (error) {
-    console.error("Error releasing D1 lock:", error);
+    debugLog(env as any, `Error releasing D1 lock: ${String(error)}`);
   }
 }

@@ -1,19 +1,8 @@
 // AI Generated: GitHub Copilot - 2025-08-16
 
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-  exec(query: string): Promise<D1Result>;
-}
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
 
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  all(): Promise<D1Result>;
-}
-
-interface D1Result {
-  success: boolean;
-  results?: unknown[];
-}
+// D1Result type omitted to avoid unused-local errors
 
 interface KVNamespace {
   get(key: string): Promise<string | null>;
@@ -24,24 +13,11 @@ interface KVNamespace {
   ): Promise<void>;
 }
 
-interface Env {
-  MOVIES_DB: D1Database;
-  MOVIES_KV: KVNamespace;
-  TMDB_API_KEY: string;
-}
+// Extend the canonical CacheEnv with the KV namespace used by this function
+type Env = CacheEnv & { MOVIES_KV: KVNamespace };
 
-// AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
 // Temporarily unused interface - commenting out to fix lint warnings
-// interface MovieSearchResult {
-//   id: number;
-//   title: string;
-//   year: number | null;
-//   poster_path: string | null;
-//   overview: string | null;
-//   vote_average: number;
-//   runtime: number | null;
-//   director?: string;
-// }
+// interface MovieSearchResult { ... }
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
@@ -49,28 +25,20 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   const q = (url.searchParams.get("q") || "").trim();
   const page = Number(url.searchParams.get("page") || "1");
 
-  if (!q) {
-    return Response.json({ error: "missing query" }, { status: 400 });
-  }
+  if (!q) return Response.json({ error: "missing query" }, { status: 400 });
 
   // Try local database first
   try {
-    // First get total count of matching records
     const countResult = await env.MOVIES_DB.prepare(
-      `SELECT COUNT(*) as total FROM tmdb_movies 
-       WHERE title LIKE ? OR original_title LIKE ?`
+      `SELECT COUNT(*) as total FROM tmdb_movies WHERE title LIKE ? OR original_title LIKE ?`
     )
       .bind(`%${q}%`, `%${q}%`)
       .all();
 
     const totalRecords = (countResult.results?.[0] as any)?.total || 0;
 
-    // Then get the paginated results
     const localResults = await env.MOVIES_DB.prepare(
-      `SELECT * FROM tmdb_movies 
-       WHERE title LIKE ? OR original_title LIKE ?
-       ORDER BY popularity DESC
-       LIMIT ? OFFSET ?`
+      `SELECT * FROM tmdb_movies WHERE title LIKE ? OR original_title LIKE ? ORDER BY popularity DESC LIMIT ? OFFSET ?`
     )
       .bind(`%${q}%`, `%${q}%`, 20, (page - 1) * 20)
       .all();
@@ -88,14 +56,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       }));
 
       return Response.json(
-        {
-          movies,
-          totalPages: Math.ceil(totalRecords / 20),
-          totalRecords,
-        },
-        {
-          headers: { "Cache-Control": "public, max-age=300" },
-        }
+        { movies, totalPages: Math.ceil(totalRecords / 20), totalRecords },
+        { headers: { "Cache-Control": "public, max-age=300" } }
       );
     }
   } catch (error) {
@@ -106,14 +68,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   const tmdbUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(q)}&page=${page}&api_key=${env.TMDB_API_KEY}`;
 
   const response = await fetch(tmdbUrl, {
-    headers: {
-      "User-Agent": "BoxdBuddy/1.1.0",
-    },
+    headers: { "User-Agent": "BoxdBuddy/1.1.0" },
   });
 
-  if (!response.ok) {
+  if (!response.ok)
     return Response.json({ error: "tmdb_error" }, { status: 502 });
-  }
 
   const data = await response.json();
   const movies = (data.results || []).map((movie: any) => ({
@@ -129,12 +88,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   }));
 
   return Response.json(
-    {
-      movies,
-      totalPages: data.total_pages ?? 1,
-    },
-    {
-      headers: { "Cache-Control": "public, max-age=300" },
-    }
+    { movies, totalPages: data.total_pages ?? 1 },
+    { headers: { "Cache-Control": "public, max-age=300" } }
   );
 }

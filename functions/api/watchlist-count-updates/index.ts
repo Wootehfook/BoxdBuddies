@@ -6,17 +6,14 @@
 
 // Import cache function
 import { setCount } from "../../letterboxd/cache/index.js";
+import { debugLog } from "../../_lib/common";
+import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
+
+// Extend canonical CacheEnv with function-specific secrets
+type Env = CacheEnv & { ADMIN_SECRET?: string };
 
 // Export for testing
 export { setCount };
-
-interface Env {
-  MOVIES_DB: any; // D1Database type
-  UPSTASH_REDIS_REST_URL?: string;
-  UPSTASH_REDIS_REST_TOKEN?: string;
-  ADMIN_SECRET?: string;
-  FEATURE_SERVER_WATCHLIST_CACHE?: string;
-}
 
 // Allow dependency injection for testing
 let cacheSetCount = setCount;
@@ -181,7 +178,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Authentication
     if (!authenticateRequest(request, env)) {
-      console.warn("Unauthorized watchlist count update attempt");
+      debugLog(env, "Unauthorized watchlist count update attempt");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -232,7 +229,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Rate limiting
     const rateCheck = checkRateLimit(request, username);
     if (!rateCheck.allowed) {
-      console.warn(`Rate limit exceeded for ${username}`);
+      debugLog(env, `Rate limit exceeded for ${username}`);
       return new Response(
         JSON.stringify({
           error: "Rate limit exceeded",
@@ -264,12 +261,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Store in cache
     try {
-      // cacheSetCount expects an Env shape that may include TMDB_API_KEY in
-      // other modules; cast to any here to avoid cross-file Env strictness
-      await cacheSetCount(username, cachePayload, env as any);
+      await cacheSetCount(username, cachePayload, env);
 
-      // Log successful update
-      console.log(
+      // Log successful update (gated)
+      debugLog(
+        env,
         `Watchlist count update accepted for ${username}: count=${payload.count}, source=${cachePayload.source}`
       );
 

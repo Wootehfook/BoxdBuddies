@@ -1,0 +1,46 @@
+name: PR Checks Watcher
+
+on:
+  workflow_run:
+    workflows:
+      [
+        "Build Application",
+        "Debug Pages Build",
+        "Test Suite",
+        "CodeQL Analysis (Custom)",
+      ]
+    types:
+      - completed
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  post-pr-comment:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find PR by commit and post comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const sha = context.payload.workflow_run.head_sha;
+            const pulls = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            const pr = pulls.data.find(p => p.head?.sha === sha);
+            if (!pr) {
+              core.info(`No open PR found with head sha ${sha}`);
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: 'Automated: All requested CI workflows completed successfully for this commit. Please review the checks and consider merging when ready.'
+            });
+            core.info(`Posted comment on PR #${pr.number}`);
