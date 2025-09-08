@@ -1,71 +1,5 @@
-/* Accessibility */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* BoxdBuddies - Letterboxd-inspired styling */
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family:
-    "Tiempos Text Web", Georgia, serif, "Noto Color Emoji", "Apple Color Emoji",
-    "Segoe UI Emoji";
-  background-color: #14181c;
-  color: #9ab;
-  line-height: 1.6;
-  min-height: 100vh;
-  text-rendering: optimizeLegibility;
-  -webkit-font-feature-settings: "liga";
-  font-feature-settings: "liga";
-}
-
-/* Container and Layout */
-.container {
-  min-height: 100vh;
-  background-color: #14181c;
-  display: flex;
-  flex-direction: column;
-}
-
-.app-main {
-  flex: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 0.5rem;
-  width: 100%;
-}
-
-/* Page Structure */
-.page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: calc(100vh - 200px);
-}
-
-.app-header .header-content {
-  display: flex;
-  justify-content: center; /* center the whole header group */
-  align-items: baseline; /* align bottoms of logo and text */
-  max-width: 650px; /* constrain to setup card width */
-  margin: 0 auto;
-  gap: 1rem;
-}
-
-.app-header .logo-wrapper {
+/* Duplicate progress-button-container removed earlier; keep canonical block above */
+.app-header {
   display: flex;
   align-items: baseline; /* ensure img bottom aligns with subtitle */
   width: 120px; /* reserve equal horizontal space for both logos */
@@ -267,57 +201,7 @@ body {
   color: #ffb86b;
 }
 
-/* Modal backdrop */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #0f1419;
-  border: 1px solid #2c3440;
-  border-radius: 10px;
-  max-width: 680px;
-  width: calc(100% - 48px);
-  padding: 1.25rem 1.5rem;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-  color: #e5e7eb;
-  outline: none; /* managed by focus ring if needed */
-}
-
-.modal h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #fff;
-}
-
-.modal-body p {
-  color: #9ab;
-  margin: 0.5rem 0;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-@media (max-width: 480px) {
-  .modal {
-    width: calc(100% - 24px);
-    padding: 1rem;
-  }
-  .modal-actions {
-    justify-content: center;
-  }
-}
-
+/* Modal (see the single modal definition later in this file) */
 /* Main Content */
 .main {
   flex: 1;
@@ -335,67 +219,7 @@ body {
   min-height: 60vh;
 }
 
-.setup-card {
-  background: #1a1f24;
-  border: 1px solid #2c3440;
-  border-radius: 8px;
-  padding: 2.5rem;
-  max-width: 650px;
-  width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.setup-card h2 {
-  color: #fff;
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.setup-card p {
-  color: #9ab;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-/* Setup Progress */
-.setup-progress {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: #1a1f24;
-  border-radius: 8px;
-  border: 1px solid #2c3440;
-}
-
-.progress-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.progress-item:last-child {
-  margin-bottom: 0;
-}
-
-.progress-icon {
-  font-size: 1.1rem;
-  min-width: 24px;
-  text-align: center;
-}
-
-.progress-text {
-  color: #9ab;
-  font-size: 0.95rem;
-}
-
-.progress-item .progress-text {
-  color: #9ab;
-}
-
-.progress-item:has(.progress-icon:contains("✅")) .progress-text {
-  color: #00d27a;
-}
+/* Setup card & progress styles are canonicalized in `src/index.css` — duplicate removed. */
 
 /* Form Elements */
 .form-group {
@@ -623,69 +447,7 @@ body {
   font-weight: 500;
 }
 
-/* Loading Progress */
-.loading-progress {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: #1a1f24;
-  border-radius: 8px;
-  border: 1px solid #2c3440;
-}
-
-.progress-message {
-  color: #9ab;
-  margin-bottom: 0.75rem;
-  text-align: center;
-  font-weight: 500;
-}
-
-.progress-bar {
-  background: #2c3440;
-  border-radius: 10px;
-  height: 8px;
-  margin-bottom: 0.5rem;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  background: linear-gradient(90deg, #00c030, #00d040);
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.3s ease;
-  position: relative;
-}
-
-.progress-fill::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  animation: progressShimmer 2s ease-in-out infinite;
-}
-
-@keyframes progressShimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.progress-percentage {
-  color: #9ab;
-  font-size: 0.85rem;
-  text-align: center;
-}
+/* Loading/progress visuals are canonicalized in `src/index.css`. Duplicate definitions removed here. */
 
 /* Profile Section */
 .profile-section {
@@ -1033,98 +795,7 @@ body {
   width: auto;
 }
 
-.friends-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  padding: 0;
-}
-
-.friend-card {
-  background: linear-gradient(135deg, #1a1f24 0%, #1c2128 100%);
-  border: 1px solid #2c3440;
-  border-radius: 12px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  min-height: 140px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.friend-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.05) 0%,
-    rgba(255, 102, 0, 0.05) 100%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.friend-card:hover {
-  border-color: #ff8000;
-  transform: translateY(-4px) scale(1.02);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 128, 0, 0.3);
-}
-
-.friend-card:hover::before {
-  opacity: 1;
-}
-
-.friend-card.selected {
-  border-color: #ff8000;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.15) 0%,
-    rgba(255, 102, 0, 0.1) 100%
-  );
-  box-shadow:
-    0 8px 24px rgba(255, 128, 0, 0.3),
-    0 0 0 2px rgba(255, 128, 0, 0.5);
-  transform: translateY(-2px);
-}
-
-.friend-card.selected::before {
-  opacity: 1;
-}
-
-.friend-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff8000, #ff6600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  color: white;
-  font-weight: bold;
-  overflow: hidden;
-  border: 2px solid rgba(255, 128, 0, 0.3);
-}
-
-.friend-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
+/* friends/grid and friend-card styles moved to `src/index.css` to avoid duplication */
 
 .avatar-initials {
   width: 100%;
@@ -1191,35 +862,7 @@ body {
 }
 
 /* Empty State Styling */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: #1a1f24;
-  border: 1px solid #2c3440;
-  border-radius: 12px;
-  margin: 2rem 0;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.empty-state h3 {
-  color: #fff;
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-}
-
-.empty-state p {
-  color: #9ab;
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
-
-.empty-state .btn {
-  min-width: 150px;
-}
+/* Empty state visuals are defined in `src/index.css` (canonical). Duplicate removed. */
 
 /* Loading Friends State */
 .loading-friends,
@@ -1232,16 +875,7 @@ body {
   margin-bottom: 2rem;
 }
 
-.loading-spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 3px solid #2c3440;
-  border-radius: 50%;
-  border-top-color: #00d9ff;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 1rem;
-}
+/* Loading spinner is canonicalized in `src/index.css`. Duplicate removed. */
 
 @keyframes spin {
   to {
@@ -1260,139 +894,13 @@ body {
   display: inline-block;
 }
 
-/* Enhanced No Friends Section */
-.friend-tips {
-  text-align: left;
-  margin: 1.5rem 0;
-}
-
-.friend-tips h3 {
-  color: #00d9ff;
-  font-size: 1.1rem;
-  margin-bottom: 0.8rem;
-}
-
-.friend-tips ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.friend-tips li {
-  color: #9ab;
-  font-size: 0.95rem;
-  margin-bottom: 0.6rem;
-  padding-left: 1.2rem;
-  position: relative;
-}
-
-.friend-tips li::before {
-  content: "•";
-  color: #00d9ff;
-  position: absolute;
-  left: 0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1.5rem;
-}
-
-.compare-actions {
-  text-align: center;
-  padding: 1.5rem;
-  background: #1a1f24;
-  border: 1px solid #2c3440;
-  border-radius: 8px;
-  margin-top: 2rem;
-}
-
-.friends-page .compare-actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #0d1319;
-  border-top: 1px solid rgba(255, 128, 0, 0.3);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-  padding: 1rem 2rem;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 0;
-  border-radius: 0;
-}
-
-.compare-actions p {
-  color: #9ab;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.friends-page .compare-actions p {
-  margin-bottom: 0;
-}
+/* Loading skeletons for friends and movies are defined in `src/index.css`. Duplicate removed. */
 
 .compare-actions button {
   min-width: 200px;
 }
 
-/* Progress Button Container */
-.progress-button-container {
-  max-width: 450px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.05) 0%,
-    rgba(255, 102, 0, 0.05) 100%
-  );
-  border: 1px solid rgba(255, 128, 0, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-button-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #ff8000, transparent);
-  animation: progressTopShimmer 3s ease-in-out infinite;
-}
-
-.progress-button-container .progress-info h3 {
-  color: #fff;
-  margin-bottom: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.progress-button-container .progress-info p {
-  color: #b0b8c0;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.progress-button-container .progress-text {
-  color: #fff;
-  margin-top: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
+/* Progress button container styles are canonicalized in `src/index.css`. Duplicate removed here. */
 
 @keyframes progressTopShimmer {
   0% {
@@ -1407,15 +915,7 @@ body {
 }
 
 /* Loading States and Animations */
-.loading-dots {
-  display: inline-block;
-  position: relative;
-}
-
-.loading-dots::after {
-  content: "";
-  animation: loadingDots 1.5s ease-in-out infinite;
-}
+/* loading-dots defined in index.css — removed duplicate */
 
 @keyframes loadingDots {
   0%,
@@ -1488,92 +988,12 @@ body {
   height: 14px;
 }
 
-/* Enhanced Empty State */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.empty-state-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
-  opacity: 0.6;
-}
-
-.buddio-empty-state {
-  height: 12rem;
-  width: auto;
-  opacity: 0.6;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.empty-state h3 {
-  color: #e5e7eb;
-  margin-bottom: 12px;
-  font-size: 1.5rem;
-}
-
-.empty-state p {
-  color: #9ca3af;
-  margin-bottom: 30px;
-  line-height: 1.5;
-}
+/* Enhanced Empty State handled in src/index.css; duplicate removed */
 
 /* Movie Skeleton Loading */
-.movie-card.loading-skeleton {
-  height: 400px;
-  pointer-events: none;
-}
+/* Movie loading skeletons are canonicalized in `src/index.css`. Duplicate removed here. */
 
-.movie-card.loading-skeleton .movie-poster-section {
-  background: linear-gradient(90deg, #2c3440 25%, #3a4550 50%, #2c3440 75%);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s ease-in-out infinite;
-}
-
-.movie-card.loading-skeleton .movie-info {
-  padding: 15px;
-}
-
-.loading-skeleton.movie-title {
-  width: 85%;
-  height: 20px;
-  margin-bottom: 12px;
-}
-
-.loading-skeleton.movie-genre {
-  width: 60%;
-  height: 14px;
-  margin-bottom: 10px;
-}
-
-.loading-skeleton.movie-director {
-  width: 75%;
-  height: 14px;
-  margin-bottom: 10px;
-}
-
-.loading-skeleton.movie-rating {
-  width: 40%;
-  height: 16px;
-}
-
-/* Loading Spinner */
-.loading-spinner {
-  margin-right: 8px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Loading spinner is defined earlier; duplicate removed */
 
 /* Enhanced Button Loading States */
 .btn.loading {
@@ -1764,6 +1184,7 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -1816,74 +1237,7 @@ body {
 }
 
 /* Enhanced Progress Button Container */
-.progress-button-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-  border-radius: 12px;
-  border: 1px solid #4b5563;
-  min-height: 120px;
-  min-width: 200px;
-  margin: 0 auto;
-}
-
-.progress-button-container .progress-info {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.progress-button-container .progress-info h3 {
-  color: #e5e7eb;
-  margin-bottom: 8px;
-  font-size: 1.2rem;
-}
-
-.progress-button-container .progress-info p {
-  color: #9ca3af;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.progress-button-container .progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #374151;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-button-container .progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff8000, #ffa500);
-  width: 100%;
-  animation: indeterminateProgress 2s ease-in-out infinite;
-}
-
-.progress-button-container .progress-percentage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  z-index: 2;
-}
-
-.progress-details {
-  margin-bottom: 1rem;
-}
-
-.progress-details p {
-  margin: 0.25rem 0;
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
+/* Duplicate progress-button-container removed; canonical styles in src/index.css */
 
 .progress-status {
   font-style: italic;
@@ -2018,300 +1372,7 @@ body {
   color: #fff;
 }
 
-.movies-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Match friend cards: 3 columns */
-  gap: 1.5rem; /* Match friend cards gap */
-  width: 100%;
-  margin: 0;
-}
-
-.movie-card {
-  background: linear-gradient(135deg, #1a1f24 0%, #1c2128 100%);
-  border: 1px solid #2c3440;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 350px; /* 2.5x friend card height (140px * 2.5) */
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  text-decoration: none; /* Remove link styling */
-  color: inherit; /* Inherit text color instead of link color */
-}
-
-.movie-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.03) 0%,
-    rgba(255, 102, 0, 0.03) 100%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.movie-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  border-color: #ff8000;
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 128, 0, 0.3);
-}
-
-.movie-card:hover::before {
-  opacity: 1;
-}
-
-.movie-card.clickable {
-  cursor: pointer;
-}
-
-.movie-card.clickable:hover {
-  border-color: #ff8000;
-  box-shadow:
-    0 16px 40px rgba(255, 128, 0, 0.3),
-    0 0 0 1px rgba(255, 128, 0, 0.5);
-}
-
-/* Movie Poster Section - Optimized for compact card height */
-.movie-poster-section {
-  height: 65%; /* Slightly reduced for compact layout */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-radius: 12px 12px 0 0;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.movie-poster-section.has-poster {
-  background-size: cover; /* Auto-zoom posters to match card width */
-  background-repeat: no-repeat;
-}
-
-.movie-poster-section.no-poster {
-  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  font-size: 2rem;
-}
-
-.movie-poster-section.no-poster::after {
-  content: "🎬";
-}
-
-.movie-poster {
-  display: none; /* Hide the poster element since we're using background images */
-}
-
-.movie-poster-placeholder {
-  width: 100%;
-  height: 225px;
-  background: #2c3440;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ab;
-  font-size: 3rem;
-}
-
-.movie-info {
-  background: #1a1f24;
-  padding: 0.5rem;
-  border-radius: 0 0 12px 12px;
-  border-top: 1px solid #2c3440;
-  height: 30%; /* Reduced info section height while maintaining friends section */
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  overflow: hidden;
-}
-
-.movie-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.movie-title-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem; /* Reduced margin for compact layout */
-}
-
-.movie-title-section h3 {
-  color: #fff;
-  font-size: 1rem; /* Smaller title for compact cards */
-  margin: 0;
-  line-height: 1.1; /* Tighter line height */
-  font-weight: 600;
-  flex: 1;
-}
-
-/* AI Generated: GitHub Copilot - 2025-08-05 */
-/* Movie details list - compact layout for 3-column grid */
-.movie-details-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem; /* Reduced gap for compact layout */
-  font-size: 0.8rem; /* Smaller font for compact cards */
-  color: #e2e8f0; /* Much brighter text */
-  margin: 0;
-  margin-left: 0.5rem; /* Reduced margin */
-}
-
-.movie-detail-item {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem; /* Reduced gap */
-  line-height: 1.1; /* Tighter line height */
-  text-decoration: none; /* Remove underline from detail items */
-}
-
-.movie-detail-item span {
-  text-decoration: none; /* Ensure spans don't have underlines */
-}
-
-/* Remove all link styling from movie card content */
-.movie-card * {
-  text-decoration: none !important;
-  color: inherit;
-}
-
-.movie-card h3 {
-  color: #fff; /* Ensure title stays white */
-}
-
-.movie-detail-item .detail-icon {
-  font-size: 0.8rem;
-  opacity: 0.9; /* Increased from 0.7 to 0.9 for better visibility */
-  min-width: 12px;
-  color: #cbd5e1; /* Lighter icon color */
-}
-
-.movie-rating-stars {
-  color: #ffd700;
-  font-size: 0.7rem;
-  opacity: 1; /* Ensure full opacity for rating stars */
-}
-
-.movie-friends {
-  margin-top: auto; /* Push to bottom of card */
-  padding-top: 0.5rem;
-  border-top: 1px solid #2c3440;
-  background: #1a1f24; /* Ensure consistent background */
-}
-
-.friend-count-visual {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0;
-}
-
-.friends-inline-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.friend-list-expanded {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.friend-tag {
-  color: #fff;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin: 0.1rem;
-  border-radius: 8px;
-  border: 1px solid;
-  background: rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  display: inline-block;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-}
-
-.friend-count-visual.friend-count-clickable {
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.friend-count-visual.friend-count-clickable:hover {
-  opacity: 0.8;
-}
-
-.friend-visual {
-  font-size: 2.4rem;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.friend-count-text {
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.2;
-  flex: 1;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.expand-icon {
-  color: #9ab;
-  font-size: 0.8rem;
-  margin-left: 0.25rem;
-}
-
-.letterboxd-link {
-  color: #00d4ff !important;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
-  padding: 0.3rem 0.5rem;
-  background: rgba(0, 212, 255, 0.15);
-  border-radius: 6px;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-.letterboxd-link:hover {
-  background: rgba(0, 212, 255, 0.25);
-  border-color: rgba(0, 212, 255, 0.5);
-  transform: translateY(-1px);
-}
-
-.letterboxd-icon {
-  font-size: 0.875rem;
-}
+/* Movie-related styles moved to `src/index.css` (authoritative source). Remove duplicates to avoid conflicts. */
 
 /* Loading States */
 .loading {
@@ -2381,23 +1442,7 @@ body {
     margin: 1.5rem 0;
   }
 
-  .page-header {
-    padding: 0.75rem 0 1rem 0;
-    margin-bottom: 1.5rem;
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .page-header h2 {
-    font-size: 1.5rem;
-    order: 1;
-  }
-
-  .page-header .btn {
-    order: 2;
-    align-self: flex-start;
-  }
+  /* Responsive page-header overrides are defined in `src/index.css`; duplicate removed. */
 
   .movies-grid {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -2457,108 +1502,8 @@ body {
 }
 
 /* Progress Bar */
-.progress-container {
-  margin-top: 0.75rem;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, #2c3440 0%, #1a1f24 50%, #2c3440 100%);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 0.75rem;
-  position: relative;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.progress-bar::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff8000 0%, #ff6600 50%, #ff8000 100%);
-  background-size: 200% 100%;
-  border-radius: 3px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 0%;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 8px rgba(255, 128, 0, 0.4);
-  animation: progressShimmer 2s ease-in-out infinite;
-}
-
-.progress-bar-fill::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  animation: progressGlide 1.5s ease-in-out infinite;
-}
-
-.progress-bar-fill.indeterminate {
-  width: 100% !important;
-  animation:
-    progressPulse 2s ease-in-out infinite,
-    progressShimmer 2s ease-in-out infinite;
-}
-
-@keyframes progressShimmer {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes progressGlide {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-.progress-text {
-  color: #9ab;
-  font-size: 0.875rem;
-  text-align: center;
-}
-
-@keyframes progressPulse {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
+/* Progress bar / progress-button-container styles are defined in `src/index.css`.
+   Keeping `src/index.css` as the canonical source to avoid duplication. */
 
 /* Modal Dialog */
 .modal-overlay {
@@ -2618,10 +1563,7 @@ body {
     font-size: 2rem;
   }
 
-  .friends-grid {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 0.75rem;
-  }
+  /* Responsive friends-grid overrides are defined in `src/index.css`. Duplicate removed. */
 
   .friend-avatar {
     width: 45px;
@@ -2629,9 +1571,7 @@ body {
     font-size: 1.2rem;
   }
 
-  .movies-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  }
+  /* Responsive movies-grid overrides are defined in `src/index.css`. Duplicate removed. */
 
   .comparison-section {
     padding: 0.75rem;
@@ -2694,101 +1634,10 @@ body {
   }
 }
 
-/* Multi-page workflow styles - AI Generated: GitHub Copilot - 2025-08-16 */
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 200px);
-  animation: fadeIn 0.3s ease-in;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #2c3440;
-}
-
-.page-header h2 {
-  margin: 0;
-  color: #fff;
-  flex: 1;
-}
-
-.page-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Setup Page */
-.setup-page {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.setup-card {
-  background: #1a1f24;
-  border: 1px solid #2c3440;
-  border-radius: 12px;
-  padding: 3rem;
-  max-width: 500px;
-  width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.setup-card h2 {
-  color: #fff;
-  margin-bottom: 1rem;
-  font-size: 2rem;
-}
-
-.setup-card p {
-  color: #9ab;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
-}
-
-.form-group {
-  margin-bottom: 2rem;
-}
-
-.form-group label {
-  display: block;
-  color: #fff;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 1rem;
-  background: #0f1419;
-  border: 1px solid #2c3440;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #ff8000;
-  box-shadow: 0 0 0 2px rgba(255, 128, 0, 0.2);
-}
+/* Duplicate layout/setup/form styles removed — canonical definitions live in src/index.css */
 
 /* Quote rotation */
-.movie-quote-display {
-  opacity: 1;
-  transition: opacity 0.5s ease-in-out;
-}
-
-.movie-quote-display.changing {
-  opacity: 0.7;
-}
+/* movie-quote-display defined earlier; removed duplicate */
 
 /* Results Page */
 .results-page .page-header h2 {
