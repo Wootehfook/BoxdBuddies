@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useEffect, useReducer, useCallback } from "react";
+import { useEffect, useReducer, useCallback, useState, useRef } from "react";
 // AI Generated: GitHub Copilot - 2025-08-29T11:30:00Z
 // Performance Optimization: Component Splitting - Updated imports
 import "./App.css";
@@ -133,6 +133,34 @@ function App() {
     enhancementProgress,
     currentQuoteIndex,
   } = state;
+
+  // Local UI state for the attribution modal
+  const [showAttribution, setShowAttribution] = useState(false);
+  // Use a neutral HTMLElement ref to avoid requiring lib.dom in TS config
+  const modalRef = useRef<HTMLElement | null>(null);
+
+  // When modal opens, show the native dialog when available and move focus into it for accessibility
+  useEffect(() => {
+    const dialog = modalRef.current;
+    if (showAttribution && dialog) {
+      try {
+        // Cast to any because the DOM dialog methods aren't available in all TS configs
+        if (typeof (dialog as any).showModal === "function")
+          (dialog as any).showModal();
+      } catch {
+        // ignore if not supported
+      }
+      // Defer focus to allow dialog to be visible
+      setTimeout(() => dialog?.focus(), 0);
+    } else if (!showAttribution && dialog) {
+      try {
+        if (typeof (dialog as any).close === "function")
+          (dialog as any).close();
+      } catch {
+        // ignore
+      }
+    }
+  }, [showAttribution]);
 
   // Performance Optimization: Efficient Quote Rotation with useCallback
   const rotateQuote = useCallback(() => {
@@ -318,19 +346,19 @@ function App() {
       if (progress < 85) {
         // Use deterministic increment instead of random for smoother progress
         progress += 3 + progress / 20; // Gradual slowdown
+
+        let enhancementStatus = "Enhancing with TMDB data...";
+        if (progress < 25) enhancementStatus = "Scraping user watchlist...";
+        else if (progress < 50)
+          enhancementStatus = "Scraping friends' watchlists...";
+        else if (progress < 75) enhancementStatus = "Finding common movies...";
+
         dispatch({
           type: "SET_ENHANCEMENT_PROGRESS",
           payload: {
             completed: Math.round(progress),
             total: 100,
-            status:
-              progress < 25
-                ? "Scraping user watchlist..."
-                : progress < 50
-                  ? "Scraping friends' watchlists..."
-                  : progress < 75
-                    ? "Finding common movies..."
-                    : "Enhancing with TMDB data...",
+            status: enhancementStatus,
           },
         });
       }
@@ -472,47 +500,97 @@ function App() {
     <div className="container">
       <header className="app-header">
         <div className="header-content">
+          <div className="logo-wrapper left-logo" aria-hidden="true">
+            <img src="/buddio.svg" alt="Buddio" className="buddio-logo" />
+          </div>
           <div className="header-title">
-            <h1>
-              <img src="/buddio.svg" alt="Buddio" className="buddio-logo" />
-              <span className="app-title-text">BoxdBuddy</span>
-            </h1>
-            <p>Find movies all your friends want to watch</p>
+            <h1 className="app-title-text">BoxdBuddy</h1>
+            <p className="app-subtitle">
+              Find movies all your friends want to watch
+            </p>
+          </div>
+          <div className="logo-wrapper right-logo" aria-hidden="true">
+            <img
+              src="/buddio.svg"
+              alt="Buddio mirror"
+              className="buddio-logo mirrored"
+            />
           </div>
         </div>
       </header>
 
       <main className="app-main">{renderCurrentPage()}</main>
 
+      {/* Centered single link that opens a modal with data source & attribution info */}
       <footer className="attribution">
-        <p>
-          <strong>Data Sources & Attribution:</strong>
-        </p>
-        <p>
-          • Watchlist data is scraped from{" "}
-          <a
-            href="https://letterboxd.com"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="attribution-center">
+          <button
+            className="attribution-link"
+            onClick={() => setShowAttribution(true)}
+            aria-haspopup="dialog"
           >
-            Letterboxd.com
-          </a>
-          <br />• Movie metadata enhanced with data from{" "}
-          <a
-            href="https://www.themoviedb.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            The Movie Database (TMDB)
-          </a>
-          <br />• BoxdBuddy is not affiliated with Letterboxd or TMDB
-        </p>
-        <p>
-          <em>
-            This product uses the TMDB API but is not endorsed or certified by
-            TMDB.
-          </em>
-        </p>
+            Data sources & attribution
+          </button>
+        </div>
+
+        {showAttribution && (
+          <>
+            <button
+              className="modal-backdrop-button"
+              aria-label="Close data sources and attribution dialog"
+              onClick={() => setShowAttribution(false)}
+            />
+            <dialog
+              className="modal"
+              aria-labelledby="attribution-title"
+              aria-modal="true"
+              ref={(el) => {
+                modalRef.current = el as HTMLElement | null;
+              }}
+              tabIndex={-1}
+              onClose={() => setShowAttribution(false)}
+            >
+              <h3 id="attribution-title">Data Sources & Attribution</h3>
+              <div className="modal-body">
+                <p>
+                  • Watchlist data is scraped from{" "}
+                  <a
+                    href="https://letterboxd.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Letterboxd.com
+                  </a>
+                </p>
+                <p>
+                  • Movie metadata enhanced with data from{" "}
+                  <a
+                    href="https://www.themoviedb.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    The Movie Database (TMDB)
+                  </a>
+                </p>
+                <p>• BoxdBuddy is not affiliated with Letterboxd or TMDB</p>
+                <p>
+                  <em>
+                    This product uses the TMDB API but is not endorsed or
+                    certified by TMDB.
+                  </em>
+                </p>
+              </div>
+              <div className="modal-actions">
+                <button
+                  onClick={() => setShowAttribution(false)}
+                  className="btn btn-primary"
+                >
+                  Close
+                </button>
+              </div>
+            </dialog>
+          </>
+        )}
       </footer>
     </div>
   );

@@ -56,71 +56,63 @@ body {
   min-height: calc(100vh - 200px);
 }
 
-.app {
-  min-height: 100vh;
-  background-color: #14181c;
+.app-header .header-content {
   display: flex;
-  flex-direction: column;
-}
-
-/* Header */
-.header {
-  text-align: center;
-  padding: 2rem 1rem;
-  background-color: #14181c;
-  border-bottom: 1px solid #2c3440;
-}
-
-/* App Header */
-.app-header {
-  padding: 1rem 1rem; /* Reduced from 2rem to 1rem */
-  background-color: #14181c;
-  border-bottom: 1px solid #2c3440;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
+  justify-content: center; /* center the whole header group */
+  align-items: baseline; /* align bottoms of logo and text */
+  max-width: 650px; /* constrain to setup card width */
   margin: 0 auto;
+  gap: 1rem;
 }
 
-.header-title {
-  text-align: center;
-  flex: 1;
-}
-
-.app-header h1 {
-  color: #ff8000;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.app-header .logo-wrapper {
   display: flex;
-  align-items: center;
+  align-items: baseline; /* ensure img bottom aligns with subtitle */
+  width: 120px; /* reserve equal horizontal space for both logos */
   justify-content: center;
-  gap: 0.5rem;
-  position: relative;
 }
 
-/* Move the app title text closer to Buddio (120px closer) */
-.app-title-text {
-  transform: translateX(-6.25rem);
-}
-
-.buddio-logo {
-  height: 7.5rem;
+.app-header .buddio-logo {
+  height: 90px; /* increased ~15% to sit visually centered between title and subtitle */
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  /* AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z */
-  /* Keep Buddio in original position, adjust text positioning instead */
-  transform: translateX(-10.875rem);
+  transform: translateY(6px); /* shift down slightly to vertically center */
+}
+
+.app-header .buddio-logo.mirrored {
+  transform: scaleX(-1) translateY(6px); /* preserve mirror and same vertical shift */
+}
+
+/* Title block - keep the H1's visual height compact (approx 50px) */
+.app-header .header-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center title text within constrained header */
+  transform: translateY(
+    -30px
+  ); /* nudge title and subtitle upward while leaving logos in place */
+}
+
+.app-header .app-title-text {
+  font-size: 2.5rem;
+  line-height: 1;
+  height: 50px; /* constrain title block height */
+  display: flex;
+  align-items: flex-end; /* align text baseline towards bottom */
+  margin: 0;
+}
+
+.app-header .app-subtitle {
+  margin: 0;
+  color: #9ab;
+  font-size: 1.1rem;
 }
 
 .app-header p {
   color: #9ab;
-  font-size: 1.1rem;
-  margin: 0;
+  font-size: 1.1rem; /* restore original font size */
+  line-height: 1.2;
+  margin: 0; /* remove default paragraph margins to reduce blank space */
 }
 
 /* Pin Button Styles */
@@ -208,7 +200,7 @@ body {
 
   .app-header {
     position: relative;
-    padding-top: 1.5rem; /* Reduced from 3rem to 1.5rem */
+    padding-top: 0.75rem; /* was 1.5rem */
   }
 }
 
@@ -249,6 +241,81 @@ body {
   font-size: 0.8rem;
   margin: 0;
   opacity: 0.7;
+}
+
+/* Attribution link and modal */
+.attribution {
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+.attribution-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.attribution-link {
+  background: transparent;
+  border: none;
+  color: #9ab;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.95rem;
+}
+.attribution-link:hover {
+  color: #ffb86b;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #0f1419;
+  border: 1px solid #2c3440;
+  border-radius: 10px;
+  max-width: 680px;
+  width: calc(100% - 48px);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  color: #e5e7eb;
+  outline: none; /* managed by focus ring if needed */
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.modal-body p {
+  color: #9ab;
+  margin: 0.5rem 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 480px) {
+  .modal {
+    width: calc(100% - 24px);
+    padding: 1rem;
+  }
+  .modal-actions {
+    justify-content: center;
+  }
 }
 
 /* Main Content */
@@ -666,9 +733,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0 1.5rem 0;
+  padding: 0.5rem 0 1rem 0; /* Reduced vertical padding to save space */
   border-bottom: 1px solid #2c3440;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem; /* Reduced bottom margin */
   position: relative;
 }
 
