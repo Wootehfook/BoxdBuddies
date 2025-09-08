@@ -44,7 +44,7 @@ jobs:
 
       - name: "🔍 Check Unresolved Conversations"
         id: check
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             // GitHub Script provides: github, context, core
@@ -266,7 +266,7 @@ jobs:
           fetch-depth: 0
 
       - name: "🔧 Apply Automatic Fixes"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           AUTO_FIXABLE_JSON: ${{ needs['check-conversations'].outputs.auto_fixable }}
         with:
@@ -385,7 +385,7 @@ jobs:
       - name: "📊 Comment on PR"
         # Only post a PR comment on PR-related events and when unresolved items exist
         if: ${{ (github.event_name == 'pull_request' || startsWith(github.event_name, 'pull_request_')) && needs['check-conversations'].outputs.has_unresolved == 'true' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           AUTO_FIXABLE_JSON: ${{ needs['check-conversations'].outputs.auto_fixable }}
           MANUAL_REVIEW_JSON: ${{ needs['check-conversations'].outputs.manual_review }}
@@ -451,7 +451,7 @@ jobs:
             }
 
       - name: "🚨 Set Check Status"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           MANUAL_REVIEW_JSON: ${{ needs['check-conversations'].outputs.manual_review }}
         with:
