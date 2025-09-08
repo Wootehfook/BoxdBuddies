@@ -921,10 +921,15 @@ body {
 }
 
 .friends-grid {
+  /* Responsive friends grid: allow up to 3 columns, centered like the results grid */
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto 2rem auto;
+  /* Limit overall width to three friend columns plus gaps */
+  max-width: calc(3 * 320px + 2 * 1.5rem);
   padding: 0;
 }
 
@@ -1871,11 +1876,15 @@ body {
 }
 
 .movies-grid {
+  /* Allow up to 3 columns of movie cards (each up to 450px), center the grid like the friends list */
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 450px));
   gap: 2rem;
+  justify-content: center;
   width: 100%;
-  margin: 0;
+  margin: 0 auto;
+  /* Limit grid width to three 450px columns + gaps so it expands to at most 3 columns */
+  max-width: calc(3 * 450px + 2 * 2rem);
 }
 
 .movie-card {
@@ -1884,7 +1893,10 @@ body {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 720px;
+  /* Allow the card to fill its grid column up to 450px while remaining responsive */
+  max-width: 450px;
+  width: 100%;
+  height: 650px; /* Fixed height per request */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2087,12 +2099,12 @@ body {
   line-height: 1;
 }
 
-.friend-count-visual.friend-count-clickable {
+.friend-count-visual.friend.count-clickable {
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 
-.friend-count-visual.friend-count-clickable:hover {
+.friend-count-visual.friend.count-clickable:hover {
   opacity: 0.8;
 }
 
