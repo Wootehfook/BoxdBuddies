@@ -41,6 +41,7 @@ export default [
         clearInterval: "readonly",
         MouseEvent: "readonly",
         HTMLElement: "readonly",
+        HTMLDialogElement: "readonly",
       },
     },
     plugins: {

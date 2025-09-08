@@ -136,17 +136,15 @@ function App() {
 
   // Local UI state for the attribution modal
   const [showAttribution, setShowAttribution] = useState(false);
-  // Use a neutral HTMLElement ref to avoid requiring lib.dom in TS config
-  const modalRef = useRef<HTMLElement | null>(null);
+  // Use a typed HTMLDialogElement ref for safe dialog method access
+  const modalRef = useRef<HTMLDialogElement | null>(null);
 
   // When modal opens, show the native dialog when available and move focus into it for accessibility
   useEffect(() => {
     const dialog = modalRef.current;
     if (showAttribution && dialog) {
       try {
-        // Cast to any because the DOM dialog methods aren't available in all TS configs
-        if (typeof (dialog as any).showModal === "function")
-          (dialog as any).showModal();
+        if (typeof dialog.showModal === "function") dialog.showModal();
       } catch {
         // ignore if not supported
       }
@@ -154,8 +152,7 @@ function App() {
       setTimeout(() => dialog?.focus(), 0);
     } else if (!showAttribution && dialog) {
       try {
-        if (typeof (dialog as any).close === "function")
-          (dialog as any).close();
+        if (typeof dialog.close === "function") dialog.close();
       } catch {
         // ignore
       }
@@ -545,7 +542,7 @@ function App() {
               aria-labelledby="attribution-title"
               aria-modal="true"
               ref={(el) => {
-                modalRef.current = el as HTMLElement | null;
+                modalRef.current = el;
               }}
               tabIndex={-1}
               onClose={() => setShowAttribution(false)}

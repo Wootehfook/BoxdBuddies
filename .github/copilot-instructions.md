@@ -47,16 +47,17 @@ Letterboxd/TMDB integration
 Frontend touchpoints
 
 - API calls from `src/` services/components; strict TypeScript (no `any`); React Testing Library used under `src/__tests__/`
-- Attribution modal (frontend): implemented as a native `<dialog>` in `src/App.tsx` with a centered trigger button labeled `Data sources & attribution`.
+- Attribution modal (frontend): native `<dialog>` in `src/App.tsx` with a centered trigger button labeled `Data sources & attribution`.
   - Uses a backdrop button element (`.modal-backdrop-button`) for closing; dialog also has an internal Close button and `onClose` handler to sync React state.
   - Dialog has `aria-labelledby="attribution-title"` and `aria-modal="true"` for accessibility.
   - Focus is moved into the dialog on open; Escape and backdrop click close it.
+  - Types: dialog ref uses `useRef<HTMLDialogElement | null>` and `eslint.config.js` declares `HTMLDialogElement` as a global to satisfy ESLint.
 
 Testing patterns to mirror
 
 - Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`
 - Cache integration: `functions/__tests__/friends-cache-integration.test.ts`
-- Modal testing in jsdom: `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text (button vs heading) via `findAllByText` and tag checks, and closes via the backdrop button for determinism (jsdom may not expose `<dialog>` role reliably).
+- Modal testing in jsdom: `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text (button vs heading) via `findAllByText` and tag checks, and closes via the backdrop button for determinism (jsdom’s `<dialog>` role support can vary).
 
 MCP servers (optional)
 
