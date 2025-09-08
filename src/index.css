@@ -760,7 +760,8 @@ body {
 
 /* Results page specific content styling */
 .results-page .page-content {
-  max-width: 1400px;
+  /* Allow three 450px-wide cards plus gaps */
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 2rem;
 }
@@ -920,12 +921,17 @@ body {
   width: auto;
 }
 
-.friends-grid {
+.friends-page .friends-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Centered, responsive up-to-3-column grid using fixed track width */
+  grid-template-columns: repeat(auto-fit, 350px);
+  justify-content: center;
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 0;
+  max-width: calc(3 * 350px + 2 * 1.5rem);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .friend-card {
@@ -1616,6 +1622,7 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  -webkit-user-select: none; /* Safari */
   user-select: none;
 }
 
@@ -1870,25 +1877,31 @@ body {
   color: #fff;
 }
 
-.movies-grid {
+.results-page .movies-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* Centered, responsive up-to-3-column grid of 450px cards */
+  grid-template-columns: repeat(auto-fit, 450px);
+  justify-content: center;
   gap: 2rem;
   width: 100%;
-  margin: 0;
+  margin: 0 auto;
+  max-width: calc(3 * 450px + 2 * 2rem);
 }
 
-.movie-card {
+.results-page .movie-card {
   background: linear-gradient(135deg, #1a1f24 0%, #1c2128 100%);
   border: 1px solid #2c3440;
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 720px;
+  /* Fixed card height for 450x650 design */
+  height: 650px;
   position: relative;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: inherit;
+  text-decoration: none;
 }
 
 .movie-card::before {
@@ -1932,9 +1945,9 @@ body {
     0 0 0 1px rgba(255, 128, 0, 0.5);
 }
 
-/* Movie Poster Section - 75% of card space */
-.movie-poster-section {
-  height: 75%; /* 75% of card space for poster */
+/* Movie Poster Section - fixed height (poster area of 488px) */
+.results-page .movie-poster-section {
+  height: 488px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1979,12 +1992,13 @@ body {
   font-size: 3rem;
 }
 
-.movie-info {
+.results-page .movie-info {
   background: #1a1f24;
   padding: 0.75rem;
   border-radius: 0 0 12px 12px;
   border-top: 1px solid #2c3440;
-  height: 25%; /* 25% of card space for info */
+  /* Fixed info area height so poster+info = 650px total */
+  height: 162px;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -2219,6 +2233,13 @@ body {
     gap: 1rem;
   }
 
+  /* Ensure page-scoped grids also adapt on mobile */
+  .friends-page .friends-grid {
+    grid-template-columns: repeat(2, 1fr);
+    justify-content: center;
+    max-width: none;
+  }
+
   .friends-page .compare-actions {
     padding: 0.75rem 1rem;
   }
@@ -2254,6 +2275,12 @@ body {
 
   .movies-grid {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .results-page .movies-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    justify-content: center;
+    max-width: none;
   }
 
   .profile-card {
