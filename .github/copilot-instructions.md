@@ -47,11 +47,16 @@ Letterboxd/TMDB integration
 Frontend touchpoints
 
 - API calls from `src/` services/components; strict TypeScript (no `any`); React Testing Library used under `src/__tests__/`
+- Attribution modal (frontend): implemented as a native `<dialog>` in `src/App.tsx` with a centered trigger button labeled `Data sources & attribution`.
+  - Uses a backdrop button element (`.modal-backdrop-button`) for closing; dialog also has an internal Close button and `onClose` handler to sync React state.
+  - Dialog has `aria-labelledby="attribution-title"` and `aria-modal="true"` for accessibility.
+  - Focus is moved into the dialog on open; Escape and backdrop click close it.
 
 Testing patterns to mirror
 
 - Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`
 - Cache integration: `functions/__tests__/friends-cache-integration.test.ts`
+- Modal testing in jsdom: `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text (button vs heading) via `findAllByText` and tag checks, and closes via the backdrop button for determinism (jsdom may not expose `<dialog>` role reliably).
 
 MCP servers (optional)
 
@@ -84,3 +89,4 @@ Notes
 - Watchlist count cache schema has evolved; migration `003_create_watchlist_counts_cache.sql` shows the initial structure, but current code expects `(username, value, expires_at)` columns. Always prefer `cache/index.ts` helpers (`getCount`/`setCount`) over direct SQL to avoid schema mismatches.
 - Cache locks table: code expects `cache_locks (lock_key, expires_at)` for D1 locking fallback
 - If schema changes are required, add a new migration under `migrations/` rather than modifying existing ones
+- CSS: `.modal-backdrop` was removed; use `.modal-backdrop-button` for the interactive backdrop that covers the viewport behind the `<dialog>`.
