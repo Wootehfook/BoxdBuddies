@@ -1,57 +1,58 @@
 <!-- Copilot Instructions for BoxdBuddies repository -->
 
-# BoxdBuddies — AI Assistant Instructions (Concise)
+# BoxdBuddies — AI Assistant Guide
 
-Purpose: Give AI coding agents the concrete, project-specific context to be productive fast.
+Purpose: Equip AI coding agents with just-enough context to be productive immediately in this repo.
 
-Tech stack and layout
+## Architecture and layout
 
-- Frontend: React + TypeScript (Vite) in `src/`
-- Backend: Cloudflare Pages Functions in `functions/` with D1 (SQLite) cache; TMDB integration
-- Migrations live in `migrations/` (snake_case). Cloudflare config: `wrangler.toml`
+- Frontend: React + TypeScript via Vite in `src/` (strict TS, React Testing Library under `src/__tests__/`).
+- Backend: Cloudflare Pages Functions in `functions/` using D1 (SQLite) for caching and TMDB enrichment.
+- Migrations live in `migrations/` (snake_case). Cloudflare config: `wrangler.toml`.
+- Public assets in `public/`. Shared server utils in `functions/_lib/common.js`.
 
-Run, build, and checks
+Data flow (big picture)
 
-- Install/dev: `npm install` → `npm run dev` (Vite)
-- Typecheck/lint/tests: `npm run type-check`, `npm run lint`, `npm run test` (Vitest)
-- Pages Functions preview: `npm run cloudflare:dev` (serves built `dist/`)
+- User enters Letterboxd usernames in the web app → frontend calls Functions under `functions/letterboxd/*` and `functions/api/*`.
+- Server scrapes Letterboxd (pagination, polite throttling) and enriches with TMDB via `tmdbFetch`/`reduceMovie`.
+- Results and counts are cached in D1 (helpers in `functions/letterboxd/cache/index.ts`) and served back to the UI.
 
-Environment and secrets (never hardcode)
+## Run, build, and checks
 
-- D1 binding: `env.MOVIES_DB`
-- Secrets: `TMDB_API_KEY`, `ADMIN_SECRET`
-- Feature flag: `FEATURE_SERVER_WATCHLIST_CACHE` (`"false"` disables server cache)
-- Optional Redis: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- Install + dev: `npm install` → `npm run dev` (serves Vite dev server).
+- Typecheck/lint/tests: `npm run type-check`, `npm run lint`, `npm run test` (Vitest).
+- Pages Functions preview (serves built `dist/`): `npm run cloudflare:dev`.
+- Build: `npm run build` (TypeScript compile then Vite build).
 
-Backend patterns (see files)
+## Environment and secrets (never hardcode)
 
-- Logging: `debugLog(env, ...)` gated by `isDebug(env)` in `functions/_lib/common.js`
-- Endpoints export `onRequestGet|Post|Options` with CORS. Example: `functions/api/watchlist-count-updates/index.ts`
-- Auth: `Authorization` must match `env.ADMIN_SECRET` (accepts `Bearer <token>` or raw token)
-- Validation: parse `request.text()` → size ≤ 1KB → JSON → detailed field checks
-- Rate limiting: in-memory Map keyed by `CF-Connecting-IP` + username (see watchlist-count-updates)
-- DI hooks: expose setters like `setCacheFunctionForTesting` to swap implementations in tests
-- CORS helpers and JSON response helpers available in `common.js` (`corsHeaders`, `withCORS`, `jsonResponse`)
+- D1 binding: `env.MOVIES_DB`.
+- Secrets: `TMDB_API_KEY`, `ADMIN_SECRET`.
+- Feature flag: `FEATURE_SERVER_WATCHLIST_CACHE` (`"false"` disables server cache).
+- Optional Redis: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
-Data access (D1) conventions
+## Backend patterns and conventions
 
-- Use `.prepare(...).bind(...).first()` for reads; `.run()` for writes
-- Keep SQL identifiers snake_case; add new migrations rather than editing existing ones
-- Prefer cache helpers in `functions/letterboxd/cache/index.ts` (`getCount`/`setCount`, friends cache); avoid hand-crafted SQL for cache tables to bypass schema drift
+- Handlers export `onRequestGet|Post|Options` and use CORS helpers from `common.js` (`corsHeaders`, `withCORS`, `jsonResponse`). Example: `functions/api/watchlist-count-updates/index.ts`.
+- Auth: header `Authorization` must equal `env.ADMIN_SECRET` (supports `Bearer <token>` or raw token).
+- Validation: read `request.text()` → enforce ≤1KB → JSON.parse → explicit field checks with detailed errors.
+- Rate limiting: in-memory Map keyed by `CF-Connecting-IP` + username; see `watchlist-count-updates` tests.
+- Logging: `debugLog(env, ...)` gated by `isDebug(env)` in `functions/_lib/common.js`.
+- DI/testability: expose setters like `setCacheFunctionForTesting` to replace implementations in tests.
 
-Letterboxd/TMDB integration
+### D1 access
 
-- Scraping: `functions/letterboxd/[username].ts` paginates, regex-parses `data-film-slug`, throttles politely
-- TMDB helpers: `tmdbFetch`, `reduceMovie` in `functions/_lib/common.js`
+- Reads: `.prepare(sql).bind(...).first()`; writes: `.run()`.
+- SQL identifiers are snake_case; add new files in `migrations/` rather than editing existing ones.
+- Prefer cache helpers in `functions/letterboxd/cache/index.ts` (`getCount`/`setCount`, friends cache) to avoid schema drift.
+- Cache locks fallback expects `cache_locks (lock_key, expires_at)`.
 
-Frontend touchpoints
+### Letterboxd/TMDB integration
 
-- API calls from `src/` services/components; strict TypeScript (no `any`); React Testing Library used under `src/__tests__/`
-- Attribution modal (frontend): native `<dialog>` in `src/App.tsx` with a centered trigger button labeled `Data sources & attribution`.
-  - Uses a backdrop button element (`.modal-backdrop-button`) for closing; dialog also has an internal Close button and `onClose` handler to sync React state.
-  - Dialog has `aria-labelledby="attribution-title"` and `aria-modal="true"` for accessibility.
-  - Focus is moved into the dialog on open; Escape and backdrop click close it.
-  - Types: dialog ref uses `useRef<HTMLDialogElement | null>` and `eslint.config.js` declares `HTMLDialogElement` as a global to satisfy ESLint.
+- Scraping: `functions/letterboxd/[username].ts` paginates and regex-parses `data-film-slug`, with polite throttling.
+- TMDB: use `tmdbFetch` and `reduceMovie` from `functions/_lib/common.js`.
+
+## Frontend touchpoints and UI patterns
 
 CSS/layout conventions (web)
 
@@ -71,39 +72,43 @@ CSS/layout conventions (web)
 
 Testing patterns to mirror
 
-- Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`
-- Cache integration: `functions/__tests__/friends-cache-integration.test.ts`
-- Modal testing in jsdom: `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text (button vs heading) via `findAllByText` and tag checks, and closes via the backdrop button for determinism (jsdom’s `<dialog>` role support can vary).
 
-MCP servers (optional)
+- API calls originate from `src/` services/components. Types are strict; avoid `any`.
+- Attribution modal: native `<dialog>` in `src/App.tsx` with trigger button text `Data sources & attribution`.
+  - Backdrop close uses a button with class `.modal-backdrop-button`; dialog also has a Close button and `onClose` syncs React state.
+  - Accessibility: `aria-labelledby="attribution-title"`, `aria-modal="true"`; focus moves into dialog; Escape/backdrop close.
+  - Types: dialog ref is `useRef<HTMLDialogElement | null>`; `eslint.config.js` declares `HTMLDialogElement` global.
 
-- Purpose: augment AI workflows (planning, repo ops, code quality, docs). Categories used in scripts: primary `@memory`, `@github`, `@sequentialthinking`; secondary `@codacy`, `@playwright`, `@markitdown`.
-- Dev Container: MCP setup runs automatically via `.devcontainer/setup-with-mcp.sh` (postCreate). Manual start inside the container: `./.devcontainer/start-mcp-servers.sh`.
-- Status/maintenance (run in Linux shell: Dev Container/WSL/Git Bash):
-  - Status: `bash scripts/mcp-status.sh` (set `MCP_STATUS_VERBOSE=1` for details)
-  - Restart: `bash scripts/mcp-restart.sh`
-  - Stop: `bash scripts/mcp-stop.sh`
-- Notes: the scripts are light-weight helpers that check VS Code CLI and attempt basic setup. They are non-blocking in CI and safe to ignore locally if you don’t use MCP.
+### CSS/layout conventions
 
-When adding a new Function endpoint
+- Canonical stylesheet is `src/index.css`; `src/App.css` is legacy—avoid duplicating base/global rules.
+- Use page-scoped selectors to out-specificity legacy styles:
+  - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`
+  - Friends grid: `.friends-page .friends-grid { grid-template-columns: repeat(auto-fit, 350px); justify-content: center; gap: 1.5rem; max-width: calc(3 * 350px + 2 * 1.5rem); margin: 0 auto; }`
+  - Movie card sizing (results): `.results-page .movie-card { height: 650px; }`, `.results-page .movie-poster-section { height: 488px; }`, `.results-page .movie-info { height: 162px; }`.
+- Links on cards: `color: inherit; text-decoration: none`.
+- Mobile: keep grids centered; reduce columns with auto-fit/minmax; drop max-width caps under media queries.
+- Avoid non-standard selectors like `:has()`/`:contains`; drive state with classes (e.g., `.progress-item.completed`).
 
-1. Place under `functions/<area>/<name>/index.ts` (or `functions/<area>/index.ts`)
-2. Implement `onRequestOptions`, request handler(s), input validation, and auth (if needed)
-3. Use `debugLog`, add rate limiting for user-triggered endpoints, and DI hooks for testability
-4. Add unit tests in `functions/__tests__/` mirroring the examples above
+## Testing patterns to mirror
 
-AI attribution and style
+- Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`.
+- Cache integration coverage: `functions/__tests__/friends-cache-integration.test.ts` and `functions/__tests__/cache.unit.test.ts`.
+- Modal testing (jsdom): `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text via `findAllByText` + tag checks, closes via backdrop button.
 
-- Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`
-- Respect ~100 col width, strict TS, and ESLint/Prettier
+## Contributing here (AI-specific)
 
-References
+- Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`.
+- Respect ~100 col width, TypeScript strictness, ESLint/Prettier. Prefer minimal, focused diffs.
+- When adding a new Function endpoint:
+  1. Place under `functions/<area>/<name>/index.ts` (or `functions/<area>/index.ts`).
+  2. Implement `onRequestOptions`, handler(s), validation, and auth (if needed).
+  3. Use `debugLog`, add rate limiting for user-triggered endpoints, and DI hooks for tests.
+  4. Add unit tests in `functions/__tests__/` mirroring the examples above.
 
-- `README.md` (overview and run scripts), `package.json` (scripts), `functions/_lib/common.js` (shared utils)
+References: `README.md` (run scripts), `package.json` (scripts), `functions/_lib/common.js` (utils), `docs/server-watchlist-cache-design.md` (design details).
 
 Notes
 
-- Watchlist count cache schema has evolved; migration `003_create_watchlist_counts_cache.sql` shows the initial structure, but current code expects `(username, value, expires_at)` columns. Always prefer `cache/index.ts` helpers (`getCount`/`setCount`) over direct SQL to avoid schema mismatches.
-- Cache locks table: code expects `cache_locks (lock_key, expires_at)` for D1 locking fallback
-- If schema changes are required, add a new migration under `migrations/` rather than modifying existing ones
-- CSS: `.modal-backdrop` was removed; use `.modal-backdrop-button` for the interactive backdrop that covers the viewport behind the `<dialog>`.
+- Watchlist cache schema evolved; prefer helpers over direct SQL. Current expectations: `(username, value, expires_at)` for counts.
+- CSS: `.modal-backdrop` was removed; use `.modal-backdrop-button` to cover/close behind the `<dialog>`.

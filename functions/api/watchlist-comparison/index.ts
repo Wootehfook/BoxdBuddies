@@ -103,7 +103,8 @@ async function scrapeLetterboxdWatchlist(
           pageMovieCount++;
 
           // Extract title and year from "Title Year" format
-          const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
+          const yearRegex = /^(.+?)\s+(\d{4})$/;
+          const yearMatch = yearRegex.exec(titleWithYear);
           if (yearMatch) {
             allMovies.push({
               title: yearMatch[1].trim(),
@@ -338,118 +339,85 @@ async function enhanceWithTMDBData(
     source,
   });
 
-  const fetchTmdbFromApi = async (m: CommonMovie): Promise<Movie | null> => {
-    try {
-      if (!env.TMDB_API_KEY) {
-        console.error("TMDB_API_KEY is not configured in environment");
-        return null;
-      }
+  // D1-only matching with multiple strategies (no TMDB API fallback)
+  const findTmdbRowForMovie = async (
+    m: CommonMovie
+  ): Promise<Record<string, unknown> | null> => {
+    const y = Number.isFinite(m.year) ? m.year : 0;
+    const t = m.title;
 
-      const qs: string[] = [];
-      const pushQS = (k: string, v: string | number | boolean | undefined) => {
-        if (v === undefined) return;
-        qs.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
-      };
-      pushQS("api_key", env.TMDB_API_KEY);
-      pushQS("query", m.title);
-      pushQS("include_adult", false);
-      pushQS("language", "en-US");
-      pushQS("page", 1);
-      if (m.year && m.year > 0) {
-        pushQS("year", m.year);
-        pushQS("primary_release_year", m.year);
-      }
-      const url = `https://api.themoviedb.org/3/search/movie?${qs.join("&")}`;
-      const res = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) {
-        console.error("TMDB search failed:", res.status, res.statusText);
-        return null;
-      }
-      const data = (await res.json()) as {
-        results?: Array<Record<string, unknown>>;
-      };
-
-      const results = (data.results || []) as any[];
-      if (results.length === 0) return null;
-
-      // Prefer exact year/title matches if possible
-      const wantYear = m.year || 0;
-      const normWant = normalizeTitle(m.title);
-      const scored = results.map((r) => {
-        const ry = parseYear(r.release_date);
-        const title = normalizeTitle(r.title || r.original_title || "");
-        let score = 0;
-        if (wantYear && ry === wantYear) score += 3;
-        if (title === normWant) score += 3;
-        // small bonus for close titles
-        if (!score && title.includes(normWant)) score += 1;
-        return { r, score, pop: Number(r.popularity || 0) };
-      });
-
-      scored.sort((a, b) => {
-        if (a.score !== b.score) return b.score - a.score;
-        return b.pop - a.pop;
-      });
-
-      const best = scored[0]?.r;
-      if (!best) return null;
-
-      // Fetch details to enrich with runtime, genres, and director
-      const detailQs: string[] = [];
-      const pushDetail = (
-        k: string,
-        v: string | number | boolean | undefined
-      ) => {
-        if (v === undefined) return;
-        detailQs.push(
-          `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`
-        );
-      };
-      pushDetail("api_key", env.TMDB_API_KEY);
-      pushDetail("language", "en-US");
-      pushDetail("append_to_response", "credits");
-      const detailUrl = `https://api.themoviedb.org/3/movie/${best.id}?${detailQs.join("&")}`;
-      const detRes = await fetch(detailUrl, {
-        headers: { Accept: "application/json" },
-      });
-      let enriched: any = best;
-      if (detRes.ok) {
-        const det = (await detRes.json()) as any;
-        enriched = {
-          ...best,
-          runtime: det.runtime,
-          genres: Array.isArray(det.genres)
-            ? det.genres
-                .map((g: any) => (typeof g.name === "string" ? g.name : ""))
-                .filter(Boolean)
-            : undefined,
-          // Extract director from crew
-          director: Array.isArray(det.credits?.crew)
-            ? det.credits.crew.find((c: any) => c.job === "Director")?.name ||
-              undefined
-            : undefined,
-        };
-      }
-
-      const mapped = mapTmdbRowToMovie(enriched, m, "tmdb_api");
-      if (Array.isArray(enriched.genres)) {
-        mapped.genres = enriched.genres as string[];
-      }
-      if (typeof enriched.runtime === "number") {
-        mapped.runtime = enriched.runtime as number;
-      }
-      if (typeof enriched.director === "string") {
-        mapped.director = enriched.director as string;
-      }
-      return mapped;
-    } catch (e) {
-      console.error("TMDB API error for", m.title, e);
-      return null;
+    // 1) Exact (case-insensitive) with year tolerance
+    const exactWithYear = await env.MOVIES_DB.prepare(
+      `SELECT * FROM tmdb_movies
+       WHERE (LOWER(title) = LOWER(?) OR LOWER(original_title) = LOWER(?))
+         AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
+       ORDER BY popularity DESC
+       LIMIT 1`
+    )
+      .bind(t, t, y, y)
+      .all();
+    if (exactWithYear.results && exactWithYear.results.length > 0) {
+      return exactWithYear.results[0] as any;
     }
+
+    // 2) LIKE with year tolerance
+    const likeWithYear = await env.MOVIES_DB.prepare(
+      `SELECT * FROM tmdb_movies
+       WHERE (title LIKE ? OR original_title LIKE ?)
+         AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
+       ORDER BY popularity DESC
+       LIMIT 1`
+    )
+      .bind(`%${t}%`, `%${t}%`, y, y)
+      .all();
+    if (likeWithYear.results && likeWithYear.results.length > 0) {
+      return likeWithYear.results[0] as any;
+    }
+
+    // 3) Exact without year
+    const exactNoYear = await env.MOVIES_DB.prepare(
+      `SELECT * FROM tmdb_movies
+       WHERE LOWER(title) = LOWER(?) OR LOWER(original_title) = LOWER(?)
+       ORDER BY popularity DESC
+       LIMIT 1`
+    )
+      .bind(t, t)
+      .all();
+    if (exactNoYear.results && exactNoYear.results.length > 0) {
+      return exactNoYear.results[0] as any;
+    }
+
+    // 4) LIKE without year + simple scoring by normalized title and year proximity
+    const likeNoYear = await env.MOVIES_DB.prepare(
+      `SELECT * FROM tmdb_movies
+       WHERE title LIKE ? OR original_title LIKE ?
+       ORDER BY popularity DESC
+       LIMIT 5`
+    )
+      .bind(`%${t}%`, `%${t}%`)
+      .all();
+    const candidates = (likeNoYear.results || []) as any[];
+    if (candidates.length > 0) {
+      const want = normalizeTitle(t);
+      const wantYear = y || 0;
+      let best: any = null;
+      let bestScore = -Infinity;
+      for (const c of candidates) {
+        const ct = normalizeTitle(String(c.title || c.original_title || ""));
+        const cy = Number(c.year || parseYear(c.release_date) || 0);
+        let score = 0;
+        if (ct === want) score += 5;
+        if (!score && ct.includes(want)) score += 2;
+        if (wantYear && cy && Math.abs(cy - wantYear) <= 1) score += 2;
+        score += Number(c.popularity || 0) / 100;
+        if (score > bestScore) {
+          bestScore = score;
+          best = c;
+        }
+      }
+      if (best) return best;
+    }
+    return null;
   };
 
   // Process movies in batches to avoid overwhelming the database
@@ -459,36 +427,24 @@ async function enhanceWithTMDBData(
     // Create batch queries for parallel execution
     const batchPromises = batch.map(async (movie) => {
       try {
-        // Prepare the query for this movie
-        const stmt = env.MOVIES_DB.prepare(
-          `SELECT * FROM tmdb_movies 
-           WHERE (title LIKE ? OR original_title LIKE ?) 
-           AND (year = ? OR year IS NULL OR ? = 0)
-           ORDER BY popularity DESC
-           LIMIT 1`
-        ).bind(`%${movie.title}%`, `%${movie.title}%`, movie.year, movie.year);
-
-        const result = await stmt.all();
-
-        if (result.results && result.results.length > 0) {
-          const tmdbMovie = result.results[0] as any;
-          return mapTmdbRowToMovie(tmdbMovie, movie, "db");
-        } else {
-          // Try TMDB API as fallback
-          const fromApi = await fetchTmdbFromApi(movie);
-          if (fromApi) return fromApi;
-
-          // Final fallback if API also fails
-          return {
-            id: Math.floor(Math.random() * 1_000_000),
-            title: movie.title,
-            year: movie.year,
-            letterboxdSlug: movie.slug,
-            friendCount: movie.friendCount,
-            friendList: movie.friendList,
-            source: "fallback",
-          };
+        const tmdbRow = await findTmdbRowForMovie(movie);
+        if (tmdbRow) {
+          return mapTmdbRowToMovie(tmdbRow, movie, "db");
         }
+        // D1-only per requirements: no TMDB API fallback
+        debugLog(
+          env,
+          `D1 enrichment miss for "${movie.title}" (${movie.year}); returning minimal fallback`
+        );
+        return {
+          id: Math.floor(Math.random() * 1_000_000),
+          title: movie.title,
+          year: movie.year,
+          letterboxdSlug: movie.slug,
+          friendCount: movie.friendCount,
+          friendList: movie.friendList,
+          source: "fallback",
+        };
       } catch (error) {
         console.error(`Error enhancing movie "${movie.title}":`, error);
         // Return basic movie data as fallback
@@ -719,6 +675,16 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
     );
 
+    // Adaptive caching:
+    // - If all results are enriched from DB (source === 'db'), allow a short cache.
+    // - If any fallback entries exist (e.g., missing enrichment), disable caching to avoid persisting placeholders.
+    const allFromDb =
+      enhancedMovies.length > 0 &&
+      enhancedMovies.every((m) => (m.source || "db") === "db");
+    const cacheHeader = allFromDb
+      ? "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
+      : "no-store, no-cache, must-revalidate";
+
     return Response.json(
       {
         movies: enhancedMovies,
@@ -732,7 +698,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       },
       {
         headers: {
-          "Cache-Control": "public, max-age=300",
+          "Cache-Control": cacheHeader,
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",

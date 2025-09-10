@@ -60,7 +60,8 @@ async function scrapeLetterboxdWatchlist(
       const titleWithYear = match[2];
 
       // Extract title and year from "Title Year" format
-      const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
+      const yearRegex = /^(.+?)\s+(\d{4})$/;
+      const yearMatch = yearRegex.exec(titleWithYear);
       if (yearMatch) {
         movies.push({
           title: yearMatch[1].trim(),
@@ -212,19 +213,21 @@ async function enhanceWithTMDBData(
     // Create batch queries for parallel execution
     const batchPromises = batch.map(async (movie) => {
       try {
-        // Prepare the query for this movie
+        // Use a tolerant year matcher: accept exact year, ±1 year, or any year when unknown (0)
+        // This avoids false negatives when Letterboxd and TMDB differ by release year (festival vs. wide release).
+        const y = Number.isFinite(movie.year) ? movie.year : 0;
         const stmt = env.MOVIES_DB.prepare(
-          `SELECT * FROM tmdb_movies 
-           WHERE (title LIKE ? OR original_title LIKE ?) 
-           AND (year = ? OR year IS NULL OR ? = 0)
+          `SELECT * FROM tmdb_movies
+           WHERE (title LIKE ? OR original_title LIKE ?)
+             AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
            ORDER BY popularity DESC
            LIMIT 1`
-        ).bind(`%${movie.title}%`, `%${movie.title}%`, movie.year, movie.year);
+        ).bind(`%${movie.title}%`, `%${movie.title}%`, y, y);
 
         const result = await stmt.all();
 
         if (result.results && result.results.length > 0) {
-          const tmdbMovie = result.results[0] as any;
+          const tmdbMovie: any = result.results[0];
           return {
             id: tmdbMovie.id,
             title: tmdbMovie.title,
@@ -240,6 +243,10 @@ async function enhanceWithTMDBData(
           };
         } else {
           // Fallback if not found in database
+          debugLog(
+            env,
+            `No TMDB match in D1 for "${movie.title}" (${movie.year}); returning placeholder`
+          );
           return {
             id: Math.floor(Math.random() * 1000000),
             title: movie.title,
