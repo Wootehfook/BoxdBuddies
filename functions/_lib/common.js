@@ -2,7 +2,6 @@
 // Enhanced utilities for Cloudflare Pages Functions with CORS and dual caching
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
 export const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -64,13 +63,16 @@ export async function tmdbFetch(path, env, init) {
 }
 
 export function reduceMovie(m) {
+  // Normalize movie objects for transport to clients.
+  // Contract: `poster_path` is returned as a TMDB relative path (e.g. `/abc123.jpg`) or `null`.
+  // Frontends should prefix with the desired TMDB image base/size when building image URLs.
+  // Returning the relative path keeps the data small and lets consumers choose an image size.
   return {
     id: m.id,
     title: m.title,
     year: m.release_date ? new Date(m.release_date).getFullYear() : null,
-  // AI Generated: GitHub Copilot - 2025-08-18
-  // Prefer explicit null for absent values to keep JSON shape stable
-  poster_path: m.poster_path ? `${TMDB_IMAGE_BASE}${m.poster_path}` : null,
+    // Prefer explicit null for absent values to keep JSON shape stable
+    poster_path: m.poster_path ? m.poster_path : null,
     overview: m.overview,
     rating: m.vote_average,
     runtime: m.runtime,

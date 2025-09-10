@@ -1992,6 +1992,13 @@ body {
   font-size: 3rem;
 }
 
+/* Poster image helper used by ResultsPage */
+.movie-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .results-page .movie-info {
   background: #1a1f24;
   padding: 0.75rem;
@@ -2196,6 +2203,88 @@ body {
   backdrop-filter: blur(4px);
   display: inline-block;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Per-user color classes (matches src/utils.getUserColors palette) */
+.friend-color-0 {
+  border-color: #ff6b6b;
+  background-color: #ff6b6b33;
+}
+.friend-color-1 {
+  border-color: #4ecdc4;
+  background-color: #4ecdc433;
+}
+.friend-color-2 {
+  border-color: #45b7d1;
+  background-color: #45b7d133;
+}
+.friend-color-3 {
+  border-color: #96ceb4;
+  background-color: #96ceb433;
+}
+.friend-color-4 {
+  border-color: #feca57;
+  background-color: #feca5733;
+}
+.friend-color-5 {
+  border-color: #ff9ff3;
+  background-color: #ff9ff333;
+}
+.friend-color-6 {
+  border-color: #54a0ff;
+  background-color: #54a0ff33;
+}
+.friend-color-7 {
+  border-color: #5f27cd;
+  background-color: #5f27cd33;
+}
+.friend-color-8 {
+  border-color: #00d2d3;
+  background-color: #00d2d333;
+}
+.friend-color-9 {
+  border-color: #ff9f43;
+  background-color: #ff9f4333;
+}
+.friend-color-10 {
+  border-color: #1dd1a1;
+  background-color: #1dd1a133;
+}
+.friend-color-11 {
+  border-color: #fd79a8;
+  background-color: #fd79a833;
+}
+.friend-color-12 {
+  border-color: #6c5ce7;
+  background-color: #6c5ce733;
+}
+.friend-color-13 {
+  border-color: #74b9ff;
+  background-color: #74b9ff33;
+}
+.friend-color-14 {
+  border-color: #a29bfe;
+  background-color: #a29bfe33;
+}
+.friend-color-15 {
+  border-color: #1e90ff;
+  background-color: #1e90ff33;
+}
+.friend-color-16 {
+  border-color: #ff7675;
+  background-color: #ff767533;
+}
+.friend-color-17 {
+  border-color: #74c0fc;
+  background-color: #74c0fc33;
+}
+.friend-color-18 {
+  border-color: #82ca9d;
+  background-color: #82ca9d33;
+}
+.friend-color-19 {
+  border-color: #f8b500;
+  background-color: #f8b50033;
 }
 
 .letterboxd-link {
