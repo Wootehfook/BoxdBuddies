@@ -675,6 +675,16 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
     );
 
+    // Adaptive caching:
+    // - If all results are enriched from DB (source === 'db'), allow a short cache.
+    // - If any fallback entries exist (e.g., missing enrichment), disable caching to avoid persisting placeholders.
+    const allFromDb =
+      enhancedMovies.length > 0 &&
+      enhancedMovies.every((m) => (m.source || "db") === "db");
+    const cacheHeader = allFromDb
+      ? "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
+      : "no-store, no-cache, must-revalidate";
+
     return Response.json(
       {
         movies: enhancedMovies,
@@ -688,7 +698,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "Cache-Control": cacheHeader,
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",
