@@ -51,6 +51,7 @@ let requestCount = 0;
 let windowStart = Date.now();
 const MAX_REQUESTS_PER_WINDOW = 35; // Leave some buffer
 const WINDOW_MS = 10000;
+const TMDB_REQUEST_TIMEOUT_MS = 8000; // Abort slow TMDB requests to keep within CF time limits
 
 async function rateLimit() {
   const now = Date.now();
@@ -76,9 +77,30 @@ async function rateLimit() {
 async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
   await rateLimit();
 
-  const response = await fetch(
-    `https://api.themoviedb.org/3${url}${url.includes("?") ? "&" : "?"}api_key=${apiKey}`
+  const ControllerCtor = (globalThis as any).AbortController as
+    | (new () => { abort: (reason?: any) => void; signal: any })
+    | undefined;
+  const controller = ControllerCtor ? new ControllerCtor() : undefined;
+  const timeout = setTimeout(
+    () => controller?.abort("timeout"),
+    TMDB_REQUEST_TIMEOUT_MS
   );
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://api.themoviedb.org/3${url}${url.includes("?") ? "&" : "?"}api_key=${apiKey}`,
+      controller ? { signal: (controller as any).signal } : undefined
+    );
+  } catch (e) {
+    clearTimeout(timeout);
+    throw new Error(
+      e instanceof Error && e.name === "AbortError"
+        ? `TMDB API timeout after ${TMDB_REQUEST_TIMEOUT_MS}ms for ${url}`
+        : `TMDB API fetch error for ${url}: ${String(e)}`
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -122,6 +144,8 @@ async function syncTMDBMoviesByID(
   let errorCount = 0;
   let currentId = startMovieId;
   let highestProcessedId = startMovieId - 1;
+  const startTime = Date.now();
+  const TIME_BUDGET_MS = 25000; // Try to return within ~25s to avoid CF 30s cap
 
   // Get genre list first
   const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
@@ -133,6 +157,13 @@ async function syncTMDBMoviesByID(
   debugLog(undefined, `📚 Loaded ${genres.size} genres`);
 
   while (syncedCount < maxMovies) {
+    if (Date.now() - startTime > TIME_BUDGET_MS) {
+      debugLog(
+        undefined,
+        "⏱️ Time budget reached, returning early to avoid timeout"
+      );
+      break;
+    }
     try {
       debugLog(undefined, `🎯 Processing movie ID ${currentId}`);
 
@@ -213,6 +244,18 @@ async function syncTMDBMoviesByID(
           undefined,
           `⏭️ Movie ID ${currentId} not found, continuing...`
         );
+        // Treat missing IDs as processed for purposes of advancing the resume pointer,
+        // so subsequent runs do not repeatedly retry the same gap.
+        highestProcessedId = currentId;
+      } else if (
+        movieError instanceof Error &&
+        movieError.message.includes("timeout")
+      ) {
+        debugLog(
+          undefined,
+          `⏱️ TMDB request timeout for movie ID ${currentId}, skipping`
+        );
+        highestProcessedId = currentId;
       }
     }
 

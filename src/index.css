@@ -2005,6 +2005,55 @@ body {
   overflow: hidden;
 }
 
+/* AI Generated: GitHub Copilot - 2025-09-08 */
+/* Dynamic responsive movie cards (200x450 → 400x900) with up to 4 columns */
+.results-page.dynamic-cards {
+  /* Tunable vars */
+  --grid-gap: 2rem;
+}
+
+.results-page.dynamic-cards .movies-grid {
+  display: grid;
+  /* Centered, responsive up-to-4-column grid using fixed track width bounds */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 400px));
+  justify-content: center;
+  gap: var(--grid-gap);
+  width: 100%;
+  margin: 0 auto;
+  max-width: calc(4 * 400px + 3 * var(--grid-gap));
+}
+
+.results-page.dynamic-cards .movie-card {
+  width: 100%; /* fill grid track width (200–400px) */
+  aspect-ratio: 400 / 900; /* enforces 2.25 height:width ratio */
+  justify-self: center;
+}
+
+.results-page.dynamic-cards .movie-poster-section {
+  height: 66.666%; /* 6/9 of card height */
+}
+
+.results-page.dynamic-cards .movie-info {
+  height: 33.333%; /* 3/9 of card height (includes friends area) */
+  display: flex;
+  flex-direction: column;
+}
+
+.results-page.dynamic-cards .movie-friends {
+  flex: 0 0 33.333%; /* 1/3 of .movie-info = 1/9 of card */
+}
+
+/* Mobile tweaks: tighter gaps and width bias to viewport */
+@media (max-width: 560px) {
+  .results-page.dynamic-cards {
+    --grid-gap: 1rem;
+    --card-w: clamp(200px, 92vw, 400px);
+  }
+  .results-page.dynamic-cards .movies-grid {
+    max-width: 100%;
+  }
+}
+
 .movie-content {
   flex: 1;
   display: flex;
@@ -2012,7 +2061,7 @@ body {
   gap: 0.125rem;
 }
 
-.movie-title-section {
+.results-page .movie-title-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -2020,7 +2069,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.movie-title-section h3 {
+.results-page .movie-title-section h3 {
   color: #fff;
   font-size: 1.25rem;
   margin: 0;
@@ -2061,15 +2110,11 @@ body {
   opacity: 1; /* Ensure full opacity for rating stars */
 }
 
-.movie-friends {
+/* Movie Friend Count Visual */
+.results-page .movie-friends {
   margin-top: auto;
   padding-top: 0.25rem;
   border-top: 1px solid #2c3440;
-}
-
-/* Movie Friend Count Visual */
-.movie-friends {
-  margin-top: 0.5rem;
 }
 
 .friend-count-visual {
@@ -2086,13 +2131,13 @@ body {
   flex-wrap: wrap;
 }
 
-.friend-list-expanded {
+.results-page .friend-list-expanded {
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
 }
 
-.friend-tag {
+.results-page .friend-tag {
   font-size: 0.6rem;
   padding: 0.125rem 0.25rem;
   border-radius: 4px;
@@ -2198,12 +2243,7 @@ body {
     padding: 1.5rem;
   }
 
-  /* Responsive page header */
-  .page-header {
-    padding: 0.25rem 0 0.5rem 0;
-    margin-bottom: 1rem;
-    min-height: 2.5rem;
-  }
+  /* Responsive page header — consolidated below in this block */
 
   .page-title {
     font-size: 1.25rem;
@@ -2425,7 +2465,7 @@ body {
   }
 }
 
-.progress-text {
+.progress-container .progress-text {
   color: #9ab;
   font-size: 0.875rem;
   text-align: center;

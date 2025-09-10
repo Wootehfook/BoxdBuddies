@@ -24,7 +24,7 @@ import type { ResultsPageProps } from "../types";
 
 export function ResultsPage({ movies, onBack }: ResultsPageProps) {
   return (
-    <section className="page results-page">
+    <section className="page results-page dynamic-cards">
       <div className="page-header">
         <button onClick={onBack} className="btn btn-secondary btn-icon">
           <svg
