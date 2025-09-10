@@ -54,6 +54,25 @@ Data flow (big picture)
 
 ## Frontend touchpoints and UI patterns
 
+CSS/layout conventions (web)
+
+- Canonical stylesheet is `src/index.css`; `src/App.css` is legacy and should not duplicate base/global rules. Prefer updating `index.css` and use page-scoped selectors to avoid overrides.
+- Centered grid pattern (up to 3 columns):
+  - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`
+  - Friends grid: `.friends-page .friends-grid { grid-template-columns: repeat(auto-fit, 350px); justify-content: center; gap: 1.5rem; max-width: calc(3 * 350px + 2 * 1.5rem); margin: 0 auto; }`
+  - Use page-scoped selectors (`.results-page`, `.friends-page`) to out-specificity any legacy `.movies-grid` rules in `App.css`.
+- Movie card sizing (Results):
+  - `.results-page .movie-card { height: 650px; }`
+  - `.results-page .movie-poster-section { height: 488px; }`
+  - `.results-page .movie-info { height: 162px; }`
+  - Ensure card links inherit color and have no underline (`color: inherit; text-decoration: none`).
+- Mobile overrides: for narrow viewports, both grids fall back to auto-fit/minmax or 1–2 columns; keep them centered and remove max-width caps under media queries.
+- Avoid non-standard CSS selectors like `:has()` or `:contains`. Drive state with classes (e.g., `.progress-item.completed`).
+- Keep global dark theme and base interactive styles (e.g., friend card hover/selected) in `index.css` to prevent regressions if legacy files change.
+
+Testing patterns to mirror
+
+
 - API calls originate from `src/` services/components. Types are strict; avoid `any`.
 - Attribution modal: native `<dialog>` in `src/App.tsx` with trigger button text `Data sources & attribution`.
   - Backdrop close uses a button with class `.modal-backdrop-button`; dialog also has a Close button and `onClose` syncs React state.
