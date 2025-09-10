@@ -2,14 +2,15 @@
 // Test endpoint: Robust D1-only movie lookup to validate enrichment matching
 
 import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+import { debugLog } from "../_lib/common";
 type Env = CacheEnv;
 
 function normalizeTitle(t: string) {
   return t
     .toLowerCase()
     .trim()
-    .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "")
-    .replace(/[:.,!\-–—()\[\]{}]/g, " ")
+    .normalize("NFKD")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ");
 }
 
@@ -123,7 +124,9 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       headers: { "Content-Type": "application/json", ...cors },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    // Avoid exposing stack traces; log internally when debug is enabled
+    debugLog(context.env as any, "movie-lookup error", err);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...cors },
     });

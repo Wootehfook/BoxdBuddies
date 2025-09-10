@@ -92,7 +92,6 @@ async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
       controller ? { signal: (controller as any).signal } : undefined
     );
   } catch (e) {
-    clearTimeout(timeout);
     throw new Error(
       e instanceof Error && e.name === "AbortError"
         ? `TMDB API timeout after ${TMDB_REQUEST_TIMEOUT_MS}ms for ${url}`

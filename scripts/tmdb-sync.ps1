@@ -92,6 +92,32 @@ function Invoke-EnsureFunctionsReady {
     return $false
 }
 
+# Helper: Extract the first matching property value from an unknown JSON shape
+function Get-FirstPropertyValue {
+    param(
+        [Parameter(Mandatory = $true)] $obj,
+        [string[]] $candidateNames
+    )
+    if ($null -eq $obj) { return $null }
+    if ($obj -is [System.Array]) {
+        foreach ($item in $obj) {
+            $val = Get-FirstPropertyValue -obj $item -candidateNames $candidateNames
+            if ($null -ne $val) { return $val }
+        }
+        return $null
+    }
+    $props = @()
+    try { $props = $obj.PSObject.Properties } catch { $props = @() }
+    foreach ($name in $candidateNames) {
+        if ($props.Name -contains $name) { return ($obj.$name) }
+    }
+    foreach ($p in $props) {
+        $val = Get-FirstPropertyValue -obj $p.Value -candidateNames $candidateNames
+        if ($null -ne $val) { return $val }
+    }
+    return $null
+}
+
 Write-Host ""
 Write-Host "Available sync options:" -ForegroundColor Yellow
 Write-Host "1. 🔄 Full sync (50 batches, 500 pages, ~10,000 movies, ~20 mins)" -ForegroundColor White
@@ -352,32 +378,6 @@ switch ($choice) {
             }
         }
 
-        # Extract the scalar value regardless of JSON shape (wrangler can nest results)
-        function Get-FirstPropertyValue {
-            param(
-                [Parameter(Mandatory = $true)] $obj,
-                [string[]] $candidateNames
-            )
-            if ($null -eq $obj) { return $null }
-            if ($obj -is [System.Array]) {
-                foreach ($item in $obj) {
-                    $val = Get-FirstPropertyValue -obj $item -candidateNames $candidateNames
-                    if ($null -ne $val) { return $val }
-                }
-                return $null
-            }
-            $props = @()
-            try { $props = $obj.PSObject.Properties } catch { $props = @() }
-            foreach ($name in $candidateNames) {
-                if ($props.Name -contains $name) { return ($obj.$name) }
-            }
-            foreach ($p in $props) {
-                $val = Get-FirstPropertyValue -obj $p.Value -candidateNames $candidateNames
-                if ($null -ne $val) { return $val }
-            }
-            return $null
-        }
-
         $highestSynced = Get-FirstPropertyValue -obj $lastIdResult -candidateNames @('highest_movie_id_synced', 'value')
 
         # Also capture current total movie count before sync for status reporting
@@ -533,31 +533,6 @@ switch ($choice) {
     "10" {
         Write-Host "📊 Checking sync status..." -ForegroundColor Green
         Write-Host "Querying database for sync metadata..." -ForegroundColor Blue
-
-        function Get-FirstPropertyValue {
-            param(
-                [Parameter(Mandatory = $true)] $obj,
-                [string[]] $candidateNames
-            )
-            if ($null -eq $obj) { return $null }
-            if ($obj -is [System.Array]) {
-                foreach ($item in $obj) {
-                    $val = Get-FirstPropertyValue -obj $item -candidateNames $candidateNames
-                    if ($null -ne $val) { return $val }
-                }
-                return $null
-            }
-            $props = @()
-            try { $props = $obj.PSObject.Properties } catch { $props = @() }
-            foreach ($name in $candidateNames) {
-                if ($props.Name -contains $name) { return ($obj.$name) }
-            }
-            foreach ($p in $props) {
-                $val = Get-FirstPropertyValue -obj $p.Value -candidateNames $candidateNames
-                if ($null -ne $val) { return $val }
-            }
-            return $null
-        }
 
         # Total movies
         $totalOut = npx wrangler d1 execute boxdbuddy-movies --remote --json --command "SELECT COUNT(*) as total_movies FROM tmdb_movies;"
