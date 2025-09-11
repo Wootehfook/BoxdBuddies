@@ -537,6 +537,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         commonCount: 0,
         commonMovies: [],
       },
+      db: {
+        tmdb_catalog_count: null,
+        enrichment_hits: 0,
+        enrichment_misses: 0,
+      },
     };
 
     // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
@@ -660,7 +665,39 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     }
 
     // Enhance with TMDB data
+    // Report TMDB catalog size (best-effort) to help debug empty DB issues
+    try {
+      const countRes = await env.MOVIES_DB.prepare(
+        `SELECT COUNT(*) as c FROM tmdb_movies`
+      ).first();
+      debugInfo.db.tmdb_catalog_count =
+        (countRes && (countRes.c || countRes["c"])) || 0;
+    } catch (err) {
+      // Best-effort only: if the DB read fails, record null but continue
+      debugInfo.db.tmdb_catalog_count = null;
+      debugLog(
+        env,
+        "Failed to read tmdb_movies count for debug:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+
+    // Enhance and then count DB enrichment hits/misses for telemetry
     const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
+
+    // Count how many movies were enriched from DB vs fallback
+    try {
+      enhancedMovies.forEach((m) => {
+        if ((m.source || "db") === "db") debugInfo.db.enrichment_hits++;
+        else debugInfo.db.enrichment_misses++;
+      });
+    } catch (err) {
+      debugLog(
+        env,
+        "Failed to compute enrichment telemetry:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
 
     // Append simple enrichment stats to debug
     const sourceCounts: Record<string, number> = {};
