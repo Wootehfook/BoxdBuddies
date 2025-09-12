@@ -97,8 +97,9 @@ export function isDebug(env) {
   try {
     if (!env) return false;
     // Accept string 'true' for DEBUG or non-production NODE_ENV
-    if (String(env.DEBUG).toLowerCase() === 'true') return true;
-    if (env.NODE_ENV && String(env.NODE_ENV).toLowerCase() !== 'production') return true;
+    if (String(env.DEBUG).toLowerCase() === "true") return true;
+    if (env.NODE_ENV && String(env.NODE_ENV).toLowerCase() !== "production")
+      return true;
     return false;
   } catch {
     return false;
@@ -108,14 +109,22 @@ export function isDebug(env) {
 export function debugLog(env, ...args) {
   try {
     // Intentionally use console.log here; debug gating happens via isDebug(env)
-    if (isDebug(env) && typeof console !== 'undefined' && typeof console.log === 'function') {
+    if (
+      isDebug(env) &&
+      typeof console !== "undefined" &&
+      typeof console.log === "function"
+    ) {
       console.log(...args);
     }
   } catch (err) {
     // Avoid throwing from logging; only surface secondary logging errors when debugging
     try {
-      if (isDebug(env) && typeof console !== 'undefined' && typeof console.error === 'function') {
-        console.error('debugLog error:', err);
+      if (
+        isDebug(env) &&
+        typeof console !== "undefined" &&
+        typeof console.error === "function"
+      ) {
+        console.error("debugLog error:", err);
       }
     } catch {
       // swallow any errors from error logging to ensure debugLog never throws
