@@ -878,6 +878,29 @@ body {
   padding: 0 2rem;
 }
 
+/* Scoped legacy styles: do not apply when using dynamic-cards layout */
+.results-page:not(.dynamic-cards) .movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 450px);
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  margin: 0 auto;
+  max-width: calc(3 * 450px + 2 * 2rem);
+}
+
+.results-page:not(.dynamic-cards) .movie-card {
+  height: 650px;
+}
+
+.results-page:not(.dynamic-cards) .movie-poster-section {
+  height: 488px;
+}
+
+.results-page:not(.dynamic-cards) .movie-info {
+  height: 162px;
+}
+
 /* Header layout spacer for consistent button alignment */
 .header-spacer {
   width: 120px;

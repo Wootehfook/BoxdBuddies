@@ -1,12 +1,12 @@
-<!-- Copilot Instructions for BoxdBuddies repository -->
+<!-- Copilot / AI contributor instructions for BoxdBuddies -->
 
-# BoxdBuddies — AI Assistant Guide
+# BoxdBuddies — AI Assistant Quick Guide
 
-Purpose: Equip AI coding agents with just-enough context to be productive immediately in this repo.
+Purpose: Give an AI contributor the precise repo knowledge, patterns, and templates needed to be productive quickly.
 
-## Architecture and layout
+## 1) High-level architecture
 
-- Frontend: React + TypeScript via Vite in `src/` (strict TS, React Testing Library under `src/__tests__/`).
+- Frontend: React + TypeScript (Vite) in `src/` (strict TS, React Testing Library under `src/__tests__/`).
 - Backend: Cloudflare Pages Functions in `functions/` using D1 (SQLite) for caching and TMDB enrichment.
 - Migrations live in `migrations/` (snake_case). Cloudflare config: `wrangler.toml`.
 - Public assets in `public/`. Shared server utils in `functions/_lib/common.js`.
@@ -17,98 +17,85 @@ Data flow (big picture)
 - Server scrapes Letterboxd (pagination, polite throttling) and enriches with TMDB via `tmdbFetch`/`reduceMovie`.
 - Results and counts are cached in D1 (helpers in `functions/letterboxd/cache/index.ts`) and served back to the UI.
 
-## Run, build, and checks
+## 2) Run / build / test (quick)
 
-- Install + dev: `npm install` → `npm run dev` (serves Vite dev server).
-- Typecheck/lint/tests: `npm run type-check`, `npm run lint`, `npm run test` (Vitest).
-- Pages Functions preview (serves built `dist/`): `npm run cloudflare:dev`.
-- Build: `npm run build` (TypeScript compile then Vite build).
+- `npm install`
+- `npm run dev` (frontend)
+- `npm run type-check`, `npm run lint`, `npm run test` (Vitest)
+- `npm run cloudflare:dev` (Functions preview)
 
-## Environment and secrets (never hardcode)
+## 3) Critical backend patterns
 
-- D1 binding: `env.MOVIES_DB`.
-- Secrets: `TMDB_API_KEY`, `ADMIN_SECRET`.
-- Feature flag: `FEATURE_SERVER_WATCHLIST_CACHE` (`"false"` disables server cache).
-- Optional Redis: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+- Handlers export `onRequestGet|onRequestPost|onRequestOptions` and use `functions/_lib/common.js` helpers (`jsonResponse`, `corsHeaders`, `debugLog`, `tmdbFetch`).
+- Validation pattern: `request.text()` → enforce ≤1KB → `JSON.parse()` → explicit field checks with clear 400 responses.
+- Auth: `Authorization` header must match `env.ADMIN_SECRET` (accepts `Bearer <token>` or raw token) for admin endpoints.
+- D1 usage: prefer `.prepare(sql).bind(...).first()` for reads and `.run()` for writes. Use cache helpers in `functions/letterboxd/cache/index.ts` when possible.
 
-## Backend patterns and conventions
+## 4) Server data contract (important)
 
-- Handlers export `onRequestGet|Post|Options` and use CORS helpers from `common.js` (`corsHeaders`, `withCORS`, `jsonResponse`). Example: `functions/api/watchlist-count-updates/index.ts`.
-- Auth: header `Authorization` must equal `env.ADMIN_SECRET` (supports `Bearer <token>` or raw token).
-- Validation: read `request.text()` → enforce ≤1KB → JSON.parse → explicit field checks with detailed errors.
-- Rate limiting: in-memory Map keyed by `CF-Connecting-IP` + username; see `watchlist-count-updates` tests.
-- Logging: `debugLog(env, ...)` gated by `isDebug(env)` in `functions/_lib/common.js`.
-- DI/testability: expose setters like `setCacheFunctionForTesting` to replace implementations in tests.
+- `poster_path` returned by server endpoints is a TMDB relative path (e.g. `/kqjL17yufvn9OVLyXYpvtyrFfak.jpg`) or `null`.
+- Clients should prefix the TMDB image base and desired size when building image URLs, e.g. `https://image.tmdb.org/t/p/w300${poster_path}`.
 
-### D1 access
+Rationale: returning a relative path keeps payloads smaller and lets clients choose an image size.
 
-- Reads: `.prepare(sql).bind(...).first()`; writes: `.run()`.
-- SQL identifiers are snake_case; add new files in `migrations/` rather than editing existing ones.
-- Prefer cache helpers in `functions/letterboxd/cache/index.ts` (`getCount`/`setCount`, friends cache) to avoid schema drift.
-- Cache locks fallback expects `cache_locks (lock_key, expires_at)`.
+## 5) Files & places to look (high ROI)
 
-### Letterboxd/TMDB integration
+- `functions/_lib/common.js` — CORS, logging, TMDB helpers and `reduceMovie` normalization.
+- `functions/letterboxd/[username].ts` — scraping + pagination.
+- `functions/letterboxd/cache/index.ts` — D1 cache helpers and lock behavior.
+- `functions/compare/index.ts` and `functions/api/watchlist-comparison/index.ts` — compare/watchlist logic.
+- `src/components/ResultsPage.tsx` — movie card rendering and poster handling.
+- `src/index.css` — canonical stylesheet; `src/App.css` is legacy.
 
-- Scraping: `functions/letterboxd/[username].ts` paginates and regex-parses `data-film-slug`, with polite throttling.
-- TMDB: use `tmdbFetch` and `reduceMovie` from `functions/_lib/common.js`.
+## 6) Quick templates (copy/paste when adding code)
 
-## Frontend touchpoints and UI patterns
+Function endpoint skeleton (short):
 
-CSS/layout conventions (web)
+```ts
+export async function onRequestPost(ctx) {
+  const { request, env } = ctx;
+  const t = await request.text();
+  if (t.length > 1024) return jsonResponse(400, { error: "payload too large" });
+  let body;
+  try {
+    body = JSON.parse(t);
+  } catch (e) {
+    return jsonResponse(400, { error: "invalid json" });
+  }
+  // optional auth
+  const auth = (request.headers.get("authorization") || "").replace(
+    "Bearer ",
+    ""
+  );
+  if (env.ADMIN_SECRET && auth !== env.ADMIN_SECRET)
+    return jsonResponse(401, { error: "unauthorized" });
+  // ... use cache helpers or env.MOVIES_DB
+}
+```
 
-- Canonical stylesheet is `src/index.css`; `src/App.css` is legacy and should not duplicate base/global rules. Prefer updating `index.css` and use page-scoped selectors to avoid overrides.
-- Centered grid pattern (up to 3 columns):
-  - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`
-  - Friends grid: `.friends-page .friends-grid { grid-template-columns: repeat(auto-fit, 350px); justify-content: center; gap: 1.5rem; max-width: calc(3 * 350px + 2 * 1.5rem); margin: 0 auto; }`
-  - Use page-scoped selectors (`.results-page`, `.friends-page`) to out-specificity any legacy `.movies-grid` rules in `App.css`.
-- Movie card sizing (Results):
-  - `.results-page .movie-card { height: 650px; }`
-  - `.results-page .movie-poster-section { height: 488px; }`
-  - `.results-page .movie-info { height: 162px; }`
-  - Ensure card links inherit color and have no underline (`color: inherit; text-decoration: none`).
-- Mobile overrides: for narrow viewports, both grids fall back to auto-fit/minmax or 1–2 columns; keep them centered and remove max-width caps under media queries.
-- Avoid non-standard CSS selectors like `:has()` or `:contains`. Drive state with classes (e.g., `.progress-item.completed`).
-- Keep global dark theme and base interactive styles (e.g., friend card hover/selected) in `index.css` to prevent regressions if legacy files change.
+Migration checklist: add `migrations/0NN_description.sql`; run via `wrangler d1 execute MOVIES_DB --file=migrations/0NN_description.sql` (see `package.json` scripts).
 
-Testing patterns to mirror
+Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunctionForTesting`) found in `functions/__tests__/` examples.
 
+## 7) Frontend touchpoints & UI conventions
 
-- API calls originate from `src/` services/components. Types are strict; avoid `any`.
-- Attribution modal: native `<dialog>` in `src/App.tsx` with trigger button text `Data sources & attribution`.
-  - Backdrop close uses a button with class `.modal-backdrop-button`; dialog also has a Close button and `onClose` syncs React state.
-  - Accessibility: `aria-labelledby="attribution-title"`, `aria-modal="true"`; focus moves into dialog; Escape/backdrop close.
-  - Types: dialog ref is `useRef<HTMLDialogElement | null>`; `eslint.config.js` declares `HTMLDialogElement` global.
+- Canonical stylesheet: `src/index.css` (avoid duplicating base/global rules in `src/App.css`).
+- Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`.
+- Movie card sizing (results): `.results-page .movie-card { height: 650px; }`, `.results-page .movie-poster-section { height: 488px; }`, `.results-page .movie-info { height: 162px; }`.
+- Accessibility: attribution modal uses a native `<dialog>` with `aria-labelledby="attribution-title"` and `aria-modal="true"`.
 
-### CSS/layout conventions
-
-- Canonical stylesheet is `src/index.css`; `src/App.css` is legacy—avoid duplicating base/global rules.
-- Use page-scoped selectors to out-specificity legacy styles:
-  - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`
-  - Friends grid: `.friends-page .friends-grid { grid-template-columns: repeat(auto-fit, 350px); justify-content: center; gap: 1.5rem; max-width: calc(3 * 350px + 2 * 1.5rem); margin: 0 auto; }`
-  - Movie card sizing (results): `.results-page .movie-card { height: 650px; }`, `.results-page .movie-poster-section { height: 488px; }`, `.results-page .movie-info { height: 162px; }`.
-- Links on cards: `color: inherit; text-decoration: none`.
-- Mobile: keep grids centered; reduce columns with auto-fit/minmax; drop max-width caps under media queries.
-- Avoid non-standard selectors like `:has()`/`:contains`; drive state with classes (e.g., `.progress-item.completed`).
-
-## Testing patterns to mirror
+## 8) Testing patterns to mirror
 
 - Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`.
 - Cache integration coverage: `functions/__tests__/friends-cache-integration.test.ts` and `functions/__tests__/cache.unit.test.ts`.
-- Modal testing (jsdom): `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text via `findAllByText` + tag checks, closes via backdrop button.
+- Modal testing (jsdom): `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()` and DOM queries.
 
-## Contributing here (AI-specific)
+## 9) Contributing (AI-specific rules)
 
 - Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`.
-- Respect ~100 col width, TypeScript strictness, ESLint/Prettier. Prefer minimal, focused diffs.
-- When adding a new Function endpoint:
-  1. Place under `functions/<area>/<name>/index.ts` (or `functions/<area>/index.ts`).
-  2. Implement `onRequestOptions`, handler(s), validation, and auth (if needed).
-  3. Use `debugLog`, add rate limiting for user-triggered endpoints, and DI hooks for tests.
-  4. Add unit tests in `functions/__tests__/` mirroring the examples above.
+- Keep diffs small, ~100-column width, TypeScript strictness (avoid `any`).
+- When adding server endpoints: include `onRequestOptions`, `debugLog`, rate limiting, and DI setters for tests.
 
-References: `README.md` (run scripts), `package.json` (scripts), `functions/_lib/common.js` (utils), `docs/server-watchlist-cache-design.md` (design details).
+References: `README.md`, `functions/_lib/common.js`, `functions/letterboxd/cache/index.ts`, `migrations/`, `docs/server-watchlist-cache-design.md`.
 
-Notes
-
-- Watchlist cache schema evolved; prefer helpers over direct SQL. Current expectations: `(username, value, expires_at)` for counts.
-- CSS: `.modal-backdrop` was removed; use `.modal-backdrop-button` to cover/close behind the `<dialog>`.
+If you'd like, I can add a new file template (Function + test) under `tools/templates/` — tell me to proceed and I'll create it.

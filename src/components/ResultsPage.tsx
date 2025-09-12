@@ -19,10 +19,10 @@
 // AI Generated: GitHub Copilot - 2025-08-29T11:15:00Z
 // Performance Optimization: Component Splitting - ResultsPage component extracted
 
-import { getUserColors } from "../utils";
+// ...existing code... (utils imports used elsewhere)
 import type { ResultsPageProps } from "../types";
 
-export function ResultsPage({ movies, onBack }: ResultsPageProps) {
+export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
   return (
     <section className="page results-page dynamic-cards">
       <div className="page-header">
@@ -62,42 +62,54 @@ export function ResultsPage({ movies, onBack }: ResultsPageProps) {
           </div>
         ) : (
           <div className="movies-grid">
-            {movies.map((movie, index) => (
+            {movies.map((movie) => (
               <a
                 key={movie.id}
                 href={`https://letterboxd.com/film/${movie.letterboxdSlug}/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="movie-card fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="movie-poster-section has-poster">
-                  {movie.poster_path &&
-                  movie.poster_path !== "/placeholder-poster.jpg" ? (
-                    <img
-                      src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-                      alt={`${movie.title} poster`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          "https://via.placeholder.com/200x300/1a1f24/9ab?text=No+Poster";
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
-                      alt={`${movie.title} placeholder`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  )}
+                  {
+                    // Compute a safe poster URL: backend may supply either a full URL
+                    // (e.g. starting with "http") or a TMDB path like "/abc.jpg".
+                    // Avoid double-prefixing and handle nulls.
+                  }
+                  {(() => {
+                    const p = movie.poster_path as string | null | undefined;
+                    let posterUrl: string | null = null;
+                    if (p && typeof p === "string") {
+                      const trimmed = p.trim();
+                      if (trimmed !== "/placeholder-poster.jpg") {
+                        posterUrl = /^https?:\/\//i.test(trimmed)
+                          ? trimmed
+                          : `https://image.tmdb.org/t/p/w300${trimmed}`;
+                      }
+                    }
+
+                    if (posterUrl) {
+                      return (
+                        <img
+                          src={posterUrl}
+                          alt={`${movie.title} poster`}
+                          className="movie-poster-img"
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              "https://via.placeholder.com/200x300/1a1f24/9ab?text=No+Poster";
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <img
+                        src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
+                        alt={`${movie.title} placeholder`}
+                        className="movie-poster-img"
+                      />
+                    );
+                  })()}
                 </div>
 
                 <div className="movie-info">
@@ -146,25 +158,20 @@ export function ResultsPage({ movies, onBack }: ResultsPageProps) {
                     <div className="friends-inline-container">
                       {movie.friendList && movie.friendList.length > 0 && (
                         <div className="friend-list-expanded">
-                          {movie.friendList.map(
-                            (friendName: string, idx: number) => {
-                              const friendColors = getUserColors(friendName);
-                              return (
-                                <span
-                                  key={idx}
-                                  className="friend-tag"
-                                  style={{
-                                    borderColor: friendColors.borderColor,
-                                    backgroundColor:
-                                      friendColors.backgroundColor,
-                                    color: "#fff",
-                                  }}
-                                >
-                                  {friendName}
-                                </span>
-                              );
-                            }
-                          )}
+                          {movie.friendList.map((friendName: string) => {
+                            // Use stable color class by hashing username to index (same algorithm as getUserColors)
+                            const hash = Array.from(friendName).reduce(
+                              (h, ch) => ch.charCodeAt(0) + ((h << 5) - h),
+                              0
+                            );
+                            const idx = Math.abs(hash) % 20;
+                            const className = `friend-tag friend-color-${idx}`;
+                            return (
+                              <span key={friendName} className={className}>
+                                {friendName}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

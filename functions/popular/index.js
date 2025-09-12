@@ -1,5 +1,12 @@
 // AI Generated: GitHub Copilot - 2025-08-17
-import { jsonResponse, getCache, kvGetJson, kvPutJson, tmdbFetch, reduceMovie } from "../_lib/common";
+import {
+  jsonResponse,
+  getCache,
+  kvGetJson,
+  kvPutJson,
+  tmdbFetch,
+  reduceMovie,
+} from "../_lib/common";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -31,6 +38,12 @@ export async function onRequestGet(context) {
   await kvPutJson(env.MOVIES_KV, kvKey, payload, 300);
   const resp = jsonResponse(payload);
   resp.headers.set("Cache-Control", "public, max-age=300");
-  if (cache) { try { await cache.put(cacheKey, resp.clone()); } catch { /* no-op */ } }
+  if (cache) {
+    try {
+      await cache.put(cacheKey, resp.clone());
+    } catch {
+      /* no-op */
+    }
+  }
   return resp;
 }
