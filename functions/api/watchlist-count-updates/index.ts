@@ -202,7 +202,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       }
 
       payload = JSON.parse(body);
-    } catch (e) {
+    } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
