@@ -2021,17 +2021,22 @@ body {
 
 .results-page.dynamic-cards .movies-grid {
   display: grid;
-  /* Centered, responsive up-to-4-column grid using fixed track width bounds */
-  grid-template-columns: repeat(auto-fit, minmax(200px, 400px));
+  /* Centered, responsive up-to-4-column grid using fixed track width bounds
+     Reduced max card width from 400px -> 300px to make cards 25% smaller on
+     very large screens (user requested). */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 300px));
   justify-content: center;
   gap: var(--grid-gap);
   width: 100%;
   margin: 0 auto;
-  max-width: calc(4 * 400px + 3 * var(--grid-gap));
+  max-width: calc(4 * 300px + 3 * var(--grid-gap));
 }
 
 .results-page.dynamic-cards .movie-card {
-  width: 100%; /* fill grid track width (200–400px) */
+  width: 100%; /* fill grid track width (200–300px) */
+  /* Keep the same visual proportions: original ratio was 400/900.
+     Since max width decreased, aspect-ratio remains the same to preserve
+     poster vs info proportions. */
   aspect-ratio: 400 / 900; /* enforces 2.25 height:width ratio */
   justify-self: center;
 }
@@ -2064,6 +2069,11 @@ body {
   height: 100%;
   object-fit: cover;
   border-radius: 12px 12px 0 0;
+}
+
+/* Increase friend-tag font-size to match movie details (0.9rem) as requested */
+.results-page.dynamic-cards .friend-tag {
+  font-size: 0.9rem;
 }
 
 /* Mobile tweaks: tighter gaps and width bias to viewport */
