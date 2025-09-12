@@ -1622,6 +1622,7 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  -webkit-user-select: none; /* Safari */
   user-select: none;
 }
 
@@ -1991,6 +1992,13 @@ body {
   font-size: 3rem;
 }
 
+/* Poster image helper used by ResultsPage */
+.movie-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .results-page .movie-info {
   background: #1a1f24;
   padding: 0.75rem;
@@ -2004,6 +2012,77 @@ body {
   overflow: hidden;
 }
 
+/* AI Generated: GitHub Copilot - 2025-09-08 */
+/* Dynamic responsive movie cards (200x450 → 400x900) with up to 4 columns */
+.results-page.dynamic-cards {
+  /* Tunable vars */
+  --grid-gap: 2rem;
+}
+
+.results-page.dynamic-cards .movies-grid {
+  display: grid;
+  /* Centered, responsive up-to-4-column grid using fixed track width bounds
+     Reduced max card width from 400px -> 300px to make cards 25% smaller on
+     very large screens (user requested). */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 300px));
+  justify-content: center;
+  gap: var(--grid-gap);
+  width: 100%;
+  margin: 0 auto;
+  max-width: calc(4 * 300px + 3 * var(--grid-gap));
+}
+
+.results-page.dynamic-cards .movie-card {
+  /* Consolidated block: fill grid track width, keep original aspect ratio,
+     and ensure the card uses flex layout so info and poster stack correctly.
+     This merges earlier duplicate definitions to remove lint warnings. */
+  width: 100%; /* fill grid track width (200–300px) */
+  aspect-ratio: 400 / 900; /* enforces 2.25 height:width ratio */
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: auto; /* Let aspect-ratio control height */
+}
+
+.results-page.dynamic-cards .movie-poster-section {
+  height: 66.666%; /* 6/9 of card height */
+}
+
+.results-page.dynamic-cards .movie-info {
+  height: 33.333%; /* 3/9 of card height (includes friends area) */
+  display: flex;
+  flex-direction: column;
+}
+
+.results-page.dynamic-cards .movie-friends {
+  flex: 0 0 33.333%; /* 1/3 of .movie-info = 1/9 of card */
+}
+
+.results-page.dynamic-cards .movie-poster-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Increase friend-tag font-size to match movie details (0.9rem) as requested */
+.results-page.dynamic-cards .friend-tag {
+  font-size: 0.9rem;
+}
+
+/* Mobile tweaks: tighter gaps and width bias to viewport */
+@media (max-width: 560px) {
+  .results-page.dynamic-cards {
+    --grid-gap: 1rem;
+    --card-w: clamp(200px, 92vw, 400px);
+  }
+  .results-page.dynamic-cards .movies-grid {
+    max-width: 100%;
+  }
+}
+
 .movie-content {
   flex: 1;
   display: flex;
@@ -2011,7 +2090,7 @@ body {
   gap: 0.125rem;
 }
 
-.movie-title-section {
+.results-page .movie-title-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -2019,7 +2098,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.movie-title-section h3 {
+.results-page .movie-title-section h3 {
   color: #fff;
   font-size: 1.25rem;
   margin: 0;
@@ -2060,15 +2139,11 @@ body {
   opacity: 1; /* Ensure full opacity for rating stars */
 }
 
-.movie-friends {
+/* Movie Friend Count Visual */
+.results-page .movie-friends {
   margin-top: auto;
   padding-top: 0.25rem;
   border-top: 1px solid #2c3440;
-}
-
-/* Movie Friend Count Visual */
-.movie-friends {
-  margin-top: 0.5rem;
 }
 
 .friend-count-visual {
@@ -2085,13 +2160,13 @@ body {
   flex-wrap: wrap;
 }
 
-.friend-list-expanded {
+.results-page .friend-list-expanded {
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
 }
 
-.friend-tag {
+.results-page .friend-tag {
   font-size: 0.6rem;
   padding: 0.125rem 0.25rem;
   border-radius: 4px;
@@ -2152,6 +2227,88 @@ body {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Per-user color classes (matches src/utils.getUserColors palette) */
+.friend-color-0 {
+  border-color: #ff6b6b;
+  background-color: #ff6b6b33;
+}
+.friend-color-1 {
+  border-color: #4ecdc4;
+  background-color: #4ecdc433;
+}
+.friend-color-2 {
+  border-color: #45b7d1;
+  background-color: #45b7d133;
+}
+.friend-color-3 {
+  border-color: #96ceb4;
+  background-color: #96ceb433;
+}
+.friend-color-4 {
+  border-color: #feca57;
+  background-color: #feca5733;
+}
+.friend-color-5 {
+  border-color: #ff9ff3;
+  background-color: #ff9ff333;
+}
+.friend-color-6 {
+  border-color: #54a0ff;
+  background-color: #54a0ff33;
+}
+.friend-color-7 {
+  border-color: #5f27cd;
+  background-color: #5f27cd33;
+}
+.friend-color-8 {
+  border-color: #00d2d3;
+  background-color: #00d2d333;
+}
+.friend-color-9 {
+  border-color: #ff9f43;
+  background-color: #ff9f4333;
+}
+.friend-color-10 {
+  border-color: #1dd1a1;
+  background-color: #1dd1a133;
+}
+.friend-color-11 {
+  border-color: #fd79a8;
+  background-color: #fd79a833;
+}
+.friend-color-12 {
+  border-color: #6c5ce7;
+  background-color: #6c5ce733;
+}
+.friend-color-13 {
+  border-color: #74b9ff;
+  background-color: #74b9ff33;
+}
+.friend-color-14 {
+  border-color: #a29bfe;
+  background-color: #a29bfe33;
+}
+.friend-color-15 {
+  border-color: #1e90ff;
+  background-color: #1e90ff33;
+}
+.friend-color-16 {
+  border-color: #ff7675;
+  background-color: #ff767533;
+}
+.friend-color-17 {
+  border-color: #74c0fc;
+  background-color: #74c0fc33;
+}
+.friend-color-18 {
+  border-color: #82ca9d;
+  background-color: #82ca9d33;
+}
+.friend-color-19 {
+  border-color: #f8b500;
+  background-color: #f8b50033;
+}
+
 .letterboxd-link {
   color: #00d4ff !important;
   font-size: 0.8rem;
@@ -2197,12 +2354,7 @@ body {
     padding: 1.5rem;
   }
 
-  /* Responsive page header */
-  .page-header {
-    padding: 0.25rem 0 0.5rem 0;
-    margin-bottom: 1rem;
-    min-height: 2.5rem;
-  }
+  /* Responsive page header — consolidated below in this block */
 
   .page-title {
     font-size: 1.25rem;
@@ -2424,7 +2576,7 @@ body {
   }
 }
 
-.progress-text {
+.progress-container .progress-text {
   color: #9ab;
   font-size: 0.875rem;
   text-align: center;

@@ -1,109 +1,101 @@
-<!-- Copilot Instructions for BoxdBuddies repository -->
+<!-- Copilot / AI contributor instructions for BoxdBuddies -->
 
-# BoxdBuddies — AI Assistant Instructions (Concise)
+# BoxdBuddies — AI Assistant Quick Guide
 
-Purpose: Give AI coding agents the concrete, project-specific context to be productive fast.
+Purpose: Give an AI contributor the precise repo knowledge, patterns, and templates needed to be productive quickly.
 
-Tech stack and layout
+## 1) High-level architecture
 
-- Frontend: React + TypeScript (Vite) in `src/`
-- Backend: Cloudflare Pages Functions in `functions/` with D1 (SQLite) cache; TMDB integration
-- Migrations live in `migrations/` (snake_case). Cloudflare config: `wrangler.toml`
+- Frontend: React + TypeScript (Vite) in `src/` (strict TS, React Testing Library under `src/__tests__/`).
+- Backend: Cloudflare Pages Functions in `functions/` using D1 (SQLite) for caching and TMDB enrichment.
+- Migrations live in `migrations/` (snake_case). Cloudflare config: `wrangler.toml`.
+- Public assets in `public/`. Shared server utils in `functions/_lib/common.js`.
 
-Run, build, and checks
+Data flow (big picture)
 
-- Install/dev: `npm install` → `npm run dev` (Vite)
-- Typecheck/lint/tests: `npm run type-check`, `npm run lint`, `npm run test` (Vitest)
-- Pages Functions preview: `npm run cloudflare:dev` (serves built `dist/`)
+- User enters Letterboxd usernames in the web app → frontend calls Functions under `functions/letterboxd/*` and `functions/api/*`.
+- Server scrapes Letterboxd (pagination, polite throttling) and enriches with TMDB via `tmdbFetch`/`reduceMovie`.
+- Results and counts are cached in D1 (helpers in `functions/letterboxd/cache/index.ts`) and served back to the UI.
 
-Environment and secrets (never hardcode)
+## 2) Run / build / test (quick)
 
-- D1 binding: `env.MOVIES_DB`
-- Secrets: `TMDB_API_KEY`, `ADMIN_SECRET`
-- Feature flag: `FEATURE_SERVER_WATCHLIST_CACHE` (`"false"` disables server cache)
-- Optional Redis: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- `npm install`
+- `npm run dev` (frontend)
+- `npm run type-check`, `npm run lint`, `npm run test` (Vitest)
+- `npm run cloudflare:dev` (Functions preview)
 
-Backend patterns (see files)
+## 3) Critical backend patterns
 
-- Logging: `debugLog(env, ...)` gated by `isDebug(env)` in `functions/_lib/common.js`
-- Endpoints export `onRequestGet|Post|Options` with CORS. Example: `functions/api/watchlist-count-updates/index.ts`
-- Auth: `Authorization` must match `env.ADMIN_SECRET` (accepts `Bearer <token>` or raw token)
-- Validation: parse `request.text()` → size ≤ 1KB → JSON → detailed field checks
-- Rate limiting: in-memory Map keyed by `CF-Connecting-IP` + username (see watchlist-count-updates)
-- DI hooks: expose setters like `setCacheFunctionForTesting` to swap implementations in tests
-- CORS helpers and JSON response helpers available in `common.js` (`corsHeaders`, `withCORS`, `jsonResponse`)
+- Handlers export `onRequestGet|onRequestPost|onRequestOptions` and use `functions/_lib/common.js` helpers (`jsonResponse`, `corsHeaders`, `debugLog`, `tmdbFetch`).
+- Validation pattern: `request.text()` → enforce ≤1KB → `JSON.parse()` → explicit field checks with clear 400 responses.
+- Auth: `Authorization` header must match `env.ADMIN_SECRET` (accepts `Bearer <token>` or raw token) for admin endpoints.
+- D1 usage: prefer `.prepare(sql).bind(...).first()` for reads and `.run()` for writes. Use cache helpers in `functions/letterboxd/cache/index.ts` when possible.
 
-Data access (D1) conventions
+## 4) Server data contract (important)
 
-- Use `.prepare(...).bind(...).first()` for reads; `.run()` for writes
-- Keep SQL identifiers snake_case; add new migrations rather than editing existing ones
-- Prefer cache helpers in `functions/letterboxd/cache/index.ts` (`getCount`/`setCount`, friends cache); avoid hand-crafted SQL for cache tables to bypass schema drift
+- `poster_path` returned by server endpoints is a TMDB relative path (e.g. `/kqjL17yufvn9OVLyXYpvtyrFfak.jpg`) or `null`.
+- Clients should prefix the TMDB image base and desired size when building image URLs, e.g. `https://image.tmdb.org/t/p/w300${poster_path}`.
 
-Letterboxd/TMDB integration
+Rationale: returning a relative path keeps payloads smaller and lets clients choose an image size.
 
-- Scraping: `functions/letterboxd/[username].ts` paginates, regex-parses `data-film-slug`, throttles politely
-- TMDB helpers: `tmdbFetch`, `reduceMovie` in `functions/_lib/common.js`
+## 5) Files & places to look (high ROI)
 
-Frontend touchpoints
+- `functions/_lib/common.js` — CORS, logging, TMDB helpers and `reduceMovie` normalization.
+- `functions/letterboxd/[username].ts` — scraping + pagination.
+- `functions/letterboxd/cache/index.ts` — D1 cache helpers and lock behavior.
+- `functions/compare/index.ts` and `functions/api/watchlist-comparison/index.ts` — compare/watchlist logic.
+- `src/components/ResultsPage.tsx` — movie card rendering and poster handling.
+- `src/index.css` — canonical stylesheet; `src/App.css` is legacy.
 
-- API calls from `src/` services/components; strict TypeScript (no `any`); React Testing Library used under `src/__tests__/`
-- Attribution modal (frontend): native `<dialog>` in `src/App.tsx` with a centered trigger button labeled `Data sources & attribution`.
-  - Uses a backdrop button element (`.modal-backdrop-button`) for closing; dialog also has an internal Close button and `onClose` handler to sync React state.
-  - Dialog has `aria-labelledby="attribution-title"` and `aria-modal="true"` for accessibility.
-  - Focus is moved into the dialog on open; Escape and backdrop click close it.
-  - Types: dialog ref uses `useRef<HTMLDialogElement | null>` and `eslint.config.js` declares `HTMLDialogElement` as a global to satisfy ESLint.
+## 6) Quick templates (copy/paste when adding code)
 
-CSS/layout conventions (web)
+Function endpoint skeleton (short):
 
-- Canonical stylesheet is `src/index.css`; `src/App.css` is legacy and should not duplicate base/global rules. Prefer updating `index.css` and use page-scoped selectors to avoid overrides.
-- Centered grid pattern (up to 3 columns):
-  - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`
-  - Friends grid: `.friends-page .friends-grid { grid-template-columns: repeat(auto-fit, 350px); justify-content: center; gap: 1.5rem; max-width: calc(3 * 350px + 2 * 1.5rem); margin: 0 auto; }`
-  - Use page-scoped selectors (`.results-page`, `.friends-page`) to out-specificity any legacy `.movies-grid` rules in `App.css`.
-- Movie card sizing (Results):
-  - `.results-page .movie-card { height: 650px; }`
-  - `.results-page .movie-poster-section { height: 488px; }`
-  - `.results-page .movie-info { height: 162px; }`
-  - Ensure card links inherit color and have no underline (`color: inherit; text-decoration: none`).
-- Mobile overrides: for narrow viewports, both grids fall back to auto-fit/minmax or 1–2 columns; keep them centered and remove max-width caps under media queries.
-- Avoid non-standard CSS selectors like `:has()` or `:contains`. Drive state with classes (e.g., `.progress-item.completed`).
-- Keep global dark theme and base interactive styles (e.g., friend card hover/selected) in `index.css` to prevent regressions if legacy files change.
+```ts
+export async function onRequestPost(ctx) {
+  const { request, env } = ctx;
+  const t = await request.text();
+  if (t.length > 1024) return jsonResponse(400, { error: "payload too large" });
+  let body;
+  try {
+    body = JSON.parse(t);
+  } catch (e) {
+    return jsonResponse(400, { error: "invalid json" });
+  }
+  // optional auth
+  const auth = (request.headers.get("authorization") || "").replace(
+    "Bearer ",
+    ""
+  );
+  if (env.ADMIN_SECRET && auth !== env.ADMIN_SECRET)
+    return jsonResponse(401, { error: "unauthorized" });
+  // ... use cache helpers or env.MOVIES_DB
+}
+```
 
-Testing patterns to mirror
+Migration checklist: add `migrations/0NN_description.sql`; run via `wrangler d1 execute MOVIES_DB --file=migrations/0NN_description.sql` (see `package.json` scripts).
 
-- Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`
-- Cache integration: `functions/__tests__/friends-cache-integration.test.ts`
-- Modal testing in jsdom: `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()`, disambiguates duplicate text (button vs heading) via `findAllByText` and tag checks, and closes via the backdrop button for determinism (jsdom’s `<dialog>` role support can vary).
+Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunctionForTesting`) found in `functions/__tests__/` examples.
 
-MCP servers (optional)
+## 7) Frontend touchpoints & UI conventions
 
-- Purpose: augment AI workflows (planning, repo ops, code quality, docs). Categories used in scripts: primary `@memory`, `@github`, `@sequentialthinking`; secondary `@codacy`, `@playwright`, `@markitdown`.
-- Dev Container: MCP setup runs automatically via `.devcontainer/setup-with-mcp.sh` (postCreate). Manual start inside the container: `./.devcontainer/start-mcp-servers.sh`.
-- Status/maintenance (run in Linux shell: Dev Container/WSL/Git Bash):
-  - Status: `bash scripts/mcp-status.sh` (set `MCP_STATUS_VERBOSE=1` for details)
-  - Restart: `bash scripts/mcp-restart.sh`
-  - Stop: `bash scripts/mcp-stop.sh`
-- Notes: the scripts are light-weight helpers that check VS Code CLI and attempt basic setup. They are non-blocking in CI and safe to ignore locally if you don’t use MCP.
+- Canonical stylesheet: `src/index.css` (avoid duplicating base/global rules in `src/App.css`).
+- Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`.
+- Movie card sizing (results): `.results-page .movie-card { height: 650px; }`, `.results-page .movie-poster-section { height: 488px; }`, `.results-page .movie-info { height: 162px; }`.
+- Accessibility: attribution modal uses a native `<dialog>` with `aria-labelledby="attribution-title"` and `aria-modal="true"`.
 
-When adding a new Function endpoint
+## 8) Testing patterns to mirror
 
-1. Place under `functions/<area>/<name>/index.ts` (or `functions/<area>/index.ts`)
-2. Implement `onRequestOptions`, request handler(s), input validation, and auth (if needed)
-3. Use `debugLog`, add rate limiting for user-triggered endpoints, and DI hooks for testability
-4. Add unit tests in `functions/__tests__/` mirroring the examples above
+- Endpoint auth/validation/rate limit/CORS: `functions/__tests__/watchlist-count-updates.test.ts`.
+- Cache integration coverage: `functions/__tests__/friends-cache-integration.test.ts` and `functions/__tests__/cache.unit.test.ts`.
+- Modal testing (jsdom): `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()` and DOM queries.
 
-AI attribution and style
+## 9) Contributing (AI-specific rules)
 
-- Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`
-- Respect ~100 col width, strict TS, and ESLint/Prettier
+- Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`.
+- Keep diffs small, ~100-column width, TypeScript strictness (avoid `any`).
+- When adding server endpoints: include `onRequestOptions`, `debugLog`, rate limiting, and DI setters for tests.
 
-References
+References: `README.md`, `functions/_lib/common.js`, `functions/letterboxd/cache/index.ts`, `migrations/`, `docs/server-watchlist-cache-design.md`.
 
-- `README.md` (overview and run scripts), `package.json` (scripts), `functions/_lib/common.js` (shared utils)
-
-Notes
-
-- Watchlist count cache schema has evolved; migration `003_create_watchlist_counts_cache.sql` shows the initial structure, but current code expects `(username, value, expires_at)` columns. Always prefer `cache/index.ts` helpers (`getCount`/`setCount`) over direct SQL to avoid schema mismatches.
-- Cache locks table: code expects `cache_locks (lock_key, expires_at)` for D1 locking fallback
-- If schema changes are required, add a new migration under `migrations/` rather than modifying existing ones
-- CSS: `.modal-backdrop` was removed; use `.modal-backdrop-button` for the interactive backdrop that covers the viewport behind the `<dialog>`.
+If you'd like, I can add a new file template (Function + test) under `tools/templates/` — tell me to proceed and I'll create it.
