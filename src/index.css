@@ -2050,6 +2050,22 @@ body {
   flex: 0 0 33.333%; /* 1/3 of .movie-info = 1/9 of card */
 }
 
+/* Stronger overrides to ensure dynamic-cards behavior wins over legacy styles */
+.results-page.dynamic-cards .movie-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: auto; /* Let aspect-ratio control height */
+}
+
+.results-page.dynamic-cards .movie-poster-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+}
+
 /* Mobile tweaks: tighter gaps and width bias to viewport */
 @media (max-width: 560px) {
   .results-page.dynamic-cards {
