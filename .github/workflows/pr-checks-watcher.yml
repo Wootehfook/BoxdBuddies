@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Find PR by commit and post comment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const sha = context.payload.workflow_run.head_sha;
