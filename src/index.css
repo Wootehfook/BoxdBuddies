@@ -2033,12 +2033,16 @@ body {
 }
 
 .results-page.dynamic-cards .movie-card {
+  /* Consolidated block: fill grid track width, keep original aspect ratio,
+     and ensure the card uses flex layout so info and poster stack correctly.
+     This merges earlier duplicate definitions to remove lint warnings. */
   width: 100%; /* fill grid track width (200–300px) */
-  /* Keep the same visual proportions: original ratio was 400/900.
-     Since max width decreased, aspect-ratio remains the same to preserve
-     poster vs info proportions. */
   aspect-ratio: 400 / 900; /* enforces 2.25 height:width ratio */
   justify-self: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: auto; /* Let aspect-ratio control height */
 }
 
 .results-page.dynamic-cards .movie-poster-section {
@@ -2053,14 +2057,6 @@ body {
 
 .results-page.dynamic-cards .movie-friends {
   flex: 0 0 33.333%; /* 1/3 of .movie-info = 1/9 of card */
-}
-
-/* Stronger overrides to ensure dynamic-cards behavior wins over legacy styles */
-.results-page.dynamic-cards .movie-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: auto; /* Let aspect-ratio control height */
 }
 
 .results-page.dynamic-cards .movie-poster-img {
