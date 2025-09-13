@@ -35,13 +35,9 @@ export function SetupPage({
       <div className="page-content">
         <div className="setup-card">
           <h2>Get Started</h2>
-          <p>
-            Enter your Letterboxd username to load your friends and compare
-            watchlists
-          </p>
+          <p>Enter your Letterboxd username to load friend list</p>
 
           <div className="form-group">
-            <label htmlFor="username">Your Letterboxd Username</label>
             <input
               id="username"
               type="text"
