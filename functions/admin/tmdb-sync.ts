@@ -125,7 +125,7 @@ async function syncPopularMovies(env: Env) {
       {
         headers: {
           "User-Agent":
-            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev; respectful-bot)",
+            "Boxdbud.io/1.1.0 (https://boxdbud.pages.dev; respectful-bot)",
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -239,7 +239,7 @@ async function syncMovieCategory(
       {
         headers: {
           "User-Agent":
-            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev; respectful-bot)",
+            "Boxdbud.io/1.1.0 (https://boxdbud.pages.dev; respectful-bot)",
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -347,7 +347,7 @@ async function syncSingleMovie(env: Env, movieId: number) {
     `https://api.themoviedb.org/3/movie/${movieId}?append_to_response=credits&api_key=${env.TMDB_API_KEY}`,
     {
       headers: {
-        "User-Agent": "BoxdBuddy/1.1.0",
+        "User-Agent": "Boxdbud.io/1.1.0",
         "Content-Type": "application/json",
       },
     }
@@ -391,7 +391,7 @@ async function syncDeltaUpdates(env: Env) {
     `https://api.themoviedb.org/3/movie/changes?start_date=${sinceDate}&api_key=${env.TMDB_API_KEY}`,
     {
       headers: {
-        "User-Agent": "BoxdBuddy/1.1.0",
+        "User-Agent": "Boxdbud.io/1.1.0",
         "Content-Type": "application/json",
       },
     }

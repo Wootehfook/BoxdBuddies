@@ -1,11 +1,11 @@
 {
-  "name": "boxdbuddies",
+  "name": "boxdbud-io",
   "private": true,
   "version": "1.1.0",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Wootehfook",
-  "description": "BoxdBuddies - Compare Letterboxd watchlists between friends to find movies everyone wants to watch",
+  "description": "Boxdbud.io - Compare Letterboxd watchlists between friends to find movies everyone wants to watch",
   "repository": {
     "type": "git",
     "url": "https://github.com/Wootehfook/BoxdBuddies.git"
@@ -55,6 +55,7 @@
     "prettier": "^3.6.2",
     "typescript": "^5.0.2",
     "vite": "^7.1.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.36.0"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * BoxdBuddies - Movie Watchlist Comparison Tool
+ * Boxdbud.io - Movie Watchlist Comparison Tool
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify

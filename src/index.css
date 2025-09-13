@@ -21,7 +21,7 @@
 
 body {
   font-family:
-    "Tiempos Text Web", Georgia, serif, "Noto Color Emoji", "Apple Color Emoji",
+    "Open Sans", Arial, sans-serif, "Noto Color Emoji", "Apple Color Emoji",
     "Segoe UI Emoji";
   background-color: #14181c;
   color: #9ab;
@@ -30,6 +30,50 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-feature-settings: "liga";
   font-feature-settings: "liga";
+}
+
+/* Color variables: friend palette (colorblind-friendly). Use translucent bg vars for tag backgrounds. */
+:root {
+  --friend-0: #000000;
+  --friend-0-bg: #00000033;
+  --friend-1: #e69f00;
+  --friend-1-bg: #e69f0033;
+  --friend-2: #56b4e9;
+  --friend-2-bg: #56b4e933;
+  --friend-3: #009e73;
+  --friend-3-bg: #009e7333;
+  --friend-4: #f0e442;
+  --friend-4-bg: #f0e44233;
+  --friend-5: #0072b2;
+  --friend-5-bg: #0072b233;
+  --friend-6: #d55e00;
+  --friend-6-bg: #d55e0033;
+  --friend-7: #cc79a7;
+  --friend-7-bg: #cc79a733;
+  --friend-8: #88ccee;
+  --friend-8-bg: #88ccee33;
+  --friend-9: #44aa99;
+  --friend-9-bg: #44aa9933;
+  --friend-10: #771155;
+  --friend-10-bg: #77115533;
+  --friend-11: #aa4499;
+  --friend-11-bg: #aa449933;
+  --friend-12: #117733;
+  --friend-12-bg: #11773333;
+  --friend-13: #88aa00;
+  --friend-13-bg: #88aa0033;
+  --friend-14: #332288;
+  --friend-14-bg: #33228833;
+  --friend-15: #999933;
+  --friend-15-bg: #99993333;
+  --friend-16: #cc6677;
+  --friend-16-bg: #cc667733;
+  --friend-17: #1177aa;
+  --friend-17-bg: #1177aa33;
+  --friend-18: #882255;
+  --friend-18-bg: #88225533;
+  --friend-19: #44aa66;
+  --friend-19-bg: #44aa6633;
 }
 
 /* Container and Layout */
@@ -78,13 +122,7 @@ body {
   border-bottom: 1px solid #2c3440;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+/* Generic header content removed to prevent conflicts with app-header */
 
 .header-title {
   text-align: center;
@@ -98,6 +136,7 @@ body {
   line-height: 1.1; /* tighter line box without changing font size */
   margin-bottom: 0.25rem; /* was 0.5rem */
   /* title is simple text now; layout is handled by .header-content */
+  font-family: "Bungee Shade", "Open Sans", Arial, sans-serif;
 }
 
 .app-header p {
@@ -211,12 +250,9 @@ body {
   opacity: 1;
 }
 
-/* Responsive header */
+/* Responsive styles for pin and header */
 @media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    gap: 1rem;
-  }
+  /* Moved these orphaned rules into a proper media query */
 
   .btn-pin {
     position: absolute;
@@ -251,6 +287,34 @@ body {
   font-size: 1.1rem;
   max-width: 600px;
   margin: 0 auto;
+}
+
+/* Brand styling for Boxdbud.io */
+.app-title-text.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  letter-spacing: 0.5px;
+}
+
+.app-title-text.brand .brand-word {
+  color: #ff8000; /* boxdbud */
+  font-family: "Bungee Shade", "Open Sans", Arial, sans-serif;
+  text-transform: none; /* Preserve capitalization from markup */
+}
+
+/* Apply Sail to generic page title elements to give consistent display */
+/* Apply Rampart One to generic page title elements to give consistent display */
+.page-title {
+  font-family: "Bungee Shade", "Open Sans", Arial, sans-serif;
+}
+
+.app-title-text.brand .brand-dot {
+  color: #00e054; /* . */
+}
+
+.app-title-text.brand .brand-tld {
+  color: #40bcf4; /* io */
 }
 
 /* Footer */
@@ -344,7 +408,12 @@ body {
   color: #9ab;
 }
 
-.progress-item:has(.progress-icon:contains("✅")) .progress-text {
+.progress-item.completed .progress-text,
+.progress-item .progress-icon.complete + .progress-text {
+  /* Replace JS-driven checkmark selector. Add `.completed` to the
+     `.progress-item` in markup when the progress-icon represents a
+     completed state, or add `.complete` to the `.progress-icon` element.
+  */
   color: #00d27a;
 }
 
@@ -620,10 +689,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0 1rem 0; /* Reduced vertical padding */
+  padding: 0.5rem 0 1rem 0;
   border-bottom: 1px solid #2c3440;
-  margin-bottom: 1.25rem; /* Reduced bottom margin */
-  position: relative;
+  margin-bottom: 1.25rem;
+  min-height: 60px;
+  gap: 1rem;
+}
+
+.header-title-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Center between top and bottom */
+  min-width: 0; /* Allow shrinking */
+  margin-bottom: 0.25rem; /* Slight downward adjustment */
 }
 
 .page-header h2 {
@@ -631,17 +710,15 @@ body {
   font-size: 1.75rem;
   font-weight: 600;
   margin: 0;
-  text-align: center;
   line-height: 1.2;
   display: flex;
-  align-items: baseline;
+  align-items: center; /* Center alignment for better positioning */
   justify-content: center;
   gap: 0.3rem;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   white-space: nowrap;
-  z-index: 10;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .page-header h2 .movie-count {
@@ -896,6 +973,28 @@ body {
 
 .btn-icon:hover svg {
   opacity: 1;
+}
+
+.btn-text {
+  /* Keep button text visible at all sizes. Allow wrapping rather than
+     clipping/ellipsising so the label remains readable when the
+     viewport is narrow (we prefer the icon to shrink instead).
+  */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* When space is constrained, shrink the icon rather than hide text */
+@media (max-width: 420px) {
+  .btn-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+  .btn-icon {
+    padding: 0.4rem 0.6rem;
+    gap: 0.4rem;
+  }
 }
 
 .friends-header h2 {
@@ -2069,7 +2168,8 @@ body {
 
 /* Increase friend-tag font-size to match movie details (0.9rem) as requested */
 .results-page.dynamic-cards .friend-tag {
-  font-size: 0.9rem;
+  /* Increased 5% for better readability in dynamic card layout */
+  font-size: 0.95rem;
 }
 
 /* Mobile tweaks: tighter gaps and width bias to viewport */
@@ -2167,9 +2267,10 @@ body {
 }
 
 .results-page .friend-tag {
-  font-size: 0.6rem;
-  padding: 0.125rem 0.25rem;
-  border-radius: 4px;
+  /* Slightly larger compact tags to improve legibility */
+  font-size: 0.63rem;
+  padding: 0.14rem 0.26rem;
+  border-radius: 5px;
   border: 1px solid;
   white-space: nowrap;
   line-height: 1;
@@ -2214,99 +2315,100 @@ body {
 
 .friend-tag {
   color: #fff;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
+  /* Increase padding and font-size by ~5% for clearer capsules */
+  padding: 0.32rem 0.63rem;
+  font-size: 0.79rem;
   font-weight: 600;
-  margin: 0.2rem;
-  border-radius: 12px;
+  margin: 0.21rem;
+  border-radius: 13px;
   border: 1px solid;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: inline-block;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Per-user color classes (matches src/utils.getUserColors palette) */
+/* Per-user color classes (reference variables in :root for maintainability) */
 .friend-color-0 {
-  border-color: #ff6b6b;
-  background-color: #ff6b6b33;
+  border-color: var(--friend-0);
+  background-color: var(--friend-0-bg);
 }
 .friend-color-1 {
-  border-color: #4ecdc4;
-  background-color: #4ecdc433;
+  border-color: var(--friend-1);
+  background-color: var(--friend-1-bg);
 }
 .friend-color-2 {
-  border-color: #45b7d1;
-  background-color: #45b7d133;
+  border-color: var(--friend-2);
+  background-color: var(--friend-2-bg);
 }
 .friend-color-3 {
-  border-color: #96ceb4;
-  background-color: #96ceb433;
+  border-color: var(--friend-3);
+  background-color: var(--friend-3-bg);
 }
 .friend-color-4 {
-  border-color: #feca57;
-  background-color: #feca5733;
+  border-color: var(--friend-4);
+  background-color: var(--friend-4-bg);
 }
 .friend-color-5 {
-  border-color: #ff9ff3;
-  background-color: #ff9ff333;
+  border-color: var(--friend-5);
+  background-color: var(--friend-5-bg);
 }
 .friend-color-6 {
-  border-color: #54a0ff;
-  background-color: #54a0ff33;
+  border-color: var(--friend-6);
+  background-color: var(--friend-6-bg);
 }
 .friend-color-7 {
-  border-color: #5f27cd;
-  background-color: #5f27cd33;
+  border-color: var(--friend-7);
+  background-color: var(--friend-7-bg);
 }
 .friend-color-8 {
-  border-color: #00d2d3;
-  background-color: #00d2d333;
+  border-color: var(--friend-8);
+  background-color: var(--friend-8-bg);
 }
 .friend-color-9 {
-  border-color: #ff9f43;
-  background-color: #ff9f4333;
+  border-color: var(--friend-9);
+  background-color: var(--friend-9-bg);
 }
 .friend-color-10 {
-  border-color: #1dd1a1;
-  background-color: #1dd1a133;
+  border-color: var(--friend-10);
+  background-color: var(--friend-10-bg);
 }
 .friend-color-11 {
-  border-color: #fd79a8;
-  background-color: #fd79a833;
+  border-color: var(--friend-11);
+  background-color: var(--friend-11-bg);
 }
 .friend-color-12 {
-  border-color: #6c5ce7;
-  background-color: #6c5ce733;
+  border-color: var(--friend-12);
+  background-color: var(--friend-12-bg);
 }
 .friend-color-13 {
-  border-color: #74b9ff;
-  background-color: #74b9ff33;
+  border-color: var(--friend-13);
+  background-color: var(--friend-13-bg);
 }
 .friend-color-14 {
-  border-color: #a29bfe;
-  background-color: #a29bfe33;
+  border-color: var(--friend-14);
+  background-color: var(--friend-14-bg);
 }
 .friend-color-15 {
-  border-color: #1e90ff;
-  background-color: #1e90ff33;
+  border-color: var(--friend-15);
+  background-color: var(--friend-15-bg);
 }
 .friend-color-16 {
-  border-color: #ff7675;
-  background-color: #ff767533;
+  border-color: var(--friend-16);
+  background-color: var(--friend-16-bg);
 }
 .friend-color-17 {
-  border-color: #74c0fc;
-  background-color: #74c0fc33;
+  border-color: var(--friend-17);
+  background-color: var(--friend-17-bg);
 }
 .friend-color-18 {
-  border-color: #82ca9d;
-  background-color: #82ca9d33;
+  border-color: var(--friend-18);
+  background-color: var(--friend-18-bg);
 }
 .friend-color-19 {
-  border-color: #f8b500;
-  background-color: #f8b50033;
+  border-color: var(--friend-19);
+  background-color: var(--friend-19-bg);
 }
 
 .letterboxd-link {
@@ -2412,16 +2514,28 @@ body {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    min-height: 60px;
+  }
+
+  .header-title-container {
+    order: 1;
   }
 
   .page-header h2 {
     font-size: 1.5rem;
-    order: 1;
   }
 
   .page-header .btn {
     order: 2;
     align-self: flex-start;
+  }
+
+  .page-header .btn .btn-text {
+    display: none;
+  }
+
+  .header-spacer {
+    display: none;
   }
 
   .movies-grid {
@@ -2449,6 +2563,45 @@ body {
 
   .sync-status {
     justify-content: center;
+  }
+}
+
+/* Extra responsive rules for very narrow screens */
+@media (max-width: 480px) {
+  .page-header h2 {
+    font-size: 1.25rem;
+    gap: 0.2rem;
+  }
+
+  .movie-count {
+    font-size: 1.8rem;
+  }
+
+  .movie-label {
+    font-size: 1rem;
+  }
+
+  .page-header .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-header .btn .btn-text {
+    display: none;
+  }
+
+  .page-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .movie-count {
+    font-size: 1.5rem;
+  }
+
+  .movie-label {
+    font-size: 0.9rem;
   }
 }
 
@@ -2722,5 +2875,49 @@ body {
   .btn-pin:hover {
     transform: none !important;
     background-color: rgba(255, 128, 0, 0.2) !important;
+  }
+}
+
+/* Small, targeted rule for the header Back button to prevent label collapsing
+   Use a dedicated class so we don't need to edit large existing selector blocks. */
+.header-back-btn {
+  /* prevent the button from shrinking when header compresses */
+  flex: 0 0 auto;
+  min-width: 64px; /* allow room for icon + short label */
+}
+.header-back-btn .btn-text {
+  white-space: nowrap; /* keep "Back" on a single line */
+  overflow: visible;
+}
+@media (max-width: 420px) {
+  .header-back-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .header-back-btn {
+    padding: 0.32rem 0.5rem !important;
+  }
+}
+
+/* Force the Back label to remain visible in the page header even when
+   other responsive rules hide generic button text. This uses a more
+   specific selector and !important to override existing media queries
+   like `.page-header .btn .btn-text { display: none; }`. */
+.page-header .header-back-btn .btn-text {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 768px) {
+  .page-header .header-back-btn .btn-text {
+    display: inline-block !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-header .header-back-btn .btn-text {
+    display: inline-block !important;
   }
 }

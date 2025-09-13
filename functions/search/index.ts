@@ -68,7 +68,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   const tmdbUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(q)}&page=${page}&api_key=${env.TMDB_API_KEY}`;
 
   const response = await fetch(tmdbUrl, {
-    headers: { "User-Agent": "BoxdBuddy/1.1.0" },
+    headers: { "User-Agent": "Boxdbud.io/1.1.0" },
   });
 
   if (!response.ok)

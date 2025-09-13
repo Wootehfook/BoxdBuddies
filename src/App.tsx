@@ -1,5 +1,5 @@
 /*
- * BoxdBuddy - Movie Watchlist Comparison Tool (Web Version)
+ * Boxdbud.io - Movie Watchlist Comparison Tool (Web Version)
  * Copyright (C) 2025 Wootehfook
  *
  * This program is free software: you can redistribute it and/or modify
@@ -498,19 +498,27 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="logo-wrapper left-logo" aria-hidden="true">
-            <img src="/buddio.svg" alt="Buddio" className="buddio-logo" />
+            <img
+              src="/boxdbudio.png"
+              alt="Boxdbud.io logo"
+              className="boxdbudio-logo"
+            />
           </div>
           <div className="header-title">
-            <h1 className="app-title-text">BoxdBuddy</h1>
+            <h1 className="app-title-text brand" aria-label="Boxdbud dot io">
+              <span className="brand-word">Boxdbud</span>
+              <span className="brand-dot">.</span>
+              <span className="brand-tld">io</span>
+            </h1>
             <p className="app-subtitle">
               Find movies all your friends want to watch
             </p>
           </div>
           <div className="logo-wrapper right-logo" aria-hidden="true">
             <img
-              src="/buddio.svg"
-              alt="Buddio mirror"
-              className="buddio-logo mirrored"
+              src="/boxdbudio.png"
+              alt="Boxdbud.io logo (mirrored)"
+              className="boxdbudio-logo mirrored"
             />
           </div>
         </div>
@@ -569,7 +577,7 @@ function App() {
                     The Movie Database (TMDB)
                   </a>
                 </p>
-                <p>• BoxdBuddy is not affiliated with Letterboxd or TMDB</p>
+                <p>• Boxdbud.io is not affiliated with Letterboxd or TMDB</p>
                 <p>
                   <em>
                     This product uses the TMDB API but is not endorsed or

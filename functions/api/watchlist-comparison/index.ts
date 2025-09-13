@@ -85,7 +85,7 @@ async function fetchWatchlistPage(
   const res = await fetch(url, {
     headers: {
       "User-Agent":
-        "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev) - Watchlist Comparison Tool",
+        "Boxdbud.io/1.1.0 (https://boxdbud.pages.dev) - Watchlist Comparison Tool",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Accept-Language": "en-US,en;q=0.5",
     },
