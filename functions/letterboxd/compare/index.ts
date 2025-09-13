@@ -175,8 +175,9 @@ async function scrapeLetterboxdWatchlist(
         break;
       }
       const html = await res.text();
-      console.log(`DEBUG: fetched page ${page} html length: ${html.length}`);
-      console.log(`DEBUG: fetched html snippet: ${html.slice(0, 200)}`);
+      // Use debugLog (centralized) rather than console.log for debug output.
+      // Avoid logging full HTML snippets to reduce sensitive/verbose output.
+      debugLog(env, `fetched page ${page} html length: ${html.length}`);
       const pageMovies = extractMoviesFromHtml(html);
       if (pageMovies.length === 0) break;
       allMovies.push(...pageMovies);
@@ -388,12 +389,15 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       })
     );
 
-    console.log(
-      "DEBUG: watchlists sizes",
-      watchlists.map((w) => ({ username: w.username, size: w.movies.length }))
-    );
+    // Structured logging for aggregated debug info
+    logger.info("watchlists sizes", {
+      watchlists: watchlists.map((w) => ({
+        username: w.username,
+        size: w.movies.length,
+      })),
+    });
     const commonMovies = findCommonMovies(watchlists);
-    console.log("DEBUG: commonMovies count", commonMovies.length);
+    logger.info("commonMovies count", { count: commonMovies.length });
     const enhanced = await enhanceWithTMDBData(commonMovies, env);
 
     const moviesWithFilteredFriends = enhanced.map((m) => ({

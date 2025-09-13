@@ -66,25 +66,24 @@ Interested in contributing? Here’s how to get the development environment runn
 
 1. **Clone the repository**:
 
-````bash
+```bash
 git clone https://github.com/your-username/BoxdBuddies.git
-    ```bash
-    git clone https://github.com/your-username/BoxdBuddies.git
-    cd BoxdBuddies
-    ```
+cd BoxdBuddies
+```
 
 2. **Install dependencies**:
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 3. **Start the development server**:
 
-    ```bash
-    npm run dev
-    ```
-    The application will be available at `http://localhost:5173`.
+   ```bash
+   npm run dev
+   ```
+
+   The application will be available at `http://localhost:5173`.
 
 ### Project Structure
 
@@ -97,7 +96,7 @@ BoxdBuddies/
 ├── .github/                # GitHub workflows and configurations
 ├── wrangler.toml           # Cloudflare configuration
 └── README.md               # This file
-````
+```
 
 ---
 
