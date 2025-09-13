@@ -21,7 +21,7 @@
 
 body {
   font-family:
-    "Tiempos Text Web", Georgia, serif, "Noto Color Emoji", "Apple Color Emoji",
+    "Open Sans", Arial, sans-serif, "Noto Color Emoji", "Apple Color Emoji",
     "Segoe UI Emoji";
   background-color: #14181c;
   color: #9ab;
@@ -58,28 +58,31 @@ body {
 
 .app-header .header-content {
   display: flex;
-  justify-content: center; /* center the whole header group */
-  align-items: baseline; /* align bottoms of logo and text */
-  max-width: 650px; /* constrain to setup card width */
+  justify-content: center;
+  align-items: baseline;
+  max-width: 650px;
   margin: 0 auto;
   gap: 1rem;
+  flex-wrap: nowrap; /* prevent wrapping */
+  min-width: 0; /* allow shrinking */
 }
 
 .app-header .logo-wrapper {
   display: flex;
-  align-items: baseline; /* ensure img bottom aligns with subtitle */
-  width: 120px; /* reserve equal horizontal space for both logos */
+  align-items: baseline;
+  width: 120px;
   justify-content: center;
+  flex-shrink: 0; /* don't shrink logos */
 }
 
-.app-header .buddio-logo {
+.app-header .boxdbudio-logo {
   height: 90px; /* increased ~15% to sit visually centered between title and subtitle */
   width: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   transform: translateY(6px); /* shift down slightly to vertically center */
 }
 
-.app-header .buddio-logo.mirrored {
+.app-header .boxdbudio-logo.mirrored {
   transform: scaleX(-1) translateY(6px); /* preserve mirror and same vertical shift */
 }
 
@@ -87,10 +90,10 @@ body {
 .app-header .header-title {
   display: flex;
   flex-direction: column;
-  align-items: center; /* center title text within constrained header */
-  transform: translateY(
-    -30px
-  ); /* nudge title and subtitle upward while leaving logos in place */
+  align-items: center;
+  transform: translateY(-30px);
+  min-width: 0; /* allow text to shrink */
+  flex: 1; /* take remaining space */
 }
 
 .app-header .app-title-text {
@@ -186,10 +189,15 @@ body {
 }
 
 /* Responsive header */
-@media (max-width: 768px) {
-  .header-content {
+@media (max-width: 600px) {
+  .app-header .header-content {
     flex-direction: column;
     gap: 1rem;
+    align-items: center;
+  }
+
+  .app-header .logo-wrapper {
+    width: auto;
   }
 
   .btn-pin {
@@ -200,7 +208,26 @@ body {
 
   .app-header {
     position: relative;
-    padding-top: 0.75rem; /* was 1.5rem */
+    padding-top: 0.75rem;
+  }
+}
+
+/* Intermediate responsive adjustments - reduce sizes before stacking */
+@media (max-width: 768px) and (min-width: 601px) {
+  .app-header .boxdbudio-logo {
+    height: 70px; /* smaller logos */
+  }
+
+  .app-header .app-title-text {
+    font-size: 2rem; /* smaller title */
+  }
+
+  .app-header .app-subtitle {
+    font-size: 1rem; /* smaller subtitle */
+  }
+
+  .app-header .header-content {
+    gap: 0.75rem; /* tighter spacing */
   }
 }
 
@@ -393,7 +420,10 @@ body {
   color: #9ab;
 }
 
-.progress-item:has(.progress-icon:contains("✅")) .progress-text {
+.progress-item.completed .progress-text,
+.progress-item .progress-icon.complete + .progress-text {
+  /* JS/JSX should add `.completed` to `.progress-item` or
+     `.complete` to `.progress-icon` when the progress step is finished. */
   color: #00d27a;
 }
 
@@ -1525,7 +1555,7 @@ body {
   opacity: 0.6;
 }
 
-.buddio-empty-state {
+.boxdbudio-empty-state {
   height: 12rem;
   width: auto;
   opacity: 0.6;
@@ -2824,9 +2854,14 @@ body {
   color: #ff8000;
   font-size: 2.5rem;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .movie-label {
   color: #fff;
   font-size: 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }

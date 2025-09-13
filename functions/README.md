@@ -1,6 +1,6 @@
 # Functions / server notes
 
-This folder contains Cloudflare Pages Functions used by BoxdBuddy for scraping, TMDB enrichment, and server-side APIs.
+This folder contains Cloudflare Pages Functions used by Boxdbud.io for scraping, TMDB enrichment, and server-side APIs.
 
 Server data contract: poster_path
 

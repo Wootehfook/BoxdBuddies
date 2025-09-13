@@ -3,7 +3,7 @@
 /* Fix emoji display issues on Linux */
 body {
   font-family:
-    "Tiempos Text Web", Georgia, serif, "Noto Color Emoji", "Apple Color Emoji",
+    "Open Sans", Arial, sans-serif, "Noto Color Emoji", "Apple Color Emoji",
     "Segoe UI Emoji";
 }
 
@@ -59,18 +59,20 @@ body {
   background-position: center;
 }
 
-/* Director icon fallback */
-.movie-detail-item:has(.detail-icon:contains("🎬")) .detail-icon::before {
+/* Fallback icon images — prefer adding marker classes in markup
+   instead of relying on unsupported selectors like `:has()` and
+   `:contains()`. Example: add `.has-director`, `.has-genre`,
+   `.has-rating` to `.movie-detail-item` in JSX/TSX when appropriate. */
+
+.movie-detail-item.has-director .detail-icon::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff8000'%3E%3Cpath d='M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z'/%3E%3C/svg%3E");
 }
 
-/* Genre icon fallback */
-.movie-detail-item:has(.detail-icon:contains("🎭")) .detail-icon::before {
+.movie-detail-item.has-genre .detail-icon::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff8000'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM7 9c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5 8c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zm5-6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z'/%3E%3C/svg%3E");
 }
 
-/* Rating icon fallback */
-.movie-detail-item:has(.detail-icon:contains("⭐")) .detail-icon::before {
+.movie-detail-item.has-rating .detail-icon::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff8000'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/%3E%3C/svg%3E");
 }
 

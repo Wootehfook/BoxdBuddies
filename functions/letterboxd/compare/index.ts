@@ -1,14 +1,12 @@
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Letterboxd Watchlist Comparison API
 
-// AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 import { debugLog } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
 
 // Structured logging utility for production
 const logger = {
   info: (message: string, meta?: any) => {
-    // Gate informational logs through debugLog so they can be disabled in production
     debugLog(
       undefined,
       JSON.stringify({
@@ -30,7 +28,6 @@ const logger = {
     );
   },
   warn: (message: string, meta?: any) => {
-    // Use debugLog for warnings too; keep errors on console.error
     debugLog(
       undefined,
       JSON.stringify({
@@ -42,11 +39,6 @@ const logger = {
     );
   },
 };
-
-// D1 database helper types omitted to avoid unused-local errors
-// D1PreparedStatement omitted to avoid unused-local errors
-
-// D1Result omitted to avoid unused-local errors
 
 type Env = CacheEnv;
 
@@ -60,20 +52,17 @@ interface Movie {
   id: number;
   title: string;
   year: number;
-  poster_path?: string;
-  overview?: string;
-  vote_average?: number;
-  director?: string;
-  runtime?: number;
-  letterboxdSlug?: string;
+  poster_path?: string | null;
+  overview?: string | null;
+  vote_average?: number | null;
+  director?: string | null;
+  runtime?: number | null;
+  letterboxdSlug?: string | null;
   friendCount: number;
   friendList: string[];
 }
 
-// AI Generated: GitHub Copilot - 2025-08-17T04:25:00Z
-// Enhanced HTML entity decoding function to prevent double-escaping issues
 function decodeHTMLEntities(text: string): string {
-  // Comprehensive entity map with numeric character references
   const entityMap: Record<string, string> = {
     "&amp;": "&",
     "&lt;": "<",
@@ -82,567 +71,368 @@ function decodeHTMLEntities(text: string): string {
     "&apos;": "'",
     "&#039;": "'",
     "&#x27;": "'",
-    "&#x2F;": "/",
-    "&#x60;": "`",
-    "&#x3D;": "=",
     "&nbsp;": " ",
-    "&copy;": "©",
-    "&reg;": "®",
-    "&trade;": "™",
-    "&hellip;": "…",
-    "&mdash;": "—",
-    "&ndash;": "–",
-    "&lsquo;": "'",
-    "&rsquo;": "'",
-    "&ldquo;": "\u201C",
-    "&rdquo;": "\u201D",
+    "&mdash;": "-",
+    "&ndash;": "-",
   };
 
-  // First pass: decode named entities
-  let decoded = text.replace(/&[a-zA-Z][a-zA-Z0-9]*;/g, (entity) => {
-    return entityMap[entity] || entity;
-  });
-
-  // Second pass: decode numeric character references
-  decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => {
-    const codePoint = parseInt(hex, 16);
-    return codePoint > 0 && codePoint < 0x10ffff
-      ? String.fromCharCode(codePoint)
-      : match;
-  });
-
-  decoded = decoded.replace(/&#([0-9]+);/g, (match, decimal) => {
-    const codePoint = parseInt(decimal, 10);
-    return codePoint > 0 && codePoint < 0x10ffff
-      ? String.fromCharCode(codePoint)
-      : match;
-  });
-
+  let decoded = text.replace(
+    /&[a-zA-Z][a-zA-Z0-9]*;/g,
+    (entity) => entityMap[entity] || entity
+  );
+  decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  );
+  decoded = decoded.replace(/&#(\d+);/g, (_, dec) =>
+    String.fromCharCode(parseInt(dec, 10))
+  );
   return decoded;
 }
 
-// Enhanced Letterboxd scraper with pagination
+export function normalizeTitleForSearch(text: string): {
+  normalized: string;
+  stripped: string;
+} {
+  if (!text) return { normalized: "", stripped: "" };
+  let s = decodeHTMLEntities(text);
+  // Handle double-escaped numeric entities and literal fragments
+  s = s.replace(/&amp;#x?0*27;?/gi, "'");
+  s = s.replace(/&amp;#0*39;?/gi, "'");
+  s = s.replace(/#x27;?/gi, "'");
+  s = s.replace(/#0*39;?/g, "'");
+  // Normalize various apostrophes/quotes to ASCII
+  s = s.replace(/[\u2018\u2019\u201A\uFF07\u02BC\u201B]/g, "'");
+  s = s.replace(/[\u201C\u201D\u201E]/g, '"');
+  s = s.replace(/[\u2013\u2014]/g, "-");
+  // Remove ampersands that remain only when they are part of broken numeric
+  // entity fragments (e.g. "& #039;", "&amp; #039;") — preserve meaningful
+  // ampersands like "Tom & Jerry". We remove the '&' only when it's
+  // followed (possibly after 'amp;' and whitespace) by a '#'.
+  s = s.replace(/&(?:amp;)?\s*(?=#)/gi, "");
+  // Remove spaces before apostrophes produced by patterns like " &#039;s" -> "'s"
+  s = s.replace(/\s+'+/g, "'");
+  s = s.replace(/\s+/g, " ").trim();
+  const stripped = s.replace(/'+/g, "");
+  return { normalized: s, stripped };
+}
+
+/**
+ * Parse the inner HTML of a single <li class="poster-container"> block
+ * and return a LetterboxdMovie or null when parsing fails.
+ */
+function parseLiContent(liContent: string): LetterboxdMovie | null {
+  const slugMatch = /data-film-slug=["']([^"']*)["']/.exec(liContent);
+  const imgAltMatch = /<img[^>]+alt=["']([^"']+)["'][^>]*>/.exec(liContent);
+  const slug = slugMatch ? slugMatch[1] : "";
+  const titleWithYear = imgAltMatch ? imgAltMatch[1] : "";
+  if (!titleWithYear) return null;
+  const yearRe = /^(.+?)\s+(\d{4})$/;
+  const ym = yearRe.exec(titleWithYear);
+  if (ym) return { title: ym[1].trim(), year: parseInt(ym[2], 10), slug };
+  // If no year is present, still return the title (year 0)
+  return { title: titleWithYear.trim(), year: 0, slug };
+}
+
+/**
+ * Extract all LetterboxdMovie entries from the page HTML by finding
+ * <li class="poster-container"> blocks and parsing each one.
+ */
+function extractMoviesFromHtml(html: string): LetterboxdMovie[] {
+  const pageMovies: LetterboxdMovie[] = [];
+  const liRegex =
+    /<li[^>]*class=["']poster-container["'][^>]*>([\s\S]*?)<\/li>/gi;
+  let liMatch: RegExpExecArray | null;
+  while ((liMatch = liRegex.exec(html)) !== null) {
+    const liContent = liMatch[1];
+    const movie = parseLiContent(liContent);
+    if (movie) pageMovies.push(movie);
+  }
+  return pageMovies;
+}
+
 async function scrapeLetterboxdWatchlist(
   username: string,
   env?: Env
 ): Promise<LetterboxdMovie[]> {
   const allMovies: LetterboxdMovie[] = [];
-  let currentPage = 1;
-  let hasMorePages = true;
-  const maxPages = 50; // Safety limit to prevent infinite loops
-
+  let page = 1;
+  const maxPages = 50;
   logger.info(`Starting to scrape watchlist`, { username });
 
-  while (hasMorePages && currentPage <= maxPages) {
+  while (page <= maxPages) {
     const url =
-      currentPage === 1
+      page === 1
         ? `https://letterboxd.com/${username}/watchlist/`
-        : `https://letterboxd.com/${username}/watchlist/page/${currentPage}/`;
-
-    debugLog(env, `Scraping page ${currentPage}: ${url}`);
-
+        : `https://letterboxd.com/${username}/watchlist/page/${page}/`;
+    debugLog(env, `Scraping ${url}`);
     try {
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent":
-            "BoxdBuddy/1.1.0 (https://boxdbuddy.pages.dev) - Watchlist Comparison Tool",
-        },
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Boxdbud.io/1.0" },
       });
-
-      if (!response.ok) {
-        if (currentPage === 1) {
-          throw new Error(
-            `Failed to fetch watchlist for ${username}: ${response.status}`
-          );
-        } else {
-          // If we can't fetch a page beyond the first, we've likely hit the end
-          debugLog(
-            env,
-            `Page ${currentPage} returned ${response.status}, stopping pagination`
-          );
-          break;
-        }
-      }
-
-      const html = await response.text();
-
-      // Check if this page has any movies
-      const filmRegex =
-        /<li[^>]*class="poster-container"[^>]*>[\s\S]*?data-film-slug="([^"]+)"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*>/g;
-      const pageMovies: LetterboxdMovie[] = [];
-
-      let match;
-      while ((match = filmRegex.exec(html)) !== null) {
-        const slug = match[1];
-        const titleWithYear = match[2];
-
-        // Extract title and year from "Title Year" format
-        const yearMatch = titleWithYear.match(/^(.+?)\s+(\d{4})$/);
-        if (yearMatch) {
-          pageMovies.push({
-            title: yearMatch[1].trim(),
-            year: parseInt(yearMatch[2]),
-            slug: slug,
-          });
-        } else {
-          // No year found, use 0 as default
-          pageMovies.push({
-            title: titleWithYear.trim(),
-            year: 0,
-            slug: slug,
-          });
-        }
-      }
-
-      debugLog(env, `Found ${pageMovies.length} movies on page ${currentPage}`);
-
-      if (pageMovies.length === 0) {
-        // No movies found on this page, we've reached the end
-        hasMorePages = false;
-        debugLog(
-          env,
-          `No movies found on page ${currentPage}, stopping pagination`
-        );
-      } else {
-        allMovies.push(...pageMovies);
-        currentPage++;
-
-        // Add a small delay between requests to be respectful to Letterboxd
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Safety check: if we're getting too many pages, something might be wrong
-        if (currentPage > maxPages) {
-          debugLog(env, `Reached maximum page limit (${maxPages}), stopping`);
-          break;
-        }
-      }
-    } catch (error) {
-      console.error(
-        `Error scraping page ${currentPage} for ${username}:`,
-        error
-      );
-      if (currentPage === 1) {
-        // If the first page fails, re-throw the error
-        throw error;
-      } else {
-        // If a later page fails, just stop pagination
-        debugLog(
-          env,
-          `Stopping pagination due to error on page ${currentPage}`
-        );
+      if (!res.ok) {
+        if (page === 1)
+          throw new Error(`Failed to fetch ${url}: ${res.status}`);
         break;
       }
+      const html = await res.text();
+      console.log(`DEBUG: fetched page ${page} html length: ${html.length}`);
+      console.log(`DEBUG: fetched html snippet: ${html.slice(0, 200)}`);
+      const pageMovies = extractMoviesFromHtml(html);
+      if (pageMovies.length === 0) break;
+      allMovies.push(...pageMovies);
+      page++;
+      await new Promise((r) => setTimeout(r, 300));
+    } catch (e) {
+      debugLog(env, `Error scraping ${url}: ${String(e)}`);
+      break;
     }
   }
 
-  debugLog(
-    env,
-    `Completed scraping ${username}: ${allMovies.length} total movies across ${currentPage - 1} pages`
-  );
+  debugLog(env, `Scraped ${allMovies.length} movies for ${username}`);
   return allMovies;
 }
 
-// Find movies that appear in multiple watchlists
 function findCommonMovies(
   watchlists: { username: string; movies: LetterboxdMovie[] }[]
-): Array<LetterboxdMovie & { friendCount: number; friendList: string[] }> {
-  if (watchlists.length < 2) return [];
-
-  const movieCounts = new Map<
-    string,
-    { movie: LetterboxdMovie; count: number; users: string[] }
-  >();
-
-  // Count occurrences of each movie across all watchlists
-  for (const watchlist of watchlists) {
-    for (const movie of watchlist.movies) {
-      const key = `${movie.title.toLowerCase()}-${movie.year}`;
-      const existing = movieCounts.get(key);
-
+) {
+  const counts = new Map<string, { movie: LetterboxdMovie; users: string[] }>();
+  for (const w of watchlists) {
+    for (const m of w.movies) {
+      // Use a normalized title for matching so that different encodings of
+      // apostrophes/quotes still count as the same movie across users.
+      const { normalized } = normalizeTitleForSearch(m.title);
+      const key = `${normalized.toLowerCase()}-${m.year}`;
+      const existing = counts.get(key);
       if (existing) {
-        existing.count++;
-        // Only add username if it's not already in the users array
-        if (!existing.users.includes(watchlist.username)) {
-          existing.users.push(watchlist.username);
-        }
-      } else {
-        movieCounts.set(key, {
-          movie,
-          count: 1,
-          users: [watchlist.username],
-        });
-      }
+        if (!existing.users.includes(w.username))
+          existing.users.push(w.username);
+      } else counts.set(key, { movie: m, users: [w.username] });
     }
   }
-
-  // Return movies that appear in at least 2 watchlists
-  const commonMovies: Array<
+  const commons: Array<
     LetterboxdMovie & { friendCount: number; friendList: string[] }
   > = [];
-  for (const [, data] of movieCounts) {
-    if (data.count >= 2) {
-      commonMovies.push({
-        ...data.movie,
-        friendCount: data.count,
-        friendList: data.users,
+  for (const [, v] of counts)
+    if (v.users.length >= 2)
+      commons.push({
+        ...v.movie,
+        friendCount: v.users.length,
+        friendList: v.users,
       });
-    }
-  }
-
-  logger.info(`Found common movies`, { count: commonMovies.length });
-  return commonMovies;
+  return commons;
 }
 
-// Enhance movies with TMDB data from database
 async function enhanceWithTMDBData(
   movies: Array<
     LetterboxdMovie & { friendCount: number; friendList: string[] }
   >,
   env: Env
 ): Promise<Movie[]> {
-  const enhancedMovies: Movie[] = [];
-
-  // Helper: deterministic fallback ID generator used when TMDB lookup fails
-  const generateFallbackId = (title: string, year: number): number => {
-    let hash = 0;
-    const str = `${title.toLowerCase()}-${year}`;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    // Ensure positive ID between 900000-999999 to avoid conflicts with real TMDB IDs
-    return Math.abs(hash % 100000) + 900000;
+  // resolved will hold the final Movie[]
+  const generateFallbackId = (t: string, y: number) => {
+    let h = 0;
+    const s = `${t.toLowerCase()}-${y}`;
+    for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+    return Math.abs(h % 100000) + 900000;
   };
 
-  for (const movie of movies) {
+  // DB helper: try the REPLACE-stripped match
+  async function dbFindStripped(titleStripped: string, year: number) {
     try {
-      // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-      // Decode HTML entities using a more robust approach to prevent double-escaping
-      const decodedTitle = decodeHTMLEntities(movie.title);
-
-      // Extract a cleaner title from the Letterboxd slug if available
-      let searchTitle = decodedTitle;
-      if (movie.slug) {
-        // Convert slug to title: "the-vanishing-1993" -> "The Vanishing"
-        const slugTitle = movie.slug
-          .replace(/-\d{4}$/, "") // Remove year suffix
-          .split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-
-        // Use slug-derived title if it's different and seems more specific
-        if (
-          slugTitle.length > 0 &&
-          slugTitle.toLowerCase() !== decodedTitle.toLowerCase()
-        ) {
-          debugLog(
-            env,
-            `Using slug-derived title: "${slugTitle}" instead of "${decodedTitle}"`
-          );
-          searchTitle = slugTitle;
-        }
-      }
-
-      debugLog(
-        env,
-        `Looking up movie: "${movie.title}" -> "${searchTitle}" (${movie.year}) [slug: ${movie.slug}]`
-      );
-
-      // Try exact match first (strict)
-      let result = await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies 
-         WHERE LOWER(title) = LOWER(?) 
-         AND (year = ? OR year = ? OR year = ?)
-         ORDER BY popularity DESC
-         LIMIT 1`
+      return await env.MOVIES_DB.prepare(
+        `SELECT * FROM tmdb_movies WHERE LOWER(REPLACE(title, ?, '')) = LOWER(?) AND (year=? OR year=? OR year=?) ORDER BY popularity DESC LIMIT 1`
       )
-        .bind(searchTitle, movie.year, movie.year - 1, movie.year + 1)
+        .bind("'", titleStripped, year, year - 1, year + 1)
         .all();
+    } catch (e) {
+      debugLog(env, `Stripped REPLACE lookup failed: ${String(e)}`);
+      return null;
+    }
+  }
 
-      // If no exact match with slug title, try exact match with original title
-      if (
-        (!result.results || result.results.length === 0) &&
-        searchTitle !== decodedTitle
-      ) {
-        debugLog(
-          env,
-          `No match with slug title, trying original title: "${decodedTitle}"`
-        );
-        result = await env.MOVIES_DB.prepare(
-          `SELECT * FROM tmdb_movies 
-           WHERE LOWER(title) = LOWER(?) 
-           AND (year = ? OR year = ? OR year = ?)
-           ORDER BY popularity DESC
-           LIMIT 1`
-        )
-          .bind(decodedTitle, movie.year, movie.year - 1, movie.year + 1)
-          .all();
+  async function dbFindExact(title: string, year: number) {
+    try {
+      return await env.MOVIES_DB.prepare(
+        `SELECT * FROM tmdb_movies WHERE LOWER(title)=LOWER(?) AND (year=? OR year=? OR year=?) ORDER BY popularity DESC LIMIT 1`
+      )
+        .bind(title, year, year - 1, year + 1)
+        .all();
+    } catch (e) {
+      debugLog(env, `Exact lookup failed: ${String(e)}`);
+      return null;
+    }
+  }
+
+  async function dbFindLike(title: string) {
+    try {
+      return await env.MOVIES_DB.prepare(
+        `SELECT * FROM tmdb_movies WHERE LOWER(title) LIKE LOWER(?) ORDER BY popularity DESC LIMIT 1`
+      )
+        .bind(`%${title}%`)
+        .all();
+    } catch (e) {
+      debugLog(env, `DB LIKE fallback failed: ${String(e)}`);
+      return null;
+    }
+  }
+
+  function buildMovieFromRow(
+    r: any,
+    movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
+  ): Movie {
+    return {
+      id: r.id,
+      title: r.title,
+      year: r.year || movie.year,
+      poster_path: r.poster_path ?? null,
+      overview: r.overview ?? null,
+      vote_average: r.vote_average ?? null,
+      director: r.director ?? null,
+      runtime: r.runtime ?? null,
+      letterboxdSlug: movie.slug,
+      friendCount: movie.friendCount,
+      friendList: movie.friendList,
+    };
+  }
+
+  async function resolveMovie(
+    movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
+  ): Promise<Movie> {
+    try {
+      const { normalized, stripped } = normalizeTitleForSearch(movie.title);
+
+      if (stripped) {
+        const strippedResult = await dbFindStripped(stripped, movie.year);
+        if (strippedResult?.results?.length)
+          return buildMovieFromRow(strippedResult.results[0], movie);
       }
 
-      // If still no exact match, try more precise fuzzy matching
-      if (!result.results || result.results.length === 0) {
-        const titleLength = searchTitle.length;
-        if (titleLength >= 6) {
-          // Lowered threshold but with better logic
-          debugLog(
-            env,
-            `No exact match found, trying precise fuzzy search for "${searchTitle}"`
-          );
-
-          // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-          // More precise fuzzy matching to avoid false positives like "The Fall" matching "The Fall Guy"
-
-          // For short titles like "The Fall", be extremely strict to prevent false matches
-          if (titleLength <= 12) {
-            debugLog(
-              env,
-              `Short title detected, using exact prefix matching to prevent false positives`
-            );
-
-            // Try multiple exact patterns before giving up:
-            // 1. Exact match (already tried above)
-            // 2. Title followed by year: "The Fall (2019)"
-            // 3. Title followed by colon: "The Fall: Subtitle"
-            // 4. Title as complete word at start
-
-            const patterns = [
-              `${searchTitle} (%`, // "The Fall (2019)"
-              `${searchTitle}:%`, // "The Fall: Subtitle"
-              `${searchTitle}.%`, // "The Fall. Subtitle"
-            ];
-
-            for (const pattern of patterns) {
-              result = await env.MOVIES_DB.prepare(
-                `SELECT * FROM tmdb_movies 
-                 WHERE LOWER(title) LIKE LOWER(?)
-                 AND (year = ? OR year = ? OR year = ?)
-                 ORDER BY popularity DESC
-                 LIMIT 1`
-              )
-                .bind(pattern, movie.year, movie.year - 1, movie.year + 1)
-                .all();
-
-              if (result.results && result.results.length > 0) {
-                debugLog(env, `Found match with pattern: ${pattern}`);
-                break;
-              }
-            }
-          } else {
-            // For longer titles, use the original fuzzy logic but with stricter constraints
-            result = await env.MOVIES_DB.prepare(
-              `SELECT * FROM tmdb_movies 
-               WHERE (title LIKE ? OR original_title LIKE ?) 
-               AND (year = ? OR year IS NULL OR ? = 0)
-               AND LENGTH(title) BETWEEN ? AND ?
-               ORDER BY popularity DESC
-               LIMIT 1`
-            )
-              .bind(
-                `%${searchTitle}%`,
-                `%${searchTitle}%`,
-                movie.year,
-                movie.year,
-                Math.max(titleLength - 3, Math.floor(titleLength * 0.8)), // Stricter minimum length
-                titleLength + 8 // Reasonable maximum length
-              )
-              .all();
-          }
-        } else {
-          debugLog(env, `Title "${searchTitle}" too short for fuzzy matching`);
-        }
+      let searchTitle = normalized;
+      if (movie.slug) {
+        const slugTitle = movie.slug
+          .replace(/-\d{4}$/, "")
+          .split("-")
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+          .join(" ");
+        if (slugTitle && slugTitle.toLowerCase() !== normalized.toLowerCase())
+          searchTitle = slugTitle;
       }
 
-      if (result.results && result.results.length > 0) {
-        const tmdbMovie = result.results[0] as any;
+      let result = await dbFindExact(searchTitle, movie.year);
+      if (!result?.results?.length && stripped)
+        result = await dbFindStripped(stripped, movie.year);
+      if (!result?.results?.length && searchTitle !== normalized)
+        result = await dbFindExact(normalized, movie.year);
+      if (!result?.results?.length && searchTitle)
+        result = await dbFindLike(searchTitle);
 
-        // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-        // Enhanced logging to help debug movie matching
-        debugLog(env, `✅ Found TMDB match for "${movie.title}":`, {
-          letterboxdTitle: movie.title,
-          letterboxdSlug: movie.slug,
-          letterboxdYear: movie.year,
-          tmdbTitle: tmdbMovie.title,
-          tmdbYear: tmdbMovie.year,
-          tmdbId: tmdbMovie.id,
-        });
+      if (result?.results?.length)
+        return buildMovieFromRow(result.results[0], movie);
 
-        enhancedMovies.push({
-          id: tmdbMovie.id,
-          title: tmdbMovie.title,
-          year: tmdbMovie.year || movie.year,
-          poster_path: tmdbMovie.poster_path,
-          overview: tmdbMovie.overview,
-          vote_average: tmdbMovie.vote_average,
-          director: tmdbMovie.director,
-          runtime: tmdbMovie.runtime,
-          letterboxdSlug: movie.slug,
-          friendCount: movie.friendCount,
-          friendList: movie.friendList,
-        });
-      } else {
-        // AI Generated: GitHub Copilot - 2025-08-16T22:00:00Z
-        // Enhanced logging for failed matches
-        debugLog(
-          env,
-          `❌ No TMDB match found for "${movie.title}" (${movie.year}) [slug: ${movie.slug}]`
-        );
-
-        // Use deterministic fallback ID generator
-        // Fallback if not found in database
-        enhancedMovies.push({
-          id: generateFallbackId(movie.title, movie.year),
-          title: movie.title,
-          year: movie.year,
-          letterboxdSlug: movie.slug,
-          friendCount: movie.friendCount,
-          friendList: movie.friendList,
-        });
-      }
-    } catch (error) {
-      // Use deterministic fallback ID generator
-      console.error("Error enhancing movie:", error);
-      // Add basic movie data as fallback
-      enhancedMovies.push({
-        id: generateFallbackId(movie.title, movie.year),
-        title: movie.title,
+      return {
+        id: generateFallbackId(normalized, movie.year),
+        title: normalized,
         year: movie.year,
         letterboxdSlug: movie.slug,
         friendCount: movie.friendCount,
         friendList: movie.friendList,
-      });
+      };
+    } catch (e) {
+      debugLog(env, `Enhance error for ${movie.title}: ${String(e)}`);
+      const { normalized: fallbackTitle } = normalizeTitleForSearch(
+        movie.title
+      );
+      return {
+        id: generateFallbackId(fallbackTitle, movie.year),
+        title: fallbackTitle,
+        year: movie.year,
+        letterboxdSlug: movie.slug,
+        friendCount: movie.friendCount,
+        friendList: movie.friendList,
+      };
     }
   }
 
-  return enhancedMovies;
+  const resolved = await Promise.all(movies.map(resolveMovie));
+  return resolved;
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
-
   try {
     const body = (await request.json()) as {
       usernames?: string[];
       username?: string;
       friends?: string[];
     };
-
-    // Support both formats: new format {usernames: []} and legacy format {username: "", friends: []}
     let usernames: string[] = [];
-
-    if (body.usernames && Array.isArray(body.usernames)) {
-      // New format: {usernames: ["user1", "user2", "user3"]}
+    if (body.usernames && Array.isArray(body.usernames))
       usernames = body.usernames;
-    } else if (body.username && body.friends && Array.isArray(body.friends)) {
-      // Legacy format: {username: "user1", friends: ["user2", "user3"]}
+    else if (body.username && body.friends && Array.isArray(body.friends))
       usernames = [body.username, ...body.friends];
-    }
-
-    // Clean and validate usernames
     usernames = usernames
-      .filter((u) => u && typeof u === "string" && u.trim())
+      .filter((u) => u && typeof u === "string")
       .map((u) => u.trim())
-      .slice(0, 10); // Limit to 10 users
-
-    if (usernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 usernames are required" },
+      .slice(0, 10);
+    if (usernames.length < 2)
+      return new Response(
+        JSON.stringify({ error: "At least 2 usernames are required" }),
         { status: 400 }
       );
-    }
 
-    debugLog(env, `Comparing watchlists for: ${usernames.join(", ")}`);
-
-    // Scrape all watchlists in parallel with rate limiting
-    const watchlistPromises = usernames.map(async (username, index) => {
-      // Add delay between requests to be respectful
-      if (index > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
-      }
-
-      const movies = await scrapeLetterboxdWatchlist(username, env);
-      return { username, movies };
-    });
-
-    const watchlists = await Promise.all(watchlistPromises);
-
-    debugLog(
-      env,
-      "Watchlist sizes:",
-      watchlists.map((w) => `${w.username}: ${w.movies.length}`)
+    const watchlists = await Promise.all(
+      usernames.map(async (u, idx) => {
+        if (idx > 0) await new Promise((r) => setTimeout(r, 500));
+        const movies = await scrapeLetterboxdWatchlist(u, env);
+        return { username: u, movies };
+      })
     );
 
-    // Find common movies
+    console.log(
+      "DEBUG: watchlists sizes",
+      watchlists.map((w) => ({ username: w.username, size: w.movies.length }))
+    );
     const commonMovies = findCommonMovies(watchlists);
+    console.log("DEBUG: commonMovies count", commonMovies.length);
+    const enhanced = await enhanceWithTMDBData(commonMovies, env);
 
-    // Enhance with TMDB data
-    const enhancedMovies = await enhanceWithTMDBData(commonMovies, env);
-
-    // Remove duplicates from friend lists but keep all users including main user
-    const moviesWithFilteredFriends = enhancedMovies.map((movie) => {
-      // Use Set to remove duplicates, but keep main user if they have the movie
-      const uniqueFriends = Array.from(new Set(movie.friendList));
-
-      return {
-        ...movie,
-        friendList: uniqueFriends,
-        friendCount: uniqueFriends.length,
-      };
-    });
-
-    // Filter out movies that don't have at least 2 friends after deduplication
+    const moviesWithFilteredFriends = enhanced.map((m) => ({
+      ...m,
+      friendList: Array.from(new Set(m.friendList)),
+      friendCount: Array.from(new Set(m.friendList)).length,
+    }));
     const moviesWithMultipleFriends = moviesWithFilteredFriends.filter(
-      (movie) => movie.friendCount >= 2
+      (m) => m.friendCount >= 2
+    );
+    moviesWithMultipleFriends.sort(
+      (a, b) =>
+        b.friendCount - a.friendCount ||
+        (b.vote_average || 0) - (a.vote_average || 0)
     );
 
-    // Sort by friend count (descending) first, then by rating (descending)
-    moviesWithMultipleFriends.sort((a, b) => {
-      // Primary sort: number of common friends (more friends = higher priority)
-      const friendCountDiff = b.friendCount - a.friendCount;
-      if (friendCountDiff !== 0) {
-        return friendCountDiff;
-      }
-
-      // Secondary sort: TMDB rating (higher rating = higher priority)
-      return (b.vote_average || 0) - (a.vote_average || 0);
-    });
-
-    return Response.json(
-      {
+    return new Response(
+      JSON.stringify({
         movies: moviesWithMultipleFriends,
         commonCount: moviesWithMultipleFriends.length,
-        usernames: usernames,
+        usernames,
         watchlistSizes: watchlists.map((w) => ({
           username: w.username,
           size: w.movies.length,
         })),
-      },
-      {
-        headers: {
-          "Cache-Control": "public, max-age=300",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
-      }
+      }),
+      { headers: { "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Comparison error:", error);
-    return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to compare watchlists",
-        details:
-          "Make sure all usernames exist on Letterboxd and have public watchlists",
-      },
-      { status: 500 }
+  } catch (e) {
+    console.error("Comparison error:", e);
+    return new Response(
+      JSON.stringify({
+        error: e instanceof Error ? e.message : "Failed to compare watchlists",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
-// Handle CORS preflight
 export async function onRequestOptions() {
   return new Response(null, {
     headers: {

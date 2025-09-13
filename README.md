@@ -1,4 +1,6 @@
-# 🎬 BoxdBuddy
+# 🎬 Boxdbud.io
+
+![Boxdbud.io brand](./docs/brand/boxdbud.io.svg)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
@@ -7,15 +9,19 @@
 
 **Find movies all your friends want to watch.**
 
-BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you the perfect movies for your next group watch. It's a modern web application powered by Cloudflare Pages and Functions, designed for speed, security, and ease of use.
+Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you the common movies for your next group watch.
 
 ## 🚀 Live Application
 
-**[Launch BoxdBuddy →](https://boxdbud.pages.dev)**
+**[Launch Boxdbud.io →](https://boxdbud.pages.dev)**
+
+Brand colors:
+
+- `#ff8000` — boxdbud
+- `#00e054` — . (dot)
+- `#40bcf4` — io
 
 - **No Installation Required**: Instant access from any modern web browser.
-- **Works Everywhere**: Fully responsive for desktop, tablet, and mobile.
-- **Always Up-to-Date**: Automatic updates deliver the latest features.
 
 ## ✨ Features
 
@@ -23,7 +29,6 @@ BoxdBuddy connects to Letterboxd, compares multiple watchlists, and shows you th
 - 👥 **Multi-User Comparison**: Compare watchlists between yourself and up to 4 friends.
 - 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and director info.
 - ⚡ **Intelligent Caching**: Utilizes a Cloudflare D1 database for rapid subsequent comparisons.
-- 📊 **Real-time Progress**: Visual progress tracking during the comparison process.
 - 🎨 **Responsive Design**: A clean, Letterboxd-inspired dark theme that works on any screen size.
 - 🔒 **Secure by Design**: All external API interactions are handled server-side; no user API keys are required or stored.
 
@@ -37,14 +42,13 @@ Navigate to **[boxdbud.pages.dev](https://boxdbud.pages.dev)**.
 
 ### Step 2: Enter Usernames
 
-1.  **Your Username**: Enter your exact Letterboxd username (it's case-sensitive).
-2.  **Friends' Usernames**: Add up to 4 friends by entering their Letterboxd usernames.
+1. **Your Username**: Enter your exact Letterboxd username.
 
 ### Step 3: Compare and View Results
 
-1.  Click **"Compare Watchlists"**. The app will scan all watchlists and find common movies.
-2.  Results are sorted to show movies that the most friends have on their watchlists.
-3.  Click any movie poster to view detailed information.
+1. Click **"Compare Watchlists"**. The app will scan all watchlists and find common movies.
+2. Results are sorted to show movies that the most friends have on their watchlists.
+3. Click any movie poster to view detailed information on [Letterboxd](https://letterboxd.com).
 
 ---
 
@@ -60,20 +64,23 @@ Interested in contributing? Here’s how to get the development environment runn
 
 ### Installation
 
-1.  **Clone the repository**:
+1. **Clone the repository**:
 
+````bash
+git clone https://github.com/your-username/BoxdBuddies.git
     ```bash
     git clone https://github.com/your-username/BoxdBuddies.git
     cd BoxdBuddies
     ```
 
-2.  **Install dependencies**:
+2. **Install dependencies**:
 
     ```bash
     npm install
     ```
 
-3.  **Start the development server**:
+3. **Start the development server**:
+
     ```bash
     npm run dev
     ```
@@ -90,7 +97,7 @@ BoxdBuddies/
 ├── .github/                # GitHub workflows and configurations
 ├── wrangler.toml           # Cloudflare configuration
 └── README.md               # This file
-```
+````
 
 ---
 
@@ -100,11 +107,11 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 
 ### Git Workflow
 
-1.  Create a feature branch: `git checkout -b feature/your-feature-name`
-2.  Make your changes and test them locally.
-3.  Format your code: `npm run lint`
-4.  Commit your changes using the [Conventional Commits](https://www.conventionalcommits.org/) format.
-5.  Push to your fork and create a Pull Request.
+1. Create a feature branch: `git checkout -b feature/your-feature-name`
+2. Make your changes and test them locally.
+3. Format your code: `npm run lint`
+4. Commit your changes using the [Conventional Commits](https://www.conventionalcommits.org/) format.
+5. Push to your fork and create a Pull Request.
 
 ### Code Style
 

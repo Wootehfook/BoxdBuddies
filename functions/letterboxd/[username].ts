@@ -122,7 +122,7 @@ async function scrapeUserWatchlist(
     const url = `https://letterboxd.com/${username}/watchlist/page/${page}/`;
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; BoxdBuddy/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; Boxdbud.io/1.0)",
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },

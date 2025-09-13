@@ -1,5 +1,5 @@
 /*
- * BoxdBuddy - Letterboxd Watchlist Count API Endpoint
+ * Boxdbud.io - Letterboxd Watchlist Count API Endpoint
  * Copyright (C) 2025 Wootehfook
  * AI Generated: GitHub Copilot - 2025-08-16
  */

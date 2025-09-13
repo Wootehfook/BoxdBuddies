@@ -99,7 +99,7 @@ async function getWatchlistCount(username: string): Promise<number> {
     const url = `https://letterboxd.com/${username}/watchlist/`;
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; BoxdBuddy/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; Boxdbud.io/1.0)",
       },
     });
 
@@ -134,7 +134,7 @@ async function scrapeWatchlist(username: string): Promise<MovieData[]> {
     const url = `https://letterboxd.com/${username}/watchlist/page/${page}/`;
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; BoxdBuddy/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; Boxdbud.io/1.0)",
       },
     });
 
@@ -195,7 +195,7 @@ async function getFriends(env: CacheEnv, username: string) {
   const url = `https://letterboxd.com/${username}/following/`;
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; BoxdBuddy/1.0)",
+      "User-Agent": "Mozilla/5.0 (compatible; Boxdbud.io/1.0)",
     },
   });
 

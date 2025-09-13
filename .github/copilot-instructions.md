@@ -1,6 +1,6 @@
-<!-- Copilot / AI contributor instructions for BoxdBuddies -->
+<!-- Copilot / AI contributor instructions for Boxdbud.io -->
 
-# BoxdBuddies — AI Assistant Quick Guide
+# Boxdbud.io — AI Assistant Quick Guide
 
 Purpose: Give an AI contributor the precise repo knowledge, patterns, and templates needed to be productive quickly.
 

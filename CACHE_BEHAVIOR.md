@@ -1,4 +1,4 @@
-# BoxdBuddies - Cache Behavior Documentation
+# Boxdbud.io - Cache Behavior Documentation
 
 ## Watchlist Cache Performance Optimization
 

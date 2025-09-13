@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
   return jsonResponse({
     status: "ok",
     service: "pages",
-    project: "boxdbuddy",
+  project: "boxdbud",
     tmdb: hasTMDB ? "configured" : "missing",
     kv: hasKV ? "bound" : "missing",
     database: hasDB ? "bound" : "missing",
