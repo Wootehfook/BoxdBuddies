@@ -7,7 +7,7 @@ packages/
 bower_components/
 
 # Production builds
-/dist
+/dist/
 /build
 out/
 
@@ -19,6 +19,7 @@ out/
 # Debug logs
 debug.log
 logs/
+scripts/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*

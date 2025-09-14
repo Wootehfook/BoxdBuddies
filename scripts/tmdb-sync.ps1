@@ -130,8 +130,9 @@ Write-Host "7. 🆔 Incremental sync by Movie ID (resumes from last ID, ~5 mins)
 Write-Host "8. 🔄 Changes sync (updates modified movies, ~2 mins)" -ForegroundColor Yellow
 Write-Host "9. 🕐 Trigger daily update job manually" -ForegroundColor White
 Write-Host "10. 📊 Check sync status" -ForegroundColor White
+Write-Host "11. 🧷 Backfill genres for existing movies" -ForegroundColor Yellow
 
-$choice = Read-Host "Enter your choice (1-10)"
+$choice = Read-Host "Enter your choice (1-11)"
 
 switch ($choice) {
     "1" {
@@ -596,6 +597,77 @@ switch ($choice) {
         $recent = Get-FirstPropertyValue -obj $recentJson -candidateNames @('recent_movies', 'COUNT(*)', 'total')
         try { $recent = [int]$recent } catch { }
         Write-Host ("`n📊 Recent additions (last 24 hours): {0}" -f $recent) -ForegroundColor Yellow
+    }
+    "11" {
+        Write-Host "🧷 Backfilling genres for existing movies..." -ForegroundColor Green
+
+        $mode = Read-Host "Mode: 'missing' (only empty) or 'all' (recompute for all)? [missing|all]"
+        if (-not $mode -or ($mode -ne 'all' -and $mode -ne 'missing')) { $mode = 'missing' }
+
+        $perBatch = Read-Host "Rows per batch (default 300)"
+        if (-not $perBatch -or -not ($perBatch -match '^[0-9]+$')) { $perBatch = 300 }
+        $maxBatches = Read-Host "Max batches this run (default 50)"
+        if (-not $maxBatches -or -not ($maxBatches -match '^[0-9]+$')) { $maxBatches = 50 }
+
+        Invoke-DeployAndSetPreviewBaseUrl -ProjectName $CF_PAGES_PROJECT
+
+        $totalUpdated = 0
+        $totalErrors = 0
+        for ($batch = 1; $batch -le [int]$maxBatches; $batch++) {
+            $body = @{
+                syncType = "backfillGenres"
+                mode     = $mode
+                limit    = [int]$perBatch
+            } | ConvertTo-Json
+
+            Write-Host ("� Backfill batch {0}/{1}: mode={2}, limit={3}" -f $batch, $maxBatches, $mode, $perBatch) -ForegroundColor Cyan
+
+            $resp = curl.exe -sS --fail-with-body --max-time 45 -w "`n%{http_code}" -X POST "$BASE_URL/admin/tmdb-sync" `
+                -H "Content-Type: application/json" `
+                -H "Authorization: Bearer admin-sync-token" `
+                -d $body
+
+            $parts = $resp -split "`n"
+            $bodyText = ($parts[0..($parts.Length - 2)] -join "`n").Trim()
+            $code = $parts[-1].Trim()
+            $json = $null
+            try { $json = ($bodyText | Out-String) | ConvertFrom-Json -ErrorAction Stop 2>$null } catch { $json = $null }
+
+            if ($code -eq "204") {
+                # No Content -> treat as zero updates and stop early
+                Write-Host "🏁 No more rows to update (HTTP 204). Stopping early." -ForegroundColor Magenta
+                break
+            }
+            elseif ($json -and ($code -eq "200")) {
+                $updated = 0
+                $errors = 0
+                # Support a few possible shapes: updated, synced, updatedCount
+                try {
+                    if ($null -ne $json.updated) { $updated = [int]$json.updated }
+                    elseif ($null -ne $json.synced) { $updated = [int]$json.synced }
+                    elseif ($null -ne $json.updatedCount) { $updated = [int]$json.updatedCount }
+                }
+                catch { $updated = 0 }
+                try { $errors = [int]$json.errors } catch { $errors = 0 }
+                $totalUpdated += $updated
+                $totalErrors += $errors
+                Write-Host ("✅ Batch complete: updated={0}, errors={1}" -f $updated, $errors) -ForegroundColor Green
+
+                if ($updated -eq 0) {
+                    Write-Host "🏁 No more rows to update. Stopping early." -ForegroundColor Magenta
+                    break
+                }
+            }
+            else {
+                Write-Host ("❌ Batch failed (HTTP {0}). Body:" -f $code) -ForegroundColor Red
+                Write-Host $bodyText -ForegroundColor Yellow
+                # Do not abort the whole run; continue to next batch after a short delay
+            }
+
+            if ($batch -lt [int]$maxBatches) { Start-Sleep -Milliseconds 300 }
+        }
+
+        Write-Host ("🎉 Backfill summary this run: totalUpdated={0}, totalErrors={1}" -f $totalUpdated, $totalErrors) -ForegroundColor Green
     }
     default {
         Write-Host "❌ Invalid choice. Please run the script again." -ForegroundColor Red

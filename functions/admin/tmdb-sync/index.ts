@@ -25,6 +25,7 @@ interface TMDBMovie {
   runtime?: number;
   status?: string;
   tagline?: string;
+  genres?: Array<{ id: number; name: string }>; // present in detail responses
 }
 
 interface TMDBResponse {
@@ -39,12 +40,7 @@ interface TMDBGenre {
   name: string;
 }
 
-interface TMDBCredits {
-  crew: Array<{
-    job: string;
-    name: string;
-  }>;
-}
+// Note: credits shape is accessed directly from appended details response; no dedicated interface needed
 
 // Rate limiting - 40 requests per 10 seconds (TMDB limit)
 let requestCount = 0;
@@ -114,16 +110,14 @@ async function getMovieDetails(
   movieId: number,
   apiKey: string
 ): Promise<{ movie: any; director: string }> {
-  // Get movie details
-  const movie = await fetchTMDBData(`/movie/${movieId}`, apiKey);
-
-  // Get credits to find director
-  const credits: TMDBCredits = await fetchTMDBData(
-    `/movie/${movieId}/credits`,
+  // Get movie details and credits in a single request to reduce API calls
+  const movie = await fetchTMDBData(
+    `/movie/${movieId}?append_to_response=credits`,
     apiKey
   );
   const director =
-    credits.crew.find((person) => person.job === "Director")?.name || "Unknown";
+    movie.credits?.crew?.find((person: any) => person.job === "Director")
+      ?.name || "Unknown";
 
   return { movie, director };
 }
@@ -180,11 +174,20 @@ async function syncTMDBMoviesByID(
         continue;
       }
 
-      // Convert genre IDs to names
-      const movieGenres =
-        movieDetails.genre_ids
-          ?.map((id: number) => genres.get(id))
-          .filter(Boolean) || [];
+      // Derive genre names from movie details; prefer detailed `genres` array fallback to `genre_ids`
+      let movieGenres: string[] = [];
+      if (Array.isArray(movieDetails.genres) && movieDetails.genres.length) {
+        movieGenres = movieDetails.genres
+          .map((g: { id: number; name: string }) => g?.name)
+          .filter(Boolean);
+      } else if (
+        Array.isArray(movieDetails.genre_ids) &&
+        movieDetails.genre_ids.length
+      ) {
+        movieGenres = movieDetails.genre_ids
+          .map((id: number) => genres.get(id))
+          .filter(Boolean) as string[];
+      }
 
       // Extract year from release date
       const year = movieDetails.release_date
@@ -333,10 +336,23 @@ async function syncTMDBChanges(
           // Skip adult content
           if (movieDetails.adult) continue;
 
-          const movieGenres =
-            movieDetails.genre_ids
-              ?.map((id: number) => genres.get(id))
-              .filter(Boolean) || [];
+          // Derive genre names from detailed response
+          let movieGenres: string[] = [];
+          if (
+            Array.isArray(movieDetails.genres) &&
+            movieDetails.genres.length
+          ) {
+            movieGenres = movieDetails.genres
+              .map((g: { id: number; name: string }) => g?.name)
+              .filter(Boolean);
+          } else if (
+            Array.isArray(movieDetails.genre_ids) &&
+            movieDetails.genre_ids.length
+          ) {
+            movieGenres = movieDetails.genre_ids
+              .map((id: number) => genres.get(id))
+              .filter(Boolean) as string[];
+          }
           const year = movieDetails.release_date
             ? new Date(movieDetails.release_date).getFullYear()
             : null;
@@ -428,6 +444,9 @@ async function syncTMDBMovies(
 
   let syncedCount = 0;
   let errorCount = 0;
+  const startTime = Date.now();
+  const TIME_BUDGET_MS = 25000; // Stay below CF 30s cap
+  let timeUp = false;
 
   // Get genre list first
   const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
@@ -441,6 +460,16 @@ async function syncTMDBMovies(
   for (let page = startPage; page <= actualMaxPages; page++) {
     try {
       debugLog(undefined, `📄 Processing page ${page}/${actualMaxPages}`);
+
+      // Time budget check
+      if (Date.now() - startTime > TIME_BUDGET_MS) {
+        debugLog(
+          undefined,
+          "⏱️ Time budget reached during page sync; returning early"
+        );
+        timeUp = true;
+        break;
+      }
 
       // Get popular movies for this page
       const response: TMDBResponse = await fetchTMDBData(
@@ -460,6 +489,14 @@ async function syncTMDBMovies(
 
         for (const tmdbMovie of batch) {
           try {
+            if (Date.now() - startTime > TIME_BUDGET_MS) {
+              debugLog(
+                undefined,
+                "⏱️ Time budget reached inside batch; stopping"
+              );
+              timeUp = true;
+              break;
+            }
             // Skip adult content
             if (tmdbMovie.adult) {
               continue;
@@ -471,10 +508,23 @@ async function syncTMDBMovies(
               apiKey
             );
 
-            // Convert genre IDs to names
-            const movieGenres = tmdbMovie.genre_ids
-              .map((id: number) => genres.get(id))
-              .filter(Boolean);
+            // Convert to genre names; prefer details.genres, fallback to list's genre_ids
+            let movieGenres: string[] = [];
+            if (
+              Array.isArray(movieDetails.genres) &&
+              movieDetails.genres.length
+            ) {
+              movieGenres = movieDetails.genres
+                .map((g: { id: number; name: string }) => g?.name)
+                .filter(Boolean);
+            } else if (
+              Array.isArray(tmdbMovie.genre_ids) &&
+              tmdbMovie.genre_ids.length
+            ) {
+              movieGenres = tmdbMovie.genre_ids
+                .map((id: number) => genres.get(id))
+                .filter(Boolean) as string[];
+            }
 
             // Extract year from release date
             const year = movieDetails.release_date
@@ -527,6 +577,7 @@ async function syncTMDBMovies(
             errorCount++;
           }
         }
+        if (timeUp) break;
       }
 
       // If we've processed all pages available
@@ -541,6 +592,7 @@ async function syncTMDBMovies(
       console.error(`❌ Error processing page ${page}:`, pageError);
       errorCount++;
     }
+    if (timeUp) break;
   }
 
   // Update sync metadata
@@ -569,6 +621,104 @@ async function syncTMDBMovies(
     `🎉 Sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
   );
   return { synced: syncedCount, errors: errorCount };
+}
+
+// Backfill genres for existing movies
+async function backfillGenres(
+  database: any,
+  apiKey: string,
+  options?: { limit?: number; mode?: "missing" | "all" }
+): Promise<{ updated: number; errors: number }> {
+  const userLimit = options?.limit;
+  const mode = options?.mode ?? "missing";
+  const BATCH_SIZE = 30;
+  const TIME_BUDGET_MS = 25000; // keep under CF's 30s cap
+  const startTime = Date.now();
+
+  // Load genre dictionary once for fallback mapping
+  const genres: Map<number, string> = await (async () => {
+    const gData = await fetchTMDBData("/genre/movie/list", apiKey);
+    const map = new Map<number, string>();
+    gData.genres.forEach((g: TMDBGenre) => map.set(g.id, g.name));
+    return map;
+  })();
+
+  const missingCond =
+    "(genres IS NULL OR TRIM(genres) = '' OR genres = '[]' OR genres = 'null')";
+  const baseWhere = mode === "missing" ? missingCond : "1=1";
+
+  let updated = 0;
+  let errors = 0;
+  let lastId = 0;
+  let processed = 0;
+
+  const selectBatch = async (afterId: number, size: number) => {
+    const res = await database
+      .prepare(
+        `SELECT id FROM tmdb_movies WHERE ${baseWhere} AND id > ? ORDER BY id LIMIT ?`
+      )
+      .bind(afterId, size)
+      .all();
+    return ((res?.results as any[]) || []) as Array<{ id: number }>;
+  };
+
+  const fetchNames = async (movieId: number): Promise<string[]> => {
+    const { movie: details } = await getMovieDetails(movieId, apiKey);
+    if (Array.isArray(details.genres) && details.genres.length) {
+      return details.genres
+        .map((g: { id: number; name: string }) => g?.name)
+        .filter(Boolean);
+    }
+    if (Array.isArray(details.genre_ids) && details.genre_ids.length) {
+      return details.genre_ids
+        .map((id: number) => genres.get(id))
+        .filter(Boolean) as string[];
+    }
+    return [];
+  };
+
+  const updateRow = async (movieId: number, names: string[]) => {
+    await database
+      .prepare(
+        `UPDATE tmdb_movies SET genres = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?`
+      )
+      .bind(JSON.stringify(names), movieId)
+      .run();
+  };
+
+  const withinBudget = () => Date.now() - startTime <= TIME_BUDGET_MS;
+  const limitRemaining = () =>
+    typeof userLimit === "number" && userLimit > 0
+      ? Math.max(0, userLimit - processed)
+      : Number.POSITIVE_INFINITY;
+
+  while (withinBudget()) {
+    const remainingNow = limitRemaining();
+    if (remainingNow === 0) break;
+    const toFetch = Number.isFinite(remainingNow)
+      ? Math.min(BATCH_SIZE, remainingNow)
+      : BATCH_SIZE;
+    const rows = await selectBatch(lastId, toFetch);
+    if (!rows.length) break;
+
+    for (const row of rows) {
+      if (!withinBudget()) break;
+      try {
+        const names = await fetchNames(row.id);
+        await updateRow(row.id, names);
+        updated++;
+      } catch (e) {
+        console.error(`Failed to backfill genres for movie ${row.id}:`, e);
+        errors++;
+      } finally {
+        processed++;
+        lastId = row.id;
+      }
+      if (Number.isFinite(remainingNow) && processed >= (userLimit ?? 0)) break;
+    }
+  }
+
+  return { updated, errors };
 }
 
 export async function onRequestPost(context: {
@@ -627,6 +777,8 @@ export async function onRequestPost(context: {
       startMovieId,
       maxMovies = 100,
       startDate,
+      limit,
+      mode,
     } = await request.json().catch(() => ({}));
 
     debugLog(undefined, `🚀 Starting TMDB sync - Type: ${syncType}`);
@@ -679,6 +831,22 @@ export async function onRequestPost(context: {
         {
           headers: { "Content-Type": "application/json" },
         }
+      );
+    } else if (syncType === "backfillGenres") {
+      const result = await backfillGenres(env.MOVIES_DB, env.TMDB_API_KEY, {
+        limit,
+        mode,
+      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Backfill completed`,
+          updated: result.updated,
+          errors: result.errors,
+          syncType: "backfillGenres",
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { "Content-Type": "application/json" } }
       );
     } else {
       // Traditional page-based sync (default)

@@ -36,7 +36,6 @@ export function SetupPage({
         <div className="setup-card">
           <h2>Get Started</h2>
           <p>Enter your Letterboxd username to load friend list</p>
-
           <div className="form-group">
             <input
               id="username"
