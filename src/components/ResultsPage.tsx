@@ -56,7 +56,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
     s = s.replace(/\s+'+/g, "'");
     // Fix cases like "World&'s" where a stray ampersand precedes an apostrophe
     // Remove '&' only when immediately before optional spaces and one or more quotes
-    s = s.replace(/&(?=\s*'+)/g, "");
+    s = s.replace(/&(?=\s*')/g, "");
     s = s.replace(/\s+/g, " ").trim();
     return s;
   }
