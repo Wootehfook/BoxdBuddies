@@ -12,7 +12,9 @@ Maintainers will triage and respond to reports within a reasonable timeframe.
 
 | Version | Status    |
 | ------- | --------- |
-| 1.0.x   | Supported |
+| 2.0.x   | Supported |
+
+| 1.0.x | Legacy - retired in favor of the v2 web application |
 
 If your affected version is not listed above, please include the exact version or commit SHA when opening a report.
 
