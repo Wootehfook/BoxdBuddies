@@ -38,20 +38,13 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
       "&#039;": "'",
     };
     let s = input;
-    // Handle double-escaped numeric entity fragments like &amp;#039;
+    // 1) Resolve double-escaped numeric entities like &amp;#039; first
     s = s.replace(/&amp;#x?0*27;?/gi, "'");
     s = s.replace(/&amp;#0*39;?/gi, "'");
-    s = s.replace(/#x27;?/gi, "'");
-    s = s.replace(/#0*39;?/g, "'");
-    // Replace named entities
+    // 2) Replace named entities next (e.g., &amp; -> &), which enables numeric decoding
     s = s.replace(/&[a-zA-Z]+;/g, (ent) => map[ent] || ent);
-    // Numeric references
-    s = s.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16))
-    );
-    s = s.replace(/&#(\d+);/g, (_, dec) =>
-      String.fromCharCode(parseInt(dec, 10))
-    );
+    // 3) Decode proper numeric references (these include the & and ;)
+
     // Normalize common curly apostrophes to straight
     s = s.replace(/[\u2018\u2019]/g, "'");
     // Remove ampersands that are part of broken numeric entity fragments
@@ -61,6 +54,9 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
     s = s.replace(/&(?:amp;)?\s*(?=#)/gi, "");
     // Remove spaces that appear before apostrophes ("World 's" -> "World's")
     s = s.replace(/\s+'+/g, "'");
+    // Fix cases like "World&'s" where a stray ampersand precedes an apostrophe
+    // Remove '&' only when immediately before optional spaces and one or more quotes
+    s = s.replace(/&(?=\s*')/g, "");
     s = s.replace(/\s+/g, " ").trim();
     return s;
   }

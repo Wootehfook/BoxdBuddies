@@ -584,6 +584,41 @@ function App() {
                     certified by TMDB.
                   </em>
                 </p>
+                <hr />
+                <h4>Contribute & Support</h4>
+                <p>
+                  • View source on GitHub:{" "}
+                  <a
+                    href="https://github.com/Wootehfook/BoxdBuddies"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open BoxdBuddies repository on GitHub in a new tab"
+                  >
+                    github.com/Wootehfook/BoxdBuddies
+                  </a>
+                </p>
+                <p>
+                  • Found an issue?{" "}
+                  <a
+                    href="https://github.com/Wootehfook/BoxdBuddies/issues/new?labels=bug"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Report a bug on GitHub in a new tab"
+                  >
+                    Report a bug
+                  </a>
+                </p>
+                <p>
+                  • Have an idea?{" "}
+                  <a
+                    href="https://github.com/Wootehfook/BoxdBuddies/issues/new?labels=enhancement"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Request a feature on GitHub in a new tab"
+                  >
+                    Request a feature
+                  </a>
+                </p>
               </div>
               <div className="modal-actions">
                 <button
