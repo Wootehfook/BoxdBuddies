@@ -15,12 +15,6 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 
 **[Launch Boxdbud.io →](https://boxdbud.pages.dev)**
 
-Brand colors:
-
-- `#ff8000` — boxdbud
-- `#00e054` — . (dot)
-- `#40bcf4` — io
-
 - **No Installation Required**: Instant access from any modern web browser.
 
 ## ✨ Features

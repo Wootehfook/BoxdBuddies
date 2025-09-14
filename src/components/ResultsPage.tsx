@@ -44,6 +44,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
     // 2) Replace named entities next (e.g., &amp; -> &), which enables numeric decoding
     s = s.replace(/&[a-zA-Z]+;/g, (ent) => map[ent] || ent);
     // 3) Decode proper numeric references (these include the & and ;)
+
     s = s.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
       String.fromCharCode(parseInt(hex, 16))
     );
@@ -54,6 +55,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
     // Use a leading char capture to avoid swallowing the character before '#'
     s = s.replace(/(^|[^&])#x?0*27;?/gi, (_, pre: string) => pre + "'");
     s = s.replace(/(^|[^&])#0*39;?/g, (_, pre: string) => pre + "'");
+
     // Normalize common curly apostrophes to straight
     s = s.replace(/[\u2018\u2019]/g, "'");
     // Remove ampersands that are part of broken numeric entity fragments
@@ -162,7 +164,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                             />
                           );
                         }
-
+                        
                         return (
                           <img
                             src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
@@ -207,6 +209,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               <span>{movie.runtime}m</span>
                             </div>
                           )}
+
 
                           {movie.director && movie.director !== "Unknown" && (
                             <div className="movie-detail-item">
