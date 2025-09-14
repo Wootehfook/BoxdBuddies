@@ -1306,69 +1306,7 @@ body {
   min-width: 200px;
 }
 
-/* Progress Button Container */
-.progress-button-container {
-  max-width: 450px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.05) 0%,
-    rgba(255, 102, 0, 0.05) 100%
-  );
-  border: 1px solid rgba(255, 128, 0, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-button-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #ff8000, transparent);
-  animation: progressTopShimmer 3s ease-in-out infinite;
-}
-
-.progress-button-container .progress-info h3 {
-  color: #fff;
-  margin-bottom: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.progress-button-container .progress-info p {
-  color: #b0b8c0;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.progress-button-container .progress-text {
-  color: #fff;
-  margin-top: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes progressTopShimmer {
-  0% {
-    left: -100%;
-  }
-  50% {
-    left: 100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
+/* Progress Button Container (merged elsewhere) */
 
 /* Loading States and Animations */
 .loading-dots {
@@ -1575,6 +1513,107 @@ body {
   color: #9ca3af;
   font-size: 1.1rem;
   font-weight: 500;
+}
+
+/* Filters toolbar styles */
+.results-filters {
+  padding: 0 2rem 1rem 2rem;
+  margin-bottom: 1rem;
+}
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.filter-group,
+.sort-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.filter-group input,
+.filter-group select,
+.sort-group select {
+  padding: 0.5rem;
+  background: #1a1f24;
+  border: 1px solid #2c3440;
+  color: #fff;
+  border-radius: 6px;
+}
+.genre-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0;
+  list-style: none;
+}
+.genre-chips li {
+  margin: 0;
+}
+.genre-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 120ms ease,
+    box-shadow 160ms ease;
+  will-change: transform, box-shadow;
+}
+.genre-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 128, 0, 0.25);
+}
+.genre-chip:focus {
+  outline: none;
+}
+.genre-chip:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(66, 153, 225, 0.18),
+    0 1px 0 rgba(0, 0, 0, 0.25) inset;
+  border-color: rgba(66, 153, 225, 0.75);
+}
+.genre-chip.active,
+.genre-chip[aria-pressed="true"] {
+  background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
+  border-color: #ff8000;
+  color: #071017;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) inset;
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .genre-chip {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .genre-chips {
+    gap: 0.375rem;
+  }
+  .genre-chip {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.82rem;
+  }
+}
+
+.active-filters-indicator {
+  color: #ff8000;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+  opacity: 0.95;
+}
+.movie-count-annotation {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
 }
 
 /* Staggered Animation Delays */
@@ -1937,12 +1976,6 @@ body {
 }
 
 /* Consistent container width */
-.progress-button-container {
-  min-width: 400px;
-  max-width: 500px;
-  width: 100%;
-}
-
 @keyframes indeterminateProgress {
   0% {
     transform: translateX(-100%);
