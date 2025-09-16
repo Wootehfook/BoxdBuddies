@@ -65,6 +65,7 @@ body {
   gap: 1rem;
   flex-wrap: nowrap; /* prevent wrapping */
   min-width: 0; /* allow shrinking */
+  overflow: hidden; /* Prevent horizontal overflow */
 }
 
 .app-header .logo-wrapper {
@@ -72,12 +73,14 @@ body {
   align-items: baseline;
   width: 120px;
   justify-content: center;
-  flex-shrink: 0; /* don't shrink logos */
+  flex-shrink: 1; /* Allow logos to shrink when space is tight */
+  min-width: 60px; /* Minimum width to prevent logos from becoming too small */
 }
 
 .app-header .boxdbudio-logo {
   height: 90px; /* increased ~15% to sit visually centered between title and subtitle */
   width: auto;
+  max-width: 100%; /* Ensure logo doesn't overflow its container */
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   transform: translateY(6px); /* shift down slightly to vertically center */
 }
@@ -188,16 +191,50 @@ body {
   opacity: 1;
 }
 
-/* Responsive header */
-@media (max-width: 600px) {
-  .app-header .header-content {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
+/* Responsive header - improved mobile layout */
+/* Hide logos on smaller screens to prevent overlap */
+@media (max-width: 900px) {
+  .app-header .logo-wrapper {
+    display: none; /* Hide logos to prevent crowding */
   }
 
-  .app-header .logo-wrapper {
-    width: auto;
+  .app-header .header-content {
+    justify-content: center; /* Center the title when logos are hidden */
+    max-width: 100%; /* Allow full width usage */
+  }
+
+  .app-header .header-title {
+    transform: translateY(0); /* Remove negative transform when logos hidden */
+  }
+}
+
+/* Medium screens - reduce logo sizes but keep them visible */
+@media (max-width: 1200px) and (min-width: 901px) {
+  .app-header .boxdbudio-logo {
+    height: 70px; /* smaller logos */
+  }
+
+  .app-header .app-title-text {
+    font-size: 2.2rem; /* slightly smaller title */
+  }
+
+  .app-header .header-content {
+    gap: 0.75rem; /* tighter spacing */
+  }
+}
+
+/* Mobile screens - stack layout vertically with smaller elements */
+@media (max-width: 600px) {
+  .app-header .app-title-text {
+    font-size: 1.8rem; /* smaller title for mobile */
+  }
+
+  .app-header .app-subtitle {
+    font-size: 1rem; /* smaller subtitle */
+  }
+
+  .app-header {
+    padding: 0.75rem 0.5rem; /* More padding for touch targets */
   }
 
   .btn-pin {
@@ -209,25 +246,6 @@ body {
   .app-header {
     position: relative;
     padding-top: 0.75rem;
-  }
-}
-
-/* Intermediate responsive adjustments - reduce sizes before stacking */
-@media (max-width: 768px) and (min-width: 601px) {
-  .app-header .boxdbudio-logo {
-    height: 70px; /* smaller logos */
-  }
-
-  .app-header .app-title-text {
-    font-size: 2rem; /* smaller title */
-  }
-
-  .app-header .app-subtitle {
-    font-size: 1rem; /* smaller subtitle */
-  }
-
-  .app-header .header-content {
-    gap: 0.75rem; /* tighter spacing */
   }
 }
 
