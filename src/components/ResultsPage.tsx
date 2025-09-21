@@ -164,7 +164,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                             />
                           );
                         }
-                        
+
                         return (
                           <img
                             src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
@@ -184,6 +184,16 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               ? ` (${movie.year})`
                               : ""}
                           </h3>
+
+                          {movie.genres && movie.genres.length > 0 && (
+                            <div className="movie-genre-badges">
+                              {movie.genres.slice(0, 3).map((g: string) => (
+                                <span key={g} className="genre-badge">
+                                  {g}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div className="movie-details-list">
@@ -196,12 +206,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                             </div>
                           )}
 
-                          {movie.genres && movie.genres.length > 0 && (
-                            <div className="movie-detail-item">
-                              <span className="detail-icon">🎭</span>
-                              <span>{movie.genres.slice(0, 2).join(", ")}</span>
-                            </div>
-                          )}
+                          {/* Genres are displayed as badges under the title */}
 
                           {movie.runtime && movie.runtime > 0 && (
                             <div className="movie-detail-item">
@@ -209,7 +214,6 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               <span>{movie.runtime}m</span>
                             </div>
                           )}
-
 
                           {movie.director && movie.director !== "Unknown" && (
                             <div className="movie-detail-item">

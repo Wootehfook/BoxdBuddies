@@ -2207,6 +2207,23 @@ body {
   flex: 1;
 }
 
+/* Genre badges shown on movie cards */
+.movie-genre-badges {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.genre-badge {
+  background: rgba(255, 255, 255, 0.03);
+  color: #9ab;
+  border: 1px solid rgba(255, 128, 0, 0.08);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
 /* AI Generated: GitHub Copilot - 2025-08-05 */
 /* Movie details list - enhanced contrast for better readability */
 .movie-details-list {
