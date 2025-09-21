@@ -2191,10 +2191,13 @@ body {
 }
 
 .results-page .movie-title-section {
+  /* Stack the title and badges vertically so badges appear below the title
+     (previous layout placed items side-by-side which hid badges on narrow cards) */
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 0.25rem;
   margin-bottom: 0.5rem;
 }
 
