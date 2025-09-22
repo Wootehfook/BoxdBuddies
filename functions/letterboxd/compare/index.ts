@@ -262,18 +262,28 @@ async function enhanceWithTMDBData(
   // DB helper: try the REPLACE-stripped match
   async function dbFindStripped(titleStripped: string, year: number) {
     try {
-      return await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies
-         WHERE (
-           LOWER(REPLACE(title, ?, '')) = LOWER(?)
-           OR LOWER(REPLACE(original_title, ?, '')) = LOWER(?)
-         )
-         AND (year=? OR year=? OR year=?)
-         ORDER BY popularity DESC
-         LIMIT 1`
-      )
-        .bind("'", titleStripped, "'", titleStripped, year, year - 1, year + 1)
-        .all();
+      const anyYear = !year || year <= 0;
+      const sql = anyYear
+        ? `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(REPLACE(title, ?, '')) = LOWER(?)
+             OR LOWER(REPLACE(original_title, ?, '')) = LOWER(?)
+           )
+           ORDER BY popularity DESC
+           LIMIT 1`
+        : `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(REPLACE(title, ?, '')) = LOWER(?)
+             OR LOWER(REPLACE(original_title, ?, '')) = LOWER(?)
+           )
+           AND (year=? OR year=? OR year=?)
+           ORDER BY popularity DESC
+           LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds = anyYear
+        ? ["'", titleStripped, "'", titleStripped]
+        : ["'", titleStripped, "'", titleStripped, year, year - 1, year + 1];
+      return await stmt.bind(...(binds as any)).all();
     } catch (e) {
       debugLog(env, `Stripped REPLACE lookup failed: ${String(e)}`);
       return null;
@@ -282,18 +292,28 @@ async function enhanceWithTMDBData(
 
   async function dbFindExact(title: string, year: number) {
     try {
-      return await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies
-         WHERE (
-           LOWER(title)=LOWER(?)
-           OR LOWER(original_title)=LOWER(?)
-         )
-         AND (year=? OR year=? OR year=?)
-         ORDER BY popularity DESC
-         LIMIT 1`
-      )
-        .bind(title, title, year, year - 1, year + 1)
-        .all();
+      const anyYear = !year || year <= 0;
+      const sql = anyYear
+        ? `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(title)=LOWER(?)
+             OR LOWER(original_title)=LOWER(?)
+           )
+           ORDER BY popularity DESC
+           LIMIT 1`
+        : `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(title)=LOWER(?)
+             OR LOWER(original_title)=LOWER(?)
+           )
+           AND (year=? OR year=? OR year=?)
+           ORDER BY popularity DESC
+           LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds = anyYear
+        ? [title, title]
+        : [title, title, year, year - 1, year + 1];
+      return await stmt.bind(...(binds as any)).all();
     } catch (e) {
       debugLog(env, `Exact lookup failed: ${String(e)}`);
       return null;
@@ -315,6 +335,35 @@ async function enhanceWithTMDBData(
         .all();
     } catch (e) {
       debugLog(env, `DB LIKE fallback failed: ${String(e)}`);
+      return null;
+    }
+  }
+
+  /**
+   * Build a tokenized LIKE query that requires all tokens to be present
+   * in any order. Returns the DB result or null.
+   */
+  async function dbFindTokenizedLike(title: string) {
+    try {
+      const tokens = title
+        .replace(/["'()\[\].,:;!?#\-]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((t) => t.trim());
+      if (!tokens.length) return null;
+      const likeClauses = tokens
+        .map(
+          () =>
+            "(LOWER(title) LIKE LOWER(?) OR LOWER(original_title) LIKE LOWER(?))"
+        )
+        .join(" AND ");
+      const sql = `SELECT * FROM tmdb_movies WHERE ${likeClauses} ORDER BY popularity DESC LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds: string[] = [];
+      for (const t of tokens) binds.push(`%${t}%`, `%${t}%`);
+      return await stmt.bind(...binds).all();
+    } catch (e) {
+      debugLog(env, `DB tokenized LIKE failed: ${String(e)}`);
       return null;
     }
   }
@@ -390,6 +439,20 @@ async function enhanceWithTMDBData(
         result = await dbFindExact(normalized, movie.year);
       if (!result?.results?.length && searchTitle)
         result = await dbFindLike(searchTitle);
+
+      // Try tokenized LIKE which requires all tokens to match
+      if (!result?.results?.length && searchTitle)
+        result = await dbFindTokenizedLike(searchTitle);
+
+      // As a last resort, try lookups without constraining by year
+      if (!result?.results?.length && stripped) {
+        const noYearStripped = await dbFindStripped(stripped, 0);
+        if (noYearStripped?.results?.length) result = noYearStripped;
+      }
+      if (!result?.results?.length && searchTitle) {
+        const noYearExact = await dbFindExact(searchTitle, 0);
+        if (noYearExact?.results?.length) result = noYearExact;
+      }
 
       if (result?.results?.length)
         return buildMovieFromRow(result.results[0], movie);

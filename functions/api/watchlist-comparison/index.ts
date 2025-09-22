@@ -74,6 +74,7 @@ const parseYear = (date?: string | null): number => {
 // Parse Letterboxd watchlist page HTML for grid items. Lightweight and resilient.
 function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
   const out: LetterboxdMovie[] = [];
+  const seenSlugs = new Set<string>();
   // 1) Modern grid markup variant: <li class="griditem" data-item-slug="..." data-item-name="Title 2021">
   const gridItemOpenTag = /<li[^>]*class=["'][^"']*griditem[^"']*["'][^>]*>/gi;
   let m: RegExpExecArray | null;
@@ -85,13 +86,18 @@ function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
     if (!slug || !name) continue;
     const decodedName = decodeHtmlEntities(name);
     const ym = yearRegex.exec(decodedName);
-    if (ym?.[2])
-      out.push({
-        title: decodeHtmlEntities(ym[1]).trim(),
-        year: parseInt(ym[2], 10),
-        slug: slug.trim(),
-      });
-    else out.push({ title: decodedName.trim(), year: 0, slug: slug.trim() });
+    const push = () => {
+      if (seenSlugs.has(slug.trim())) return;
+      if (ym?.[2])
+        out.push({
+          title: decodeHtmlEntities(ym[1]).trim(),
+          year: parseInt(ym[2], 10),
+          slug: slug.trim(),
+        });
+      else out.push({ title: decodedName.trim(), year: 0, slug: slug.trim() });
+      seenSlugs.add(slug.trim());
+    };
+    push();
   }
 
   // 2) Legacy/alternate markup: <li class="poster-container" data-film-slug="..."> ... <img alt="Title 2021">
@@ -108,13 +114,16 @@ function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
     if (!slug || !raw) continue;
     const decodedRaw = decodeHtmlEntities(raw);
     const ym = yearRegex.exec(decodedRaw);
+    const s = slug.trim();
+    if (seenSlugs.has(s)) continue;
     if (ym?.[2])
       out.push({
         title: decodeHtmlEntities(ym[1]).trim(),
         year: parseInt(ym[2], 10),
-        slug,
+        slug: s,
       });
-    else out.push({ title: decodedRaw.trim(), year: 0, slug });
+    else out.push({ title: decodedRaw.trim(), year: 0, slug: s });
+    seenSlugs.add(s);
   }
 
   // 3) Generic fallback: scan for data-film-slug and capture a nearby title via
@@ -127,6 +136,7 @@ function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
     const slug = (gm[1] || "").trim();
     const raw = (gm[2] || gm[3] || gm[4] || "").trim();
     if (!slug || !raw) continue;
+    if (seenSlugs.has(slug)) continue;
     const decodedRaw = decodeHtmlEntities(raw);
     const ym = yearRegex.exec(decodedRaw);
     if (ym?.[2])
@@ -136,12 +146,12 @@ function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
         slug,
       });
     else out.push({ title: decodedRaw.trim(), year: 0, slug });
+    seenSlugs.add(slug);
   }
 
   // 4) Link-based fallback: scan for /film/<slug>/ anchors and attempt to capture
   // a nearby <img alt="Title 2021"> within a small window. This is resilient to
   // class/attribute churn as long as the link structure remains.
-  const seenSlugs = new Set(out.map((m) => m.slug));
   const linkRegex = /href=["']\/film\/([a-z0-9-]+)\/["'][^>]*>/gi;
   let lm: RegExpExecArray | null;
   while ((lm = linkRegex.exec(html)) !== null) {
