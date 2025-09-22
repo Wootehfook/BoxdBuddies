@@ -99,3 +99,88 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 References: `README.md`, `functions/_lib/common.js`, `functions/letterboxd/cache/index.ts`, `migrations/`, `docs/server-watchlist-cache-design.md`.
 
 If you'd like, I can add a new file template (Function + test) under `tools/templates/` — tell me to proceed and I'll create it.
+
+## 10) MCP servers and VS Code extensions (for AI agents)
+
+This repo includes helper scripts and conventions to improve AI agent capabilities via MCP (Model Context Protocol). Below is what’s available, how to start it, and safe defaults.
+
+### Available MCP servers (by role)
+
+- Primary (recommended):
+  - `@memory` — persistent knowledge/memory graph to keep context across steps.
+  - `@github` — GitHub operations (PRs, issues, reviews, releases, searches) when authorized.
+  - `@sequentialthinking` — planning/analysis helper for stepwise problem-solving.
+- Secondary (optional):
+  - `@codacy` — code quality checks via Codacy CLI.
+  - `@playwright` — UI testing helpers.
+  - `@markitdown` — content rendering/markdown utilities.
+
+Note: These are logical server names mirrored by our scripts; the actual runtime is provided by your MCP-capable client/extension.
+
+### Ensure MCP servers are running
+
+Choose the path that matches your environment.
+
+1. Dev Container or Linux-like shell (recommended)
+
+- Scripts:
+  - `scripts/mcp-restart.sh` — stop then start MCP servers via the devcontainer bootstrap.
+  - `scripts/mcp-status.sh` — status check. Use `MCP_STATUS_VERBOSE=1` for details.
+  - `scripts/mcp-stop.sh` — stop MCP-related processes.
+- Commands (run inside the Dev Container, WSL, or Git Bash):
+
+```bash
+# Restart servers
+bash ./scripts/mcp-restart.sh
+
+# Check status (verbose)
+MCP_STATUS_VERBOSE=1 bash ./scripts/mcp-status.sh
+```
+
+Notes:
+
+- Startup uses `.devcontainer/start-mcp-servers.sh` and attempts to prepare common MCP servers.
+- These scripts use Linux utilities (`pgrep`, etc.) and the VS Code CLI (`code`). They won’t run in plain Windows PowerShell without WSL/Git Bash.
+
+2. Windows host without Dev Container
+
+- Install a VS Code extension that can host MCP servers. Keep it local-first; only enable what you need for this repo.
+- Verify/install extensions from PowerShell (examples):
+
+```powershell
+# List common assistants you may already have installed
+code --list-extensions | Select-String -Pattern 'github.copilot|github.copilot-chat|Continue.continue'
+
+# Install GitHub Copilot and Copilot Chat
+code --install-extension GitHub.copilot
+code --install-extension GitHub.copilot-chat
+
+# Optional: a local-first MCP-capable host
+code --install-extension Continue.continue
+```
+
+- In your MCP host extension settings, enable the servers you want (`@memory`, `@github`, `@sequentialthinking`). The exact UI varies by extension (look for “MCP servers” / “Providers”).
+
+### Security guidance (least privilege)
+
+- Prefer local-first MCP hosts; keep optional network access disabled by default.
+- GitHub access:
+  - Use a short-lived Personal Access Token with minimal scopes (e.g., `repo:read`, `read:org` only if needed).
+  - Store tokens in VS Code Secret Storage or the extension’s credential store. Never commit tokens to the repo.
+- Disable telemetry in third-party extensions unless required.
+- Periodically review enabled MCP servers and disable anything not needed for this repo.
+- Follow org security policies on managed devices.
+
+### Troubleshooting
+
+- Status script fails on Windows: run it in WSL/Git Bash or use the Dev Container.
+- MCP servers not detected: ensure your MCP host extension is installed and that `@memory`, `@github`, and `@sequentialthinking` are enabled.
+- `code` CLI not found: install VS Code and ensure `code` is on `PATH`.
+- Script suggests `npm run mcp:start`: this repo doesn’t define that script; use `bash ./scripts/mcp-restart.sh` instead.
+
+### Why this helps here
+
+- Our workflows benefit from:
+  - `@github` for PR/review automation and repository insights.
+  - `@sequentialthinking` for multi-step plans across frontend and Functions code.
+  - `@memory` for keeping context between edits and test runs.

@@ -48,6 +48,20 @@ const normalizeTitle = (t: string) =>
     .replace(/[\p{P}\p{S}]/gu, " ") // punctuation and symbols (unicode-aware)
     .replace(/\s+/g, " ");
 
+const decodeHtmlEntities = (str: string): string => {
+  return str
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    )
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&copy;/g, "©");
+};
+
 const parseYear = (date?: string | null): number => {
   if (!date) return 0;
   const m = /^(\d{4})/.exec(date);
@@ -57,26 +71,140 @@ const parseYear = (date?: string | null): number => {
 // Parse Letterboxd watchlist page HTML for grid items. Lightweight and resilient.
 function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
   const out: LetterboxdMovie[] = [];
-  const gridItemRegex =
-    /<li[^>]*class="[^"]*griditem[^"]*"[^>]*>([\s\S]*?)<\/li>/g;
+  // 1) Modern grid markup variant: <li class="griditem" data-item-slug="..." data-item-name="Title 2021">
+  const gridItemOpenTag = /<li[^>]*class=["'][^"']*griditem[^"']*["'][^>]*>/gi;
   let m: RegExpExecArray | null;
   const yearRegex = /^(.*?)\s+(\d{4})$/;
-  while ((m = gridItemRegex.exec(html)) !== null) {
-    const content = m[1];
-    const slug = /data-item-slug="([^"]+)"/.exec(content)?.[1];
-    const name = /data-item-name="([^"]+)"/.exec(content)?.[1];
+  while ((m = gridItemOpenTag.exec(html)) !== null) {
+    const openTag = m[0];
+    const slug = /data-item-slug=["']([^"']+)["']/i.exec(openTag)?.[1];
+    const name = /data-item-name=["']([^"']+)["']/i.exec(openTag)?.[1];
     if (!slug || !name) continue;
-    const ym = yearRegex.exec(name);
+    const decodedName = decodeHtmlEntities(name);
+    const ym = yearRegex.exec(decodedName);
     if (ym?.[2])
-      out.push({ title: ym[1].trim(), year: parseInt(ym[2], 10), slug });
-    else out.push({ title: name.trim(), year: 0, slug });
+      out.push({
+        title: decodeHtmlEntities(ym[1]).trim(),
+        year: parseInt(ym[2], 10),
+        slug: slug.trim(),
+      });
+    else out.push({ title: decodedName.trim(), year: 0, slug: slug.trim() });
   }
+
+  // 2) Legacy/alternate markup: <li class="poster-container" data-film-slug="..."> ... <img alt="Title 2021">
+  const posterLiRegex =
+    /<li[^>]*class=["'][^"']*poster-container[^"']*["'][^>]*>[\s\S]*?<\/li>/gi;
+  let liMatch: RegExpExecArray | null;
+  while ((liMatch = posterLiRegex.exec(html)) !== null) {
+    const liBlock = liMatch[0];
+    const slug = /data-film-slug=["']([^"']+)["']/i.exec(liBlock)?.[1];
+    // Accept either data-item-name or <img alt="...">
+    const nameAttr = /data-item-name=["']([^"']+)["']/i.exec(liBlock)?.[1];
+    const imgAlt = /<img[^>]*alt=["']([^"']+)["'][^>]*>/i.exec(liBlock)?.[1];
+    const raw = nameAttr || imgAlt;
+    if (!slug || !raw) continue;
+    const decodedRaw = decodeHtmlEntities(raw);
+    const ym = yearRegex.exec(decodedRaw);
+    if (ym?.[2])
+      out.push({
+        title: decodeHtmlEntities(ym[1]).trim(),
+        year: parseInt(ym[2], 10),
+        slug,
+      });
+    else out.push({ title: decodedRaw.trim(), year: 0, slug });
+  }
+
+  // 3) Generic fallback: scan for data-film-slug and capture a nearby title via
+  // data-item-name, data-film-name, or img alt regardless of surrounding tags
+  // This helps when the class names change but attribute semantics remain.
+  const genericRegex =
+    /data-film-slug=["']([^"']+)["'][\s\S]{0,400}?(?:data-item-name=["']([^"']+)["']|data-film-name=["']([^"']+)["']|alt=["']([^"']+)["'])/gi;
+  let gm: RegExpExecArray | null;
+  while ((gm = genericRegex.exec(html)) !== null) {
+    const slug = (gm[1] || "").trim();
+    const raw = (gm[2] || gm[3] || gm[4] || "").trim();
+    if (!slug || !raw) continue;
+    const decodedRaw = decodeHtmlEntities(raw);
+    const ym = yearRegex.exec(decodedRaw);
+    if (ym?.[2])
+      out.push({
+        title: decodeHtmlEntities(ym[1]).trim(),
+        year: parseInt(ym[2], 10),
+        slug,
+      });
+    else out.push({ title: decodedRaw.trim(), year: 0, slug });
+  }
+
+  // 4) Link-based fallback: scan for /film/<slug>/ anchors and attempt to capture
+  // a nearby <img alt="Title 2021"> within a small window. This is resilient to
+  // class/attribute churn as long as the link structure remains.
+  const seenSlugs = new Set(out.map((m) => m.slug));
+  const linkRegex = /href=["']\/film\/([a-z0-9-]+)\/["'][^>]*>/gi;
+  let lm: RegExpExecArray | null;
+  while ((lm = linkRegex.exec(html)) !== null) {
+    const slug = (lm[1] || "").trim();
+    if (!slug || seenSlugs.has(slug)) continue;
+    // Look ahead up to 400 chars for an alt title
+    const tail = html.slice(lm.index, Math.min(html.length, lm.index + 400));
+    const altMatch = /alt=["']([^"']+)["']/i.exec(tail);
+    const raw = altMatch ? altMatch[1].trim() : slug.replace(/-/g, " ");
+    const decodedRaw = decodeHtmlEntities(raw);
+    const ym = yearRegex.exec(decodedRaw);
+    const title = ym?.[1]
+      ? decodeHtmlEntities(ym[1]).trim()
+      : decodedRaw.trim();
+    const year = ym?.[2] ? parseInt(ym[2], 10) : 0;
+    out.push({ title, year, slug });
+    seenSlugs.add(slug);
+  }
+
+  // 5) Additional fallback: data-target-link="/film/slug/" with nearby img alt
+  const targetLinkRegex =
+    /data-target-link=["']\/film\/([a-z0-9-]+)\/["'][\s\S]{0,400}?(?:alt=["']([^"']+)["']|data-item-name=["']([^"']+)["'])/gi;
+  let tm: RegExpExecArray | null;
+  while ((tm = targetLinkRegex.exec(html)) !== null) {
+    const slug = (tm[1] || "").trim();
+    const raw = (tm[2] || tm[3] || "").trim();
+    if (!slug || !raw || seenSlugs.has(slug)) continue;
+    const decodedRaw = decodeHtmlEntities(raw);
+    const ym = yearRegex.exec(decodedRaw);
+    if (ym?.[2])
+      out.push({
+        title: decodeHtmlEntities(ym[1]).trim(),
+        year: parseInt(ym[2], 10),
+        slug,
+      });
+    else out.push({ title: decodedRaw.trim(), year: 0, slug });
+    seenSlugs.add(slug);
+  }
+
+  // 6) Film-poster class fallback: <div class="film-poster"> or similar with data attributes
+  const filmPosterRegex =
+    /<[^>]*class=["'][^"']*film-poster[^"']*["'][^>]*>[\s\S]{0,500}?(?:data-film-slug=["']([^"']+)["']|data-target-link=["']\/film\/([^"']+)\/["']|href=["']\/film\/([^"']+)\/["'])[\s\S]{0,200}?(?:alt=["']([^"']+)["']|data-item-name=["']([^"']+)["'])/gi;
+  let fm: RegExpExecArray | null;
+  while ((fm = filmPosterRegex.exec(html)) !== null) {
+    const slug = (fm[1] || fm[2] || fm[3] || "").trim();
+    const raw = (fm[4] || fm[5] || "").trim();
+    if (!slug || !raw || seenSlugs.has(slug)) continue;
+    const decodedRaw = decodeHtmlEntities(raw);
+    const ym = yearRegex.exec(decodedRaw);
+    if (ym?.[2])
+      out.push({
+        title: decodeHtmlEntities(ym[1]).trim(),
+        year: parseInt(ym[2], 10),
+        slug,
+      });
+    else out.push({ title: decodedRaw.trim(), year: 0, slug });
+    seenSlugs.add(slug);
+  }
+
   return out;
 }
 
 async function fetchWatchlistPage(
   username: string,
-  page: number
+  page: number,
+  env: Env
 ): Promise<LetterboxdMovie[]> {
   const url =
     page === 1
@@ -84,10 +212,14 @@ async function fetchWatchlistPage(
       : `https://letterboxd.com/${username}/watchlist/page/${page}/`;
   const res = await fetch(url, {
     headers: {
+      // Use a realistic browser UA and headers to avoid simplistic bot gating
       "User-Agent":
-        "Boxdbud.io/1.1.0 (https://boxdbud.pages.dev) - Watchlist Comparison Tool",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: "https://letterboxd.com/",
+      "Cache-Control": "no-cache",
     },
   });
   if (!res.ok) {
@@ -95,18 +227,31 @@ async function fetchWatchlistPage(
     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   }
   const html = await res.text();
+  debugLog(
+    env,
+    `Fetched HTML for ${username} page ${page}: length=${html.length}`
+  );
+  if (html.length > 0) {
+    const bodyStart = html.indexOf("<body");
+    const sampleStart = bodyStart > 0 ? bodyStart : 0;
+    const sample = html
+      .slice(sampleStart, sampleStart + 500)
+      .replace(/\s+/g, " ")
+      .trim();
+    debugLog(env, `HTML sample (from body): ${sample}`);
+  }
   return parseMoviesFromHtml(html);
 }
 
 export async function scrapeLetterboxdWatchlist(
   username: string,
-  env?: Env
+  env: Env
 ): Promise<LetterboxdMovie[]> {
   const all: LetterboxdMovie[] = [];
   const maxPages = 10;
   debugLog(env, `Starting scrape for ${username}`);
   for (let p = 1; p <= maxPages; p++) {
-    const pageMovies = await fetchWatchlistPage(username, p);
+    const pageMovies = await fetchWatchlistPage(username, p, env);
     all.push(...pageMovies);
     if (pageMovies.length === 0) break;
     // polite delay
@@ -156,21 +301,46 @@ export async function enhanceWithTMDBData(
   const BATCH = 10;
   const out: Movie[] = [];
 
-  const mapTmdb = (row: any, base: CommonMovie, source: string): Movie => ({
-    id: Number(row.id),
-    title: row.title || row.original_title || base.title,
-    year: Number(row.year ?? parseYear(row.release_date) ?? base.year),
-    poster_path: row.poster_path ?? null,
-    overview: row.overview ?? undefined,
-    vote_average:
-      typeof row.vote_average === "number" ? row.vote_average : undefined,
-    director: row.director ?? undefined,
-    runtime: typeof row.runtime === "number" ? row.runtime : undefined,
-    letterboxdSlug: base.slug,
-    friendCount: base.friendCount,
-    friendList: base.friendList,
-    source,
-  });
+  const mapTmdb = (row: any, base: CommonMovie, source: string): Movie => {
+    // Parse genres column (can be JSON string or array of strings/objects)
+    let genres: string[] | undefined;
+    try {
+      const raw = (row as any).genres;
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed)) {
+        if (parsed.length > 0 && typeof parsed[0] === "string") {
+          genres = parsed as string[];
+        } else if (
+          parsed.length > 0 &&
+          parsed[0] &&
+          typeof (parsed[0] as any).name === "string"
+        ) {
+          genres = (parsed as Array<{ id?: number; name: string }>)
+            .map((g) => g.name)
+            .filter(Boolean);
+        }
+      }
+    } catch {
+      // ignore parse errors; leave genres undefined
+    }
+
+    return {
+      id: Number(row.id),
+      title: row.title || row.original_title || base.title,
+      year: Number(row.year ?? parseYear(row.release_date) ?? base.year),
+      poster_path: row.poster_path ?? null,
+      overview: row.overview ?? undefined,
+      vote_average:
+        typeof row.vote_average === "number" ? row.vote_average : undefined,
+      director: row.director ?? undefined,
+      runtime: typeof row.runtime === "number" ? row.runtime : undefined,
+      genres,
+      letterboxdSlug: base.slug,
+      friendCount: base.friendCount,
+      friendList: base.friendList,
+      source,
+    };
+  };
 
   const mapRowsForDebug = (rows: any[] | undefined) =>
     (rows || []).map((r) => ({
