@@ -49,17 +49,20 @@ const normalizeTitle = (t: string) =>
     .replace(/\s+/g, " ");
 
 const decodeHtmlEntities = (str: string): string => {
-  return str
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16))
-    )
-    .replace(/&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&copy;/g, "©");
+  return (
+    str
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      )
+      // Unescape named entities first, then '&' last to avoid double-unescaping
+      .replace(/&apos;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&copy;/g, "©")
+      .replace(/&amp;/g, "&")
+  );
 };
 
 const parseYear = (date?: string | null): number => {
