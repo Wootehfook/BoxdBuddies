@@ -1,7 +1,7 @@
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Letterboxd Watchlist Comparison API
 
-import { debugLog } from "../../_lib/common";
+import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
 
 // Structured logging utility for production
@@ -372,27 +372,9 @@ async function enhanceWithTMDBData(
     r: any,
     movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
   ): Movie {
-    // Parse genres into array of names when possible
-    let genres: string[] | null = null;
-    try {
-      const raw = r.genres;
-      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (Array.isArray(parsed)) {
-        if (parsed.length > 0 && typeof parsed[0] === "string") {
-          genres = parsed as string[];
-        } else if (
-          parsed.length > 0 &&
-          parsed[0] &&
-          typeof parsed[0].name === "string"
-        ) {
-          genres = (parsed as Array<{ id?: number; name: string }>)
-            .map((g) => g.name)
-            .filter(Boolean);
-        }
-      }
-    } catch {
-      // ignore parse errors
-    }
+    // Parse genres via shared helper
+    const gnames = parseGenresToNames((r as any).genres);
+    const genres: string[] | null = gnames ? [...gnames] : null;
     return {
       id: r.id,
       title: r.title,

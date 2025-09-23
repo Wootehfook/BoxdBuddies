@@ -6,7 +6,7 @@
 
 // D1Result omitted to avoid unused-local errors
 
-import { debugLog } from "../../_lib/common";
+import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
 
 type Env = CacheEnv;
@@ -315,27 +315,9 @@ export async function enhanceWithTMDBData(
   const out: Movie[] = [];
 
   const mapTmdb = (row: any, base: CommonMovie, source: string): Movie => {
-    // Parse genres column (can be JSON string or array of strings/objects)
-    let genres: string[] | undefined;
-    try {
-      const raw = (row as any).genres;
-      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (Array.isArray(parsed)) {
-        if (parsed.length > 0 && typeof parsed[0] === "string") {
-          genres = parsed as string[];
-        } else if (
-          parsed.length > 0 &&
-          parsed[0] &&
-          typeof (parsed[0] as any).name === "string"
-        ) {
-          genres = (parsed as Array<{ id?: number; name: string }>)
-            .map((g) => g.name)
-            .filter(Boolean);
-        }
-      }
-    } catch {
-      // ignore parse errors; leave genres undefined
-    }
+    // Parse genres via shared helper
+    const gnames = parseGenresToNames((row as any).genres);
+    const genres: string[] | undefined = gnames ? [...gnames] : undefined;
 
     return {
       id: Number(row.id),
