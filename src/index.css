@@ -2341,6 +2341,13 @@ body {
   transform: translateY(-1px);
 }
 
+/* Keyboard focus ring for genre badges */
+.genre-badge:focus-visible {
+  outline: 2px solid #ff8000;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(255, 128, 0, 0.25);
+}
+
 .selected-clear {
   background: rgba(255, 255, 255, 0.06);
   color: #ff8000;

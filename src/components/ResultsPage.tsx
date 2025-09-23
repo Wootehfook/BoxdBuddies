@@ -170,7 +170,29 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
             </span>
           </h2>
         </div>
-        <div className="header-spacer"></div>
+        <div className="header-controls">
+          {selectedGenres.length > 0 && (
+            <button
+              className="btn btn-icon btn-secondary"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedGenres([]);
+              }}
+              aria-label="Clear filters"
+              title="Clear filters"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+              <span className="btn-text">Clear</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="page-content">
@@ -311,6 +333,9 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                                         className={className}
                                         title={label}
                                         aria-label={`${label} genre${isSelected ? " (selected)" : ""}`}
+                                        aria-pressed={
+                                          isSelected ? "true" : "false"
+                                        }
                                         onClick={(e) => {
                                           e.preventDefault();
                                           setSelectedGenres((s) => {
@@ -330,17 +355,6 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                                     );
                                   });
                               })()}
-                              {selectedGenres.length > 0 && (
-                                <button
-                                  className="genre-badge genre-default selected-clear"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setSelectedGenres([]);
-                                  }}
-                                >
-                                  Clear
-                                </button>
-                              )}
                             </div>
                           )}
                         </div>
