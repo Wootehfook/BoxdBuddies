@@ -5,7 +5,7 @@
  */
 
 import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
-type Env = CacheEnv & { ADMIN_SECRET?: string };
+type Env = CacheEnv & { ADMIN_SECRET?: string; TMDB_GENRE_SENTINEL?: string };
 
 import { debugLog } from "../../_lib/common";
 
@@ -126,7 +126,8 @@ async function syncTMDBMoviesByID(
   database: any,
   apiKey: string,
   startMovieId: number,
-  maxMovies: number = 100
+  maxMovies: number = 100,
+  sentinel: string = "Unknown"
 ): Promise<{ synced: number; errors: number; highestId: number }> {
   debugLog(
     undefined,
@@ -189,6 +190,13 @@ async function syncTMDBMoviesByID(
           .filter(Boolean) as string[];
       }
 
+      // If no genres were derived, write a sentinel so downstream processes don't repeatedly treat
+      // this row as missing. Use ['Unknown'] to indicate attempted lookup with no TMDB match.
+      const finalGenres =
+        Array.isArray(movieGenres) && movieGenres.length > 0
+          ? movieGenres
+          : [sentinel];
+
       // Extract year from release date
       const year = movieDetails.release_date
         ? new Date(movieDetails.release_date).getFullYear()
@@ -219,7 +227,7 @@ async function syncTMDBMoviesByID(
           movieDetails.vote_count,
           movieDetails.popularity,
           movieDetails.adult ? 1 : 0,
-          JSON.stringify(movieGenres),
+          JSON.stringify(finalGenres),
           director,
           movieDetails.runtime,
           movieDetails.status,
@@ -289,7 +297,8 @@ async function syncTMDBMoviesByID(
 async function syncTMDBChanges(
   database: any,
   apiKey: string,
-  startDate?: string
+  startDate?: string,
+  sentinel: string = "Unknown"
 ): Promise<{ synced: number; errors: number }> {
   debugLog(
     undefined,
@@ -353,6 +362,10 @@ async function syncTMDBChanges(
               .map((id: number) => genres.get(id))
               .filter(Boolean) as string[];
           }
+          const finalGenres =
+            Array.isArray(movieGenres) && movieGenres.length > 0
+              ? movieGenres
+              : [sentinel];
           const year = movieDetails.release_date
             ? new Date(movieDetails.release_date).getFullYear()
             : null;
@@ -381,7 +394,7 @@ async function syncTMDBChanges(
               movieDetails.vote_count,
               movieDetails.popularity,
               movieDetails.adult ? 1 : 0,
-              JSON.stringify(movieGenres),
+              JSON.stringify(finalGenres),
               director,
               movieDetails.runtime,
               movieDetails.status,
@@ -426,7 +439,8 @@ async function syncTMDBMovies(
   database: any,
   apiKey: string,
   startPage: number = 1,
-  maxPages: number = 10
+  maxPages: number = 10,
+  sentinel: string = "Unknown"
 ): Promise<{ synced: number; errors: number }> {
   debugLog(
     undefined,
@@ -526,6 +540,11 @@ async function syncTMDBMovies(
                 .filter(Boolean) as string[];
             }
 
+            const finalGenres =
+              Array.isArray(movieGenres) && movieGenres.length > 0
+                ? movieGenres
+                : [sentinel];
+
             // Extract year from release date
             const year = movieDetails.release_date
               ? new Date(movieDetails.release_date).getFullYear()
@@ -556,7 +575,7 @@ async function syncTMDBMovies(
                 movieDetails.vote_count,
                 movieDetails.popularity,
                 movieDetails.adult ? 1 : 0,
-                JSON.stringify(movieGenres),
+                JSON.stringify(finalGenres),
                 director,
                 movieDetails.runtime,
                 movieDetails.status,
@@ -627,7 +646,8 @@ async function syncTMDBMovies(
 async function backfillGenres(
   database: any,
   apiKey: string,
-  options?: { limit?: number; mode?: "missing" | "all" }
+  options?: { limit?: number; mode?: "missing" | "all" },
+  sentinel: string = "Unknown"
 ): Promise<{ updated: number; errors: number }> {
   const userLimit = options?.limit;
   const mode = options?.mode ?? "missing";
@@ -643,8 +663,13 @@ async function backfillGenres(
     return map;
   })();
 
+  // Consider NULL/empty/empty-array/'null' as missing. Also treat any genres value
+  // that contains no alphabetic characters (e.g. numeric garbage like '123' or '["123"]')
+  // as missing so it will be re-fetched from TMDB.
+  // SQLite GLOB supports basic character classes; 'NOT GLOB "*[A-Za-z]*"' matches strings
+  // without any ASCII letters.
   const missingCond =
-    "(genres IS NULL OR TRIM(genres) = '' OR genres = '[]' OR genres = 'null')";
+    "(genres IS NULL OR TRIM(genres) = '' OR genres = '[]' OR genres = 'null' OR (genres NOT GLOB '*[A-Za-z]*'))";
   const baseWhere = mode === "missing" ? missingCond : "1=1";
 
   let updated = 0;
@@ -663,18 +688,28 @@ async function backfillGenres(
   };
 
   const fetchNames = async (movieId: number): Promise<string[]> => {
-    const { movie: details } = await getMovieDetails(movieId, apiKey);
-    if (Array.isArray(details.genres) && details.genres.length) {
-      return details.genres
-        .map((g: { id: number; name: string }) => g?.name)
-        .filter(Boolean);
+    try {
+      const { movie: details } = await getMovieDetails(movieId, apiKey);
+      if (Array.isArray(details.genres) && details.genres.length) {
+        return details.genres
+          .map((g: { id: number; name: string }) => g?.name)
+          .filter(Boolean);
+      }
+      if (Array.isArray(details.genre_ids) && details.genre_ids.length) {
+        return details.genre_ids
+          .map((id: number) => genres.get(id))
+          .filter(Boolean) as string[];
+      }
+      return [];
+    } catch (e) {
+      // If movie not found or TMDB request fails for this movie, return empty to signal no genres.
+      // The caller will store ['Unknown'] for empty genre results so the row isn't retried repeatedly.
+      debugLog(
+        undefined,
+        `⚠️ fetchNames failed for movie ${movieId}: ${String(e)}`
+      );
+      return [];
     }
-    if (Array.isArray(details.genre_ids) && details.genre_ids.length) {
-      return details.genre_ids
-        .map((id: number) => genres.get(id))
-        .filter(Boolean) as string[];
-    }
-    return [];
   };
 
   const updateRow = async (movieId: number, names: string[]) => {
@@ -705,7 +740,11 @@ async function backfillGenres(
       if (!withinBudget()) break;
       try {
         const names = await fetchNames(row.id);
-        await updateRow(row.id, names);
+        // If no genres found, write a sentinel value so the row won't be repeatedly selected as "missing".
+        // Use sentinel from env (default "Unknown") to indicate attempted lookup with no TMDB match or an error.
+        const finalNames =
+          Array.isArray(names) && names.length > 0 ? names : [sentinel];
+        await updateRow(row.id, finalNames);
         updated++;
       } catch (e) {
         console.error(`Failed to backfill genres for movie ${row.id}:`, e);
@@ -790,11 +829,13 @@ export async function onRequestPost(context: {
       if (!startMovieId) {
         throw new Error("startMovieId is required for movieId sync type");
       }
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
       result = await syncTMDBMoviesByID(
         env.MOVIES_DB,
         env.TMDB_API_KEY,
         startMovieId,
-        maxMovies
+        maxMovies,
+        sentinelVal
       );
 
       return new Response(
@@ -813,10 +854,12 @@ export async function onRequestPost(context: {
       );
     } else if (syncType === "changes") {
       // Incremental sync by changes
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
       result = await syncTMDBChanges(
         env.MOVIES_DB,
         env.TMDB_API_KEY,
-        startDate
+        startDate,
+        sentinelVal
       );
 
       return new Response(
@@ -850,11 +893,13 @@ export async function onRequestPost(context: {
       );
     } else {
       // Traditional page-based sync (default)
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
       result = await syncTMDBMovies(
         env.MOVIES_DB,
         env.TMDB_API_KEY,
         startPage,
-        maxPages
+        maxPages,
+        sentinelVal
       );
 
       return new Response(

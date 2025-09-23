@@ -13,6 +13,9 @@ out/
 
 # Generated files
 .docusaurus
+
+# Cloudflare Pages local state
+.wrangler/state/
 *.min.js
 *.min.css
 
