@@ -13,6 +13,7 @@ declare module "*_lib/common" {
     init?: any
   ): Promise<Response>;
   export function reduceMovie(m: any): any;
+  export function parseGenresToNames(genres: unknown): string[] | undefined;
 }
 
 declare module "*_lib/common.js" {
@@ -26,4 +27,5 @@ declare module "*_lib/common.js" {
     init?: any
   ): Promise<Response>;
   export function reduceMovie(m: any): any;
+  export function parseGenresToNames(genres: unknown): string[] | undefined;
 }

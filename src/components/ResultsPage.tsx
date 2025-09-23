@@ -22,7 +22,75 @@
 // ...existing code... (utils imports used elsewhere)
 import type { ResultsPageProps } from "../types";
 
+import { useMemo, useState, useEffect } from "react";
+import getGenreClassSlug from "../utils/genreClassMap";
+
 export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
+  // Store selected genres as slugs for stable matching across aliases (e.g.,
+  // "Sci-Fi" and "Science Fiction" -> "scifi"). Maintain backward
+  // compatibility by also checking raw labels when filtering.
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+
+  // Read initial selected genres from the URL query string: ?genres=Action,Comedy
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      // Parse the query string manually to avoid referencing global URLSearchParams
+      const search = window.location.search || "";
+      const qs = search.startsWith("?") ? search.slice(1) : search;
+      const match = qs.match(/(?:^|&)genres=([^&]+)/i);
+      const raw = match ? match[1] : null;
+      if (raw && raw.trim().length > 0) {
+        const arr = raw
+          .split(",")
+          .map((s: string) => decodeURIComponent(s).trim())
+          .filter(Boolean);
+        if (arr.length > 0) setSelectedGenres(arr);
+      }
+    } catch (e) {
+      // swallow - URL parsing should not break rendering
+      // Use console.error to comply with lint rules
+      console.error("Failed to read genres from URL", e);
+    }
+    // run once on mount
+  }, []);
+
+  // Sync selectedGenres to URL (replace state so back button isn't flooded)
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const search = window.location.search || "";
+      const qs = search.startsWith("?") ? search.slice(1) : search;
+      const parts = qs ? qs.split("&").filter(Boolean) : [];
+      // remove existing genres param (case-insensitive)
+      const filtered = parts.filter((p) => !/^genres=/i.test(p));
+      if (!selectedGenres || selectedGenres.length === 0) {
+        // nothing to add
+      } else {
+        filtered.push(
+          "genres=" + selectedGenres.map((s) => encodeURIComponent(s)).join(",")
+        );
+      }
+      const newQuery = filtered.length ? `?${filtered.join("&")}` : "";
+      const newUrl = `${window.location.pathname}${newQuery}`;
+      window.history.replaceState({}, "", newUrl);
+    } catch (e) {
+      console.error("Failed to sync genres to URL", e);
+    }
+  }, [selectedGenres]);
+
+  const filteredMovies = useMemo(() => {
+    if (!selectedGenres || selectedGenres.length === 0) return movies;
+    return movies.filter((m) => {
+      const genres = (m.genres || []) as string[];
+      for (const g of genres) {
+        const slug = getGenreClassSlug(g);
+        if (selectedGenres.includes(slug) || selectedGenres.includes(g))
+          return true;
+      }
+      return false;
+    });
+  }, [movies, selectedGenres]);
   // Decode HTML entities and numeric references in server-supplied titles.
   // This is defensive: if a scraped title slips through with fragments like
   // "#039;s" or double-escaped "&amp;#039;s", we'll normalize it for display.
@@ -71,6 +139,11 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
     s = s.replace(/\s+/g, " ").trim();
     return s;
   }
+  // Truncate long genre labels to keep badges tidy (CSS may further constrain)
+  function truncateLabel(s: string, max = 18): string {
+    if (!s) return s;
+    return s.length > max ? s.slice(0, max - 1).trimEnd() + "…" : s;
+  }
   return (
     <section className="page results-page dynamic-cards">
       <div className="page-header">
@@ -97,11 +170,33 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
             </span>
           </h2>
         </div>
-        <div className="header-spacer"></div>
+        <div className="header-controls">
+          {selectedGenres.length > 0 && (
+            <button
+              className="btn btn-icon btn-secondary"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedGenres([]);
+              }}
+              aria-label="Clear filters"
+              title="Clear filters"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+              <span className="btn-text">Clear</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="page-content">
-        {movies.length === 0 ? (
+        {filteredMovies.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">
               <img
@@ -111,13 +206,32 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
               />
             </div>
             <h3>No common movies found</h3>
-            <p>
-              Try selecting different friends or check if watchlists are public
-            </p>
+            {selectedGenres.length > 0 ? (
+              <>
+                <p>
+                  No matches with current genre filter. You can clear filters to
+                  see all common movies.
+                </p>
+                <button
+                  className="btn btn-secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedGenres([]);
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </>
+            ) : (
+              <p>
+                Try selecting different friends or check if watchlists are
+                public
+              </p>
+            )}
           </div>
         ) : (
           <div className="movies-grid">
-            {movies.map((movie) => {
+            {filteredMovies.map((movie) => {
               try {
                 const safeSlug = movie.letterboxdSlug || "";
                 const safeTitle = movie.title || "Untitled";
@@ -164,7 +278,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                             />
                           );
                         }
-                        
+
                         return (
                           <img
                             src="https://via.placeholder.com/200x300/1a1f24/9ab?text=Movie+Poster"
@@ -184,6 +298,65 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               ? ` (${movie.year})`
                               : ""}
                           </h3>
+
+                          {movie.genres && movie.genres.length > 0 && (
+                            <div className="movie-genre-badges">
+                              {(() => {
+                                const raw = (movie.genres || []) as string[];
+                                // Deduplicate by slug; prefer the first encountered label
+                                const seen = new Set<string>();
+                                const unique: Array<{
+                                  slug: string;
+                                  label: string;
+                                }> = [];
+                                for (const g of raw) {
+                                  const slug = getGenreClassSlug(g);
+                                  if (!slug) continue;
+                                  if (seen.has(slug)) continue;
+                                  seen.add(slug);
+                                  unique.push({ slug, label: g });
+                                  if (unique.length >= 6) break; // soft cap to limit DOM
+                                }
+                                return unique
+                                  .slice(0, 3)
+                                  .map(({ slug, label }) => {
+                                    const isSelected =
+                                      selectedGenres.includes(slug) ||
+                                      selectedGenres.includes(label);
+                                    const className = `genre-badge genre-${slug} ${
+                                      isSelected ? "selected" : ""
+                                    }`;
+                                    return (
+                                      <button
+                                        key={`${movie.id}-${slug}`}
+                                        type="button"
+                                        className={className}
+                                        title={label}
+                                        aria-label={`${label} genre${isSelected ? " (selected)" : ""}`}
+                                        aria-pressed={
+                                          isSelected ? "true" : "false"
+                                        }
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          setSelectedGenres((s) => {
+                                            const hasSlug = s.includes(slug);
+                                            const hasLabel = s.includes(label);
+                                            if (hasSlug || hasLabel) {
+                                              return s.filter(
+                                                (x) => x !== slug && x !== label
+                                              );
+                                            }
+                                            return [...s, slug];
+                                          });
+                                        }}
+                                      >
+                                        {truncateLabel(label)}
+                                      </button>
+                                    );
+                                  });
+                              })()}
+                            </div>
+                          )}
                         </div>
 
                         <div className="movie-details-list">
@@ -196,12 +369,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                             </div>
                           )}
 
-                          {movie.genres && movie.genres.length > 0 && (
-                            <div className="movie-detail-item">
-                              <span className="detail-icon">🎭</span>
-                              <span>{movie.genres.slice(0, 2).join(", ")}</span>
-                            </div>
-                          )}
+                          {/* Genres are displayed as badges under the title */}
 
                           {movie.runtime && movie.runtime > 0 && (
                             <div className="movie-detail-item">
@@ -209,7 +377,6 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               <span>{movie.runtime}m</span>
                             </div>
                           )}
-
 
                           {movie.director && movie.director !== "Unknown" && (
                             <div className="movie-detail-item">

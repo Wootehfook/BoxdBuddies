@@ -1,7 +1,7 @@
 // AI Generated: GitHub Copilot - 2025-08-16T23:30:00Z
 // Letterboxd Watchlist Comparison API
 
-import { debugLog } from "../../_lib/common";
+import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
 
 // Structured logging utility for production
@@ -57,6 +57,7 @@ interface Movie {
   vote_average?: number | null;
   director?: string | null;
   runtime?: number | null;
+  genres?: string[] | null;
   letterboxdSlug?: string | null;
   friendCount: number;
   friendList: string[];
@@ -139,13 +140,34 @@ function parseLiContent(liContent: string): LetterboxdMovie | null {
  */
 function extractMoviesFromHtml(html: string): LetterboxdMovie[] {
   const pageMovies: LetterboxdMovie[] = [];
-  const liRegex =
-    /<li[^>]*class=["']poster-container["'][^>]*>([\s\S]*?)<\/li>/gi;
-  let liMatch: RegExpExecArray | null;
-  while ((liMatch = liRegex.exec(html)) !== null) {
-    const liContent = liMatch[1];
-    const movie = parseLiContent(liContent);
-    if (movie) pageMovies.push(movie);
+  // Avoid running a global /s regex over possibly large untrusted HTML
+  // (code-scanning flagged this pattern as a potential ReDoS/DoS vector).
+  // Instead, do a simple linear scan for <li ... class="poster-container"> blocks
+  // and parse each block individually. Also cap the amount of HTML we process.
+  const MAX_HTML_LENGTH = 200 * 1024; // 200 KB
+  if (html.length === 0) return pageMovies;
+  const safeHtml =
+    html.length > MAX_HTML_LENGTH ? html.slice(0, MAX_HTML_LENGTH) : html;
+
+  let pos = 0;
+  const lc = safeHtml.toLowerCase();
+  while (true) {
+    const liStart = lc.indexOf("<li", pos);
+    if (liStart === -1) break;
+    const liOpenEnd = lc.indexOf(">", liStart + 3);
+    if (liOpenEnd === -1) break;
+    const liTag = safeHtml.slice(liStart, liOpenEnd + 1);
+    if (/class=["'][^"']*poster-container[^"']*["']/.test(liTag)) {
+      // find the end of this li by searching for </li> from liOpenEnd
+      const liClose = lc.indexOf("</li>", liOpenEnd + 1);
+      const contentEnd = liClose !== -1 ? liClose : liOpenEnd + 1;
+      const liContent = safeHtml.slice(liOpenEnd + 1, contentEnd);
+      const movie = parseLiContent(liContent);
+      if (movie) pageMovies.push(movie);
+      pos = contentEnd + 5; // move past </li>
+    } else {
+      pos = liOpenEnd + 1;
+    }
   }
   return pageMovies;
 }
@@ -240,11 +262,28 @@ async function enhanceWithTMDBData(
   // DB helper: try the REPLACE-stripped match
   async function dbFindStripped(titleStripped: string, year: number) {
     try {
-      return await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies WHERE LOWER(REPLACE(title, ?, '')) = LOWER(?) AND (year=? OR year=? OR year=?) ORDER BY popularity DESC LIMIT 1`
-      )
-        .bind("'", titleStripped, year, year - 1, year + 1)
-        .all();
+      const anyYear = !year || year <= 0;
+      const sql = anyYear
+        ? `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(REPLACE(title, ?, '')) = LOWER(?)
+             OR LOWER(REPLACE(original_title, ?, '')) = LOWER(?)
+           )
+           ORDER BY popularity DESC
+           LIMIT 1`
+        : `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(REPLACE(title, ?, '')) = LOWER(?)
+             OR LOWER(REPLACE(original_title, ?, '')) = LOWER(?)
+           )
+           AND (year=? OR year=? OR year=?)
+           ORDER BY popularity DESC
+           LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds = anyYear
+        ? ["'", titleStripped, "'", titleStripped]
+        : ["'", titleStripped, "'", titleStripped, year, year - 1, year + 1];
+      return await stmt.bind(...(binds as any)).all();
     } catch (e) {
       debugLog(env, `Stripped REPLACE lookup failed: ${String(e)}`);
       return null;
@@ -253,11 +292,28 @@ async function enhanceWithTMDBData(
 
   async function dbFindExact(title: string, year: number) {
     try {
-      return await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies WHERE LOWER(title)=LOWER(?) AND (year=? OR year=? OR year=?) ORDER BY popularity DESC LIMIT 1`
-      )
-        .bind(title, year, year - 1, year + 1)
-        .all();
+      const anyYear = !year || year <= 0;
+      const sql = anyYear
+        ? `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(title)=LOWER(?)
+             OR LOWER(original_title)=LOWER(?)
+           )
+           ORDER BY popularity DESC
+           LIMIT 1`
+        : `SELECT * FROM tmdb_movies
+           WHERE (
+             LOWER(title)=LOWER(?)
+             OR LOWER(original_title)=LOWER(?)
+           )
+           AND (year=? OR year=? OR year=?)
+           ORDER BY popularity DESC
+           LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds = anyYear
+        ? [title, title]
+        : [title, title, year, year - 1, year + 1];
+      return await stmt.bind(...(binds as any)).all();
     } catch (e) {
       debugLog(env, `Exact lookup failed: ${String(e)}`);
       return null;
@@ -267,12 +323,47 @@ async function enhanceWithTMDBData(
   async function dbFindLike(title: string) {
     try {
       return await env.MOVIES_DB.prepare(
-        `SELECT * FROM tmdb_movies WHERE LOWER(title) LIKE LOWER(?) ORDER BY popularity DESC LIMIT 1`
+        `SELECT * FROM tmdb_movies
+         WHERE (
+           LOWER(title) LIKE LOWER(?)
+           OR LOWER(original_title) LIKE LOWER(?)
+         )
+         ORDER BY popularity DESC
+         LIMIT 1`
       )
-        .bind(`%${title}%`)
+        .bind(`%${title}%`, `%${title}%`)
         .all();
     } catch (e) {
       debugLog(env, `DB LIKE fallback failed: ${String(e)}`);
+      return null;
+    }
+  }
+
+  /**
+   * Build a tokenized LIKE query that requires all tokens to be present
+   * in any order. Returns the DB result or null.
+   */
+  async function dbFindTokenizedLike(title: string) {
+    try {
+      const tokens = title
+        .replace(/["'()\[\].,:;!?#\-]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((t) => t.trim());
+      if (!tokens.length) return null;
+      const likeClauses = tokens
+        .map(
+          () =>
+            "(LOWER(title) LIKE LOWER(?) OR LOWER(original_title) LIKE LOWER(?))"
+        )
+        .join(" AND ");
+      const sql = `SELECT * FROM tmdb_movies WHERE ${likeClauses} ORDER BY popularity DESC LIMIT 1`;
+      const stmt = env.MOVIES_DB.prepare(sql);
+      const binds: string[] = [];
+      for (const t of tokens) binds.push(`%${t}%`, `%${t}%`);
+      return await stmt.bind(...binds).all();
+    } catch (e) {
+      debugLog(env, `DB tokenized LIKE failed: ${String(e)}`);
       return null;
     }
   }
@@ -281,6 +372,9 @@ async function enhanceWithTMDBData(
     r: any,
     movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
   ): Movie {
+    // Parse genres via shared helper
+    const gnames = parseGenresToNames((r as any).genres);
+    const genres: string[] | null = gnames ? [...gnames] : null;
     return {
       id: r.id,
       title: r.title,
@@ -290,6 +384,7 @@ async function enhanceWithTMDBData(
       vote_average: r.vote_average ?? null,
       director: r.director ?? null,
       runtime: r.runtime ?? null,
+      genres,
       letterboxdSlug: movie.slug,
       friendCount: movie.friendCount,
       friendList: movie.friendList,
@@ -326,6 +421,20 @@ async function enhanceWithTMDBData(
         result = await dbFindExact(normalized, movie.year);
       if (!result?.results?.length && searchTitle)
         result = await dbFindLike(searchTitle);
+
+      // Try tokenized LIKE which requires all tokens to match
+      if (!result?.results?.length && searchTitle)
+        result = await dbFindTokenizedLike(searchTitle);
+
+      // As a last resort, try lookups without constraining by year
+      if (!result?.results?.length && stripped) {
+        const noYearStripped = await dbFindStripped(stripped, 0);
+        if (noYearStripped?.results?.length) result = noYearStripped;
+      }
+      if (!result?.results?.length && searchTitle) {
+        const noYearExact = await dbFindExact(searchTitle, 0);
+        if (noYearExact?.results?.length) result = noYearExact;
+      }
 
       if (result?.results?.length)
         return buildMovieFromRow(result.results[0], movie);

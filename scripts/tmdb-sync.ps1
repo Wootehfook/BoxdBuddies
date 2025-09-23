@@ -14,6 +14,12 @@ if (-not (Get-Command "npx" -ErrorAction SilentlyContinue)) {
 $CF_PAGES_PROJECT = if ($env:CF_PAGES_PROJECT -and $env:CF_PAGES_PROJECT.Trim()) { $env:CF_PAGES_PROJECT } else { 'boxdbud' }
 $BASE_URL = if ($env:CF_PAGES_BASE_URL -and $env:CF_PAGES_BASE_URL.Trim()) { $env:CF_PAGES_BASE_URL } else { "https://$CF_PAGES_PROJECT.pages.dev" }
 
+# Admin token: prefer ADMIN_SYNC_TOKEN env var; fallback to legacy literal (not recommended)
+$ADMIN_SYNC_TOKEN = if ($env:ADMIN_SYNC_TOKEN -and $env:ADMIN_SYNC_TOKEN.Trim()) { $env:ADMIN_SYNC_TOKEN } else { 'admin-sync-token' }
+if ($ADMIN_SYNC_TOKEN -eq 'admin-sync-token') {
+    Write-Host "⚠️  ADMIN_SYNC_TOKEN not set; falling back to literal 'admin-sync-token'. Set ADMIN_SYNC_TOKEN in your environment to avoid using a hard-coded token." -ForegroundColor Yellow
+}
+
 # Helper: Deploy and capture preview base URL from Wrangler output
 function Invoke-DeployAndSetPreviewBaseUrl {
     param(
@@ -130,7 +136,7 @@ Write-Host "7. 🆔 Incremental sync by Movie ID (resumes from last ID, ~5 mins)
 Write-Host "8. 🔄 Changes sync (updates modified movies, ~2 mins)" -ForegroundColor Yellow
 Write-Host "9. 🕐 Trigger daily update job manually" -ForegroundColor White
 Write-Host "10. 📊 Check sync status" -ForegroundColor White
-Write-Host "11. 🧷 Backfill genres for existing movies" -ForegroundColor Yellow
+Write-Host "11. 🧷 Backfill genres for existing movies (cleans numeric garbage and marks unmatched as 'Unknown')" -ForegroundColor Yellow
 
 $choice = Read-Host "Enter your choice (1-11)"
 
@@ -159,7 +165,7 @@ switch ($choice) {
                 
                 $result = curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
                     -H "Content-Type: application/json" `
-                    -H "Authorization: Bearer admin-sync-token" `
+                    -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                     -d $body | ConvertFrom-Json
                 
                 if ($result.success) {
@@ -202,7 +208,7 @@ switch ($choice) {
             
             $result = curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
                 -H "Content-Type: application/json" `
-                -H "Authorization: Bearer admin-sync-token" `
+                -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                 -d $body | ConvertFrom-Json
             
             if ($result.success) {
@@ -235,7 +241,7 @@ switch ($choice) {
         Write-Host "📡 Starting sync..." -ForegroundColor Blue
         curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
             -H "Content-Type: application/json" `
-            -H "Authorization: Bearer admin-sync-token" `
+            -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
             -d $body
     }
     "4" {
@@ -253,7 +259,7 @@ switch ($choice) {
         Write-Host "📡 Starting sync for pages $startPage to $maxPages..." -ForegroundColor Blue
         curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
             -H "Content-Type: application/json" `
-            -H "Authorization: Bearer admin-sync-token" `
+            -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
             -d $body
     }
     "5" {
@@ -280,7 +286,7 @@ switch ($choice) {
                 
                 $result = curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
                     -H "Content-Type: application/json" `
-                    -H "Authorization: Bearer admin-sync-token" `
+                    -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                     -d $body | ConvertFrom-Json
                 
                 if ($result.success) {
@@ -327,7 +333,7 @@ switch ($choice) {
                 
                 $result = curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
                     -H "Content-Type: application/json" `
-                    -H "Authorization: Bearer admin-sync-token" `
+                    -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                     -d $body | ConvertFrom-Json
                 
                 if ($result.success) {
@@ -413,9 +419,9 @@ switch ($choice) {
         $healthUrl = "$BASE_URL/api/health"
         Invoke-EnsureFunctionsReady -HealthUrl $healthUrl | Out-Null
         
-        # Run in small chunks to avoid Cloudflare timeouts
+        # Run in chunks to avoid Cloudflare timeouts; increased chunk size to speed up throughput
         $remaining = [int]$maxMovies
-        $chunkSize = 10
+        $chunkSize = 100
         $totalSyncedThisRun = 0
         $totalErrorsThisRun = 0
         while ($remaining -gt 0) {
@@ -434,7 +440,7 @@ switch ($choice) {
                 Write-Host ("📡 Starting incremental sync chunk: {0} movies from ID {1} (URL: {2}, timeout 45s)" -f $attemptSize, $startMovieId, "$BASE_URL/admin/tmdb-sync") -ForegroundColor Blue
                 $syncResponse = curl.exe -sS --fail-with-body --max-time 45 -w "`n%{http_code}" -X POST "$BASE_URL/admin/tmdb-sync" `
                     -H "Content-Type: application/json" `
-                    -H "Authorization: Bearer admin-sync-token" `
+                    -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                     -d $body
                 $srParts = $syncResponse -split "`n"
                 $srBody = ($srParts[0..($srParts.Length - 2)] -join "`n").Trim()
@@ -516,7 +522,7 @@ switch ($choice) {
         Write-Host "📡 Starting changes sync..." -ForegroundColor Blue
         curl.exe -sS -X POST "$BASE_URL/admin/tmdb-sync" `
             -H "Content-Type: application/json" `
-            -H "Authorization: Bearer admin-sync-token" `
+            -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
             -d $body
     }
     "9" {
@@ -529,7 +535,7 @@ switch ($choice) {
         Write-Host "📡 Starting daily update..." -ForegroundColor Blue
         curl.exe -sS -X POST "$BASE_URL/scheduled/tmdb-daily-update" `
             -H "Content-Type: application/json" `
-            -H "Authorization: Bearer admin-sync-token"
+            -H "Authorization: Bearer $ADMIN_SYNC_TOKEN"
     }
     "10" {
         Write-Host "📊 Checking sync status..." -ForegroundColor Green
@@ -600,12 +606,20 @@ switch ($choice) {
     }
     "11" {
         Write-Host "🧷 Backfilling genres for existing movies..." -ForegroundColor Green
+        Write-Host "ℹ️  This operation will attempt to fetch canonical genres from TMDB for rows where the 'genres' column is empty or contains invalid data (e.g., numeric garbage)." -ForegroundColor DarkCyan
+        Write-Host "ℹ️  Rows that cannot be matched on TMDB (or when TMDB fetch fails) will be written as ['Unknown'] so they will not be repeatedly reselected." -ForegroundColor DarkCyan
+        Write-Host "ℹ️  Use mode 'missing' to only target empty/invalid rows, or 'all' to recompute genres for every movie." -ForegroundColor DarkCyan
 
-        $mode = Read-Host "Mode: 'missing' (only empty) or 'all' (recompute for all)? [missing|all]"
+        $mode = Read-Host "Mode: 'missing' (only empty/invalid) or 'all' (recompute for all)? [missing|all]"
         if (-not $mode -or ($mode -ne 'all' -and $mode -ne 'missing')) { $mode = 'missing' }
 
-        $perBatch = Read-Host "Rows per batch (default 300)"
-        if (-not $perBatch -or -not ($perBatch -match '^[0-9]+$')) { $perBatch = 300 }
+        $perBatch = Read-Host "Rows per batch (default 200, max 200)"
+        if (-not $perBatch -or -not ($perBatch -match '^[0-9]+$')) { $perBatch = 200 }
+        else { $perBatch = [int]$perBatch }
+        if ($perBatch -gt 200) {
+            Write-Host "⚠️  Rows per batch capped to 200 to avoid function timeouts and rate limits." -ForegroundColor Yellow
+            $perBatch = 200
+        }
         $maxBatches = Read-Host "Max batches this run (default 50)"
         if (-not $maxBatches -or -not ($maxBatches -match '^[0-9]+$')) { $maxBatches = 50 }
 
@@ -624,7 +638,7 @@ switch ($choice) {
 
             $resp = curl.exe -sS --fail-with-body --max-time 45 -w "`n%{http_code}" -X POST "$BASE_URL/admin/tmdb-sync" `
                 -H "Content-Type: application/json" `
-                -H "Authorization: Bearer admin-sync-token" `
+                -H "Authorization: Bearer $ADMIN_SYNC_TOKEN" `
                 -d $body
 
             $parts = $resp -split "`n"

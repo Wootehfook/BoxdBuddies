@@ -18,6 +18,7 @@ declare module "../../_lib/common" {
     init?: any
   ): Promise<Response>;
   export function reduceMovie(m: any): any;
+  export function parseGenresToNames(genres: unknown): string[] | undefined;
   export function toYear(d: any): number | null;
   export function isDebug(env?: any): boolean;
   export function debugLog(env: any, ...args: any[]): void;
@@ -41,6 +42,7 @@ declare module "../../_lib/common.js" {
     init?: any
   ): Promise<Response>;
   export function reduceMovie(m: any): any;
+  export function parseGenresToNames(genres: unknown): string[] | undefined;
   export function toYear(d: any): number | null;
   export function isDebug(env?: any): boolean;
   export function debugLog(env: any, ...args: any[]): void;
