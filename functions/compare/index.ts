@@ -228,6 +228,29 @@ async function enhanceWithTMDBData(
 
         if (result.results && result.results.length > 0) {
           const tmdbMovie: any = result.results[0];
+
+          // Parse genres from D1 row (stored as JSON text or array)
+          let genres: string[] | undefined;
+          try {
+            const raw = tmdbMovie.genres;
+            const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+            if (Array.isArray(parsed)) {
+              if (parsed.length > 0 && typeof parsed[0] === "string") {
+                genres = parsed as string[];
+              } else if (
+                parsed.length > 0 &&
+                parsed[0] &&
+                typeof parsed[0].name === "string"
+              ) {
+                genres = (parsed as Array<{ id?: number; name: string }>)
+                  .map((g) => g.name)
+                  .filter(Boolean);
+              }
+            }
+          } catch {
+            // ignore parse errors; leave genres undefined
+          }
+
           return {
             id: tmdbMovie.id,
             title: tmdbMovie.title,
@@ -237,6 +260,7 @@ async function enhanceWithTMDBData(
             vote_average: tmdbMovie.vote_average,
             director: tmdbMovie.director,
             runtime: tmdbMovie.runtime,
+            genres,
             letterboxdSlug: movie.slug, // Preserve original slug
             friendCount: movie.friendCount, // Preserve friend information
             friendList: movie.friendList, // Preserve friend information
