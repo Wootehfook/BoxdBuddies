@@ -80,6 +80,34 @@ export function reduceMovie(m) {
 }
 
 /**
+ * Normalize a TMDB `genres` field into an array of names (strings).
+ * Accepts either a JSON string, an array of strings, or an array of objects
+ * with a `name` property.
+ * Returns `undefined` when no genres can be derived.
+ */
+export function parseGenresToNames(genres) {
+  try {
+    const raw = genres;
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) {
+      if (parsed.length > 0 && typeof parsed[0] === "string") {
+        return parsed;
+      }
+      if (
+        parsed.length > 0 &&
+        parsed[0] &&
+        typeof parsed[0].name === "string"
+      ) {
+        return parsed.map((g) => g && g.name).filter(Boolean);
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return undefined;
+}
+
+/**
  * Extracts the year from a date string or Date object.
  * @param {string|Date|null|undefined} d - The date to extract the year from. Can be a date string, Date object, or null/undefined.
  * @returns {number|null} The year as a four-digit number, or null if the input is falsy or invalid.

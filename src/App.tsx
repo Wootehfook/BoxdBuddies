@@ -344,7 +344,7 @@ function App() {
         // Use deterministic increment instead of random for smoother progress
         progress += 3 + progress / 20; // Gradual slowdown
 
-        let enhancementStatus = "Enhancing with catalog data...";
+        let enhancementStatus = "Enhancing with TMDB movie details...";
         if (progress < 25) enhancementStatus = "Scraping user watchlist...";
         else if (progress < 50)
           enhancementStatus = "Scraping friends' watchlists...";

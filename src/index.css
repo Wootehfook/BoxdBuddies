@@ -74,6 +74,19 @@ body {
   --friend-18-bg: #88225533;
   --friend-19: #44aa66;
   --friend-19-bg: #44aa6633;
+  /* Genre color palette (high-contrast tokens) */
+  --genre-action: #e11d48;
+  --genre-comedy: #f59e0b;
+  --genre-drama: #0ea5e9;
+  --genre-romance: #fb7185;
+  --genre-horror: #6b21a8;
+  --genre-thriller: #ef4444;
+  --genre-scifi: #7c3aed;
+  --genre-fantasy: #0ea5a3;
+  --genre-documentary: #10b981;
+  --genre-animation: #f97316;
+  --genre-crime: #374151;
+  --genre-mystery: #06b6d4;
 }
 
 /* Container and Layout */
@@ -547,7 +560,7 @@ body {
 
 .btn-secondary {
   background: linear-gradient(135deg, #2c3440 0%, #253138 100%);
-  color: #9ab;
+  color: #ffffff; /* Force button text to white for better contrast */
   border: 1px solid #456;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -2191,10 +2204,13 @@ body {
 }
 
 .results-page .movie-title-section {
+  /* Stack the title and badges vertically so badges appear below the title
+     (previous layout placed items side-by-side which hid badges on narrow cards) */
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 0.25rem;
   margin-bottom: 0.5rem;
 }
 
@@ -2204,7 +2220,154 @@ body {
   margin: 0;
   line-height: 1.2;
   font-weight: 600;
-  flex: 1;
+  /* In column layout, don't let the title consume extra vertical space */
+  flex: 0 0 auto;
+}
+
+/* Genre badges shown on movie cards */
+.movie-genre-badges {
+  margin-top: 0.25rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Genre badge (pill) - apply to both span and button elements */
+.genre-badge {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Default neutral background; specific genre classes override this with gradients */
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px !important; /* ensure pill shape even when other rules apply */
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 700;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.12s ease;
+  background-clip: padding-box;
+}
+
+/* Genre-specific color classes (use tokens defined above) */
+.genre-action {
+  background: linear-gradient(135deg, var(--genre-action), #b91c1c);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-comedy {
+  background: linear-gradient(135deg, var(--genre-comedy), #b45309);
+  color: #0b0f12;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.genre-drama {
+  background: linear-gradient(135deg, var(--genre-drama), #0284c7);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-romance {
+  background: linear-gradient(135deg, var(--genre-romance), #be185d);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-horror {
+  background: linear-gradient(135deg, var(--genre-horror), #4c1d95);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-thriller {
+  background: linear-gradient(135deg, var(--genre-thriller), #dc2626);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-scifi {
+  background: linear-gradient(135deg, var(--genre-scifi), #5b21b6);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-fantasy {
+  background: linear-gradient(135deg, var(--genre-fantasy), #115e59);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-documentary {
+  background: linear-gradient(135deg, var(--genre-documentary), #059669);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-animation {
+  background: linear-gradient(135deg, var(--genre-animation), #c2410c);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.genre-crime {
+  background: linear-gradient(135deg, var(--genre-crime), #111827);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.genre-mystery {
+  background: linear-gradient(135deg, var(--genre-mystery), #0891b2);
+  color: white;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Generic fallback if no specific class matches */
+.genre-default {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Small-screen tweaks for badge sizing */
+@media (max-width: 420px) {
+  .genre-badge {
+    font-size: 0.7rem;
+    padding: 0.12rem 0.45rem;
+  }
+}
+
+/* Make badges look clickable and ensure text is white */
+.genre-badge.selected {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Keyboard focus ring for genre badges */
+.genre-badge:focus-visible {
+  outline: 2px solid #ff8000;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(255, 128, 0, 0.25);
+}
+
+.selected-clear {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ff8000;
+  border: 1px solid rgba(255, 128, 0, 0.2);
+}
+
+/* Ensure button reset for consistent badge appearance */
+.movie-genre-badges button.genre-badge {
+  /* Keep the same pill styles for buttons but do NOT override
+     the genre-specific background classes (e.g. .genre-action).
+     Previously this selector forced `background: inherit` which
+     unintentionally removed the gradient background. */
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-clip: padding-box;
 }
 
 /* AI Generated: GitHub Copilot - 2025-08-05 */
