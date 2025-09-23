@@ -35,3 +35,7 @@ export declare function isDebug(env?: any): boolean;
 export declare function debugLog(env: any, ...args: any[]): void;
 
 // Canonical declarations live in functions/_types/*.d.ts — keep these lightweight
+
+export declare function parseGenresToNames(
+  genres: unknown
+): string[] | undefined;
