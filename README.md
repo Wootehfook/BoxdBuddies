@@ -22,6 +22,7 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 - ✔️ **Letterboxd Integration**: Scrapes complete watchlists with full pagination support.
 - 👥 **Multi-User Comparison**: Compare watchlists between yourself and up to 4 friends.
 - 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and director info.
+- 🎭 **Genre Display**: Shows movie genres as interactive badges on result cards for easy browsing.
 - ⚡ **Intelligent Caching**: Utilizes a Cloudflare D1 database for rapid subsequent comparisons.
 - 🎨 **Responsive Design**: A clean, Letterboxd-inspired dark theme that works on any screen size.
 - 🔒 **Secure by Design**: All external API interactions are handled server-side; no user API keys are required or stored.
@@ -42,7 +43,8 @@ Navigate to **[boxdbud.pages.dev](https://boxdbud.pages.dev)**.
 
 1. Click **"Compare Watchlists"**. The app will scan all watchlists and find common movies.
 2. Results are sorted to show movies that the most friends have on their watchlists.
-3. Click any movie poster to view detailed information on [Letterboxd](https://letterboxd.com).
+3. Each movie card displays genres as badges for easy identification and browsing.
+4. Click any movie poster to view detailed information on [Letterboxd](https://letterboxd.com).
 
 ---
 

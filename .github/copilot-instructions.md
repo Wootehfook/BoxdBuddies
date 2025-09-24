@@ -82,6 +82,7 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 - Canonical stylesheet: `src/index.css` (avoid duplicating base/global rules in `src/App.css`).
 - Results grid: `.results-page .movies-grid { grid-template-columns: repeat(auto-fit, 450px); justify-content: center; gap: 2rem; max-width: calc(3 * 450px + 2 * 2rem); margin: 0 auto; }`.
 - Movie card sizing (results): `.results-page .movie-card { height: 650px; }`, `.results-page .movie-poster-section { height: 488px; }`, `.results-page .movie-info { height: 162px; }`.
+- Genre badges: displayed on movie cards with `.genre-badge` styles in `src/index.css`.
 - Accessibility: attribution modal uses a native `<dialog>` with `aria-labelledby="attribution-title"` and `aria-modal="true"`.
 
 ## 8) Testing patterns to mirror
