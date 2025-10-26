@@ -33,7 +33,7 @@
     "pre-commit": "lint-staged"
   },
   "dependencies": {
-    "react": "^19.1.1",
+    "react": "^19.2.0",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
@@ -42,7 +42,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24",
-    "@types/react": "^19.1.1",
+    "@types/react": "^19.2.2",
     "@types/react-dom": "^19.1.1",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.44.1",
