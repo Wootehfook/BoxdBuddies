@@ -29,6 +29,9 @@ jobs:
       - name: Run test suite
         run: npm test
 
+      - name: Run versioning workflow tests
+        run: npm run test:versioning
+
       - name: Verify test results
         run: |
           echo "✅ Test suite completed successfully"
