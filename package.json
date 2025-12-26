@@ -29,6 +29,10 @@
     "cloudflare:deploy": "npm run build && wrangler pages deploy dist",
     "cloudflare:db:migrate": "wrangler d1 execute MOVIES_DB --file=migrations/001_create_tmdb_catalog.sql",
     "cloudflare:secrets:set": "echo 'Run: wrangler secret put TMDB_API_KEY && wrangler secret put ADMIN_SECRET'",
+    "version:patch": "echo 'Use GitHub Actions workflow: Version Bump and Release with patch option'",
+    "version:minor": "echo 'Use GitHub Actions workflow: Version Bump and Release with minor option'",
+    "version:major": "echo 'Use GitHub Actions workflow: Version Bump and Release with major option'",
+    "version:current": "node -p \"require('./package.json').version\"",
     "prepare": "husky",
     "pre-commit": "lint-staged"
   },
