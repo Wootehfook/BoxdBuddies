@@ -52,7 +52,7 @@ jobs:
         # Report-only: surfaces unused exports without failing CI
 
       - name: Upload frontend build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: frontend-dist
           path: dist/
