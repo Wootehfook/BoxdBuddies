@@ -1,6 +1,8 @@
 #!/bin/bash
 # Test script for versioning workflows
-# This script validates the logic used in GitHub Actions workflows
+# This script validates the logic used in GitHub Actions workflows.
+# Usage (recommended in CI): bash scripts/test-versioning-workflows.sh
+# If you want to run it directly, ensure it is executable: chmod +x scripts/test-versioning-workflows.sh
 
 set -e
 
