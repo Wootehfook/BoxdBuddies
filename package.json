@@ -24,6 +24,7 @@
     "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest",
+    "test:versioning": "bash scripts/test-versioning-workflows.sh",
     "clean": "rm -rf dist node_modules/.vite",
     "cloudflare:dev": "wrangler pages dev dist --compatibility-date=2024-09-23",
     "cloudflare:deploy": "npm run build && wrangler pages deploy dist",

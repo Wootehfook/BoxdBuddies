@@ -6,7 +6,7 @@
 
 set -e
 
-SCRIPT_DIR="/home/runner/work/BoxdBuddies/BoxdBuddies"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR="/tmp/versioning_test"
 
 echo "=== Versioning Workflow Test Suite ==="
@@ -127,14 +127,20 @@ echo ""
 
 # Test 5: Validate workflow YAML syntax
 echo "Test 5: Validate workflow YAML syntax"
-for workflow in .github/workflows/version-bump.yml .github/workflows/changelog-update.yml; do
-    if python3 -c "import yaml; yaml.safe_load(open('$workflow'))" 2>/dev/null; then
-        echo "✅ $workflow is valid YAML"
-    else
-        echo "❌ $workflow has YAML syntax errors"
-        exit 1
-    fi
-done
+
+# Check if python3 is available
+if ! command -v python3 &> /dev/null; then
+    echo "⚠️  python3 not found, skipping YAML validation"
+else
+    for workflow in .github/workflows/version-bump.yml .github/workflows/changelog-update.yml; do
+        if python3 -c "import yaml; yaml.safe_load(open('$workflow'))" 2>/dev/null; then
+            echo "✅ $workflow is valid YAML"
+        else
+            echo "❌ $workflow has YAML syntax errors"
+            exit 1
+        fi
+    done
+fi
 echo ""
 
 # Summary

@@ -40,27 +40,39 @@ jobs:
 
           # Determine change type from PR title using conventional commits
           CHANGE_TYPE="Changed"
+          FOLLOWS_CONVENTION=false
+          
           if [[ "$PR_TITLE" =~ ^feat(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Added"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^fix(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Fixed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^chore(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^docs(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^refactor(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^perf(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^test(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^build(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^ci(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
           fi
 
           echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
+          echo "follows_convention=$FOLLOWS_CONVENTION" >> $GITHUB_OUTPUT
 
           # Clean PR title (remove conventional commit prefix if present)
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
@@ -139,7 +151,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ steps.pr_info.outputs.number }} \
-            --body "✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
+          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
+          
+          if [[ "${{ steps.pr_info.outputs.follows_convention }}" != "true" ]]; then
+            COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorized as '**Changed**' by default. Consider using conventional commits for better changelog organization."
+          fi
+          
+          gh pr comment ${{ steps.pr_info.outputs.number }} --body "$COMMENT"
 
 # AI Generated: GitHub Copilot - 2025-12-26
