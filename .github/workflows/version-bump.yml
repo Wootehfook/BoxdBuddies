@@ -110,6 +110,8 @@ jobs:
           # Add new version link after Unreleased link
           sed -i "/\[Unreleased\]:/a [$NEW_VERSION]: https://github.com/${{ github.repository }}/compare/v${PREV_VERSION}...v${NEW_VERSION}" CHANGELOG.md
 
+      - name: Update package-lock.json
+        run: npm install --package-lock-only
       - name: Commit changes
         run: |
           git add package.json package-lock.json CHANGELOG.md
