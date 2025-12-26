@@ -87,17 +87,27 @@ jobs:
 
           # Create temporary file with updated content
           awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" -v author="$PR_AUTHOR" '
-          BEGIN { found_unreleased=0; added_entry=0; }
+          BEGIN { found_unreleased=0; added_entry=0; blank_lines=0; }
 
           # When we find the Unreleased section
           /## \[Unreleased\]/ {
             print $0;
             found_unreleased=1;
+            blank_lines=0;
+            next;
+          }
+
+          # Track blank lines in the Unreleased section
+          found_unreleased && !added_entry && /^[[:space:]]*$/ {
+            blank_lines++;
             next;
           }
 
           # If we are in unreleased section and find the change type section
           found_unreleased && !added_entry && $0 ~ "^### " type {
+            # Print any accumulated blank lines
+            for (i = 0; i < blank_lines; i++) print "";
+            blank_lines=0;
             print $0;
             print "- " title " (#" pr ") by @" author;
             added_entry=1;
@@ -106,17 +116,36 @@ jobs:
 
           # If we are in unreleased section and hit another ## section (next version)
           found_unreleased && !added_entry && /^## \[/ {
-            # Need to add the section and entry before this line
+            # Unreleased section is empty or has no matching subsection
+            # Add the section and entry with proper formatting
             print "";
             print "### " type;
             print "- " title " (#" pr ") by @" author;
             print "";
+            blank_lines=0;
             added_entry=1;
             found_unreleased=0;
+            print $0;
+            next;
           }
 
-          # Print all other lines
-          { print $0; }
+          # If we encounter a subsection in Unreleased but not our type
+          found_unreleased && !added_entry && /^### / {
+            # Print accumulated blank lines and this subsection
+            for (i = 0; i < blank_lines; i++) print "";
+            blank_lines=0;
+            print $0;
+            next;
+          }
+
+          # Print all other lines (reset blank line counter if we printed content)
+          { 
+            if (found_unreleased && !added_entry && blank_lines > 0) {
+              for (i = 0; i < blank_lines; i++) print "";
+              blank_lines=0;
+            }
+            print $0; 
+          }
           ' CHANGELOG.md > /tmp/changelog_updated.md
 
           # If we never found an unreleased section, prepend it
