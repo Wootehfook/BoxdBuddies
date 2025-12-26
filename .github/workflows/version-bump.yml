@@ -105,10 +105,10 @@ jobs:
           PREV_VERSION="${{ steps.current_version.outputs.version }}"
 
           # Update version comparison links at the bottom of CHANGELOG
-          sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v${NEW_VERSION}...HEAD|" CHANGELOG.md
+          sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/${{ github.repository }}/compare/v${NEW_VERSION}...HEAD|" CHANGELOG.md
 
           # Add new version link after Unreleased link
-          sed -i "/\[Unreleased\]:/a [$NEW_VERSION]: https://github.com/Wootehfook/BoxdBuddies/compare/v${PREV_VERSION}...v${NEW_VERSION}" CHANGELOG.md
+          sed -i "/\[Unreleased\]:/a [$NEW_VERSION]: https://github.com/${{ github.repository }}/compare/v${PREV_VERSION}...v${NEW_VERSION}" CHANGELOG.md
 
       - name: Commit changes
         run: |
