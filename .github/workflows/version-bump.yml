@@ -60,11 +60,11 @@ jobs:
         id: extract_changelog
         run: |
           # Extract unreleased section from CHANGELOG.md
-          awk '/## \[Unreleased\]/,/## \[/ {
-            if (/## \[Unreleased\]/) next;
-            if (/## \[/) exit;
-            print
-          }' CHANGELOG.md > /tmp/unreleased.md
+          awk '
+          /## \[Unreleased\]/ { in_unreleased=1; next }
+          in_unreleased && /^## \[/ { exit }
+          in_unreleased { print }
+          ' CHANGELOG.md > /tmp/unreleased.md
 
           # Check if there are any changes
           if [ ! -s /tmp/unreleased.md ]; then
@@ -93,14 +93,8 @@ jobs:
             echo "## [$NEW_VERSION] - $DATE"
             cat /tmp/unreleased.md
             echo ""
-            # Append rest of changelog (skip header and unreleased section)
-            awk '/## \[Unreleased\]/,/## \[/ {
-              if (/## \[Unreleased\]/) { found=1; next }
-              if (/## \[/ && found) { print; found=0; next }
-              next
-            }
-            /## \[/ { print }
-            found { print }' CHANGELOG.md
+            # Append all existing version sections
+            awk '/^## \[[0-9]/ { printing=1 } printing { print }' CHANGELOG.md
           } > /tmp/changelog_new.md
 
           mv /tmp/changelog_new.md CHANGELOG.md
