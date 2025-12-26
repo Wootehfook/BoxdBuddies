@@ -127,15 +127,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_NOTES=$(cat /tmp/unreleased.md)
+          RELEASE_NOTES_FILE=/tmp/release_notes.md
 
+          # Start with the unreleased notes content
+          cp /tmp/unreleased.md "$RELEASE_NOTES_FILE"
+
+          # If additional release notes were provided, append them with spacing and a separator
           if [ -n "${{ github.event.inputs.release_notes }}" ]; then
-            RELEASE_NOTES="${RELEASE_NOTES}\n\n---\n\n${{ github.event.inputs.release_notes }}"
+            {
+              echo
+              echo '---'
+              echo
+              printf '%s\n' "${{ github.event.inputs.release_notes }}"
+            } >> "$RELEASE_NOTES_FILE"
           fi
 
           gh release create ${{ steps.bump_version.outputs.tag }} \
             --title "Release ${{ steps.bump_version.outputs.new_version }}" \
-            --notes "$RELEASE_NOTES" \
+            --notes-file "$RELEASE_NOTES_FILE" \
             --target ${{ github.ref_name }}
 
       - name: Summary
