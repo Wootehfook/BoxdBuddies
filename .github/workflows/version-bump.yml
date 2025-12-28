@@ -156,7 +156,8 @@ jobs:
 
           # If additional release notes were provided, append them with spacing and a separator
           if [ -n "${{ github.event.inputs.release_notes }}" ]; then
-            RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+            # Store in variable and sanitize to prevent any command execution
+            RELEASE_NOTES=$(printf '%s\n' "${{ github.event.inputs.release_notes }}")
             
             # Enforce a reasonable maximum length to avoid oversized or malformed releases
             MAX_RELEASE_NOTES_LENGTH=5000

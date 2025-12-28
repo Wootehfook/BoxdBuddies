@@ -35,11 +35,11 @@ jobs:
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           
           # Validate and sanitize PR title to prevent command injection
-          # Check for dangerous characters
-          if [[ "$PR_TITLE" =~ [\`\$\(\)] ]]; then
+          # Check for dangerous characters (expanded to include more shell metacharacters)
+          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)<>] ]]; then
             echo "Warning: PR title contains potentially dangerous characters"
             # Replace dangerous characters with safe alternatives
-            PR_TITLE=$(echo "$PR_TITLE" | tr -d '`$()' | tr '\n' ' ')
+            PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
           fi
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
