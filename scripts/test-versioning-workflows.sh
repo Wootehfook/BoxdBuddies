@@ -27,7 +27,7 @@ in_unreleased { print }
 
 if [ -s "$TEST_DIR/unreleased.md" ]; then
     echo "✅ Successfully extracted unreleased changes"
-    LINES=$(wc -l < "$TEST_DIR/unreleased.md")
+    LINES=$(wc -l < "$TEST_DIR/unreleased.md" | awk '{print $1}')
     echo "   Found $LINES lines of content"
 else
     echo "❌ Failed to extract unreleased changes"
@@ -129,8 +129,11 @@ echo ""
 echo "Test 5: Validate workflow YAML syntax"
 
 # Check if python3 is available
+# Note: python3 with PyYAML is recommended for full test coverage
+# CI environments should ensure python3 is installed for complete validation
 if ! command -v python3 &> /dev/null; then
     echo "⚠️  python3 not found, skipping YAML validation"
+    echo "   Install python3 for complete test coverage"
 else
     for workflow in .github/workflows/version-bump.yml .github/workflows/changelog-update.yml; do
         if python3 -c "import yaml; yaml.safe_load(open('$workflow'))" 2>/dev/null; then

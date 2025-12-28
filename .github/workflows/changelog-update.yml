@@ -41,6 +41,15 @@ jobs:
             # Replace dangerous characters with safe alternatives
             PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
           fi
+          
+          # Ensure PR_TITLE is not empty after sanitization; if it is, use a safe fallback
+          PR_TITLE_TRIMMED=$(echo "$PR_TITLE" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+          if [ -z "$PR_TITLE_TRIMMED" ]; then
+            echo "Warning: PR title is empty after sanitization; using fallback title based on PR number"
+            PR_TITLE="PR #$PR_NUMBER"
+          else
+            PR_TITLE="$PR_TITLE_TRIMMED"
+          fi
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
@@ -83,6 +92,7 @@ jobs:
           echo "follows_convention=$FOLLOWS_CONVENTION" >> $GITHUB_OUTPUT
 
           # Clean PR title (remove conventional commit prefix if present)
+          # Note: Uses `sed -E` (extended regex); requires GNU sed or BSD sed with -E support
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
           echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
 

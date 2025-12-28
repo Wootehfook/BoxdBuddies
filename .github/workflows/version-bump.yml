@@ -46,12 +46,22 @@ jobs:
 
       - name: Get current version
         id: current_version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: |
+          if [ ! -r package.json ]; then
+            echo "Error: package.json file not found or not readable"
+            exit 1
+          fi
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump version
         id: bump_version
         run: |
           npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+          if [ ! -r package.json ]; then
+            echo "Error: package.json file not found or not readable after version bump"
+            exit 1
+          fi
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
