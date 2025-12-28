@@ -59,19 +59,34 @@ jobs:
       - name: Extract unreleased changes from CHANGELOG
         id: extract_changelog
         run: |
-          # Extract unreleased section from CHANGELOG.md
-          awk '
-          /## \[Unreleased\]/ { in_unreleased=1; next }
-          in_unreleased && /^## \[/ { exit }
-          in_unreleased { print }
-          ' CHANGELOG.md > /tmp/unreleased.md
-
-          # Check if there are any changes
-          if [ ! -s /tmp/unreleased.md ]; then
-            echo "No unreleased changes found in CHANGELOG.md"
+          # Validate CHANGELOG.md exists
+          if [ ! -f CHANGELOG.md ]; then
+            echo "Error: CHANGELOG.md file not found"
+            exit 1
+          fi
+          
+          # Validate basic CHANGELOG structure
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo "Warning: CHANGELOG.md does not contain an [Unreleased] section"
+            echo "Creating a default unreleased entry..."
             echo "### Changes" > /tmp/unreleased.md
             echo "" >> /tmp/unreleased.md
             echo "- Version bump to ${{ steps.bump_version.outputs.new_version }}" >> /tmp/unreleased.md
+          else
+            # Extract unreleased section from CHANGELOG.md
+            awk '
+            /## \[Unreleased\]/ { in_unreleased=1; next }
+            in_unreleased && /^## \[/ { exit }
+            in_unreleased { print }
+            ' CHANGELOG.md > /tmp/unreleased.md
+
+            # Check if there are any changes
+            if [ ! -s /tmp/unreleased.md ]; then
+              echo "No unreleased changes found in CHANGELOG.md"
+              echo "### Changes" > /tmp/unreleased.md
+              echo "" >> /tmp/unreleased.md
+              echo "- Version bump to ${{ steps.bump_version.outputs.new_version }}" >> /tmp/unreleased.md
+            fi
           fi
 
       - name: Update CHANGELOG.md
@@ -118,7 +133,7 @@ jobs:
 
       - name: Update package-lock.json
         run: npm install --package-lock-only
-        
+
       - name: Commit changes
         run: |
           git add package.json package-lock.json CHANGELOG.md
@@ -141,11 +156,20 @@ jobs:
 
           # If additional release notes were provided, append them with spacing and a separator
           if [ -n "${{ github.event.inputs.release_notes }}" ]; then
+            RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+            
+            # Enforce a reasonable maximum length to avoid oversized or malformed releases
+            MAX_RELEASE_NOTES_LENGTH=5000
+            if [ "${#RELEASE_NOTES}" -gt "$MAX_RELEASE_NOTES_LENGTH" ]; then
+              echo "Error: release_notes input is too long (${#RELEASE_NOTES} characters). Maximum allowed is $MAX_RELEASE_NOTES_LENGTH." >&2
+              exit 1
+            fi
+            
             {
               echo
               echo '---'
               echo
-              printf '%s\n' "${{ github.event.inputs.release_notes }}"
+              printf '%s\n' "$RELEASE_NOTES"
             } >> "$RELEASE_NOTES_FILE"
           fi
 

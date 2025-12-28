@@ -94,8 +94,8 @@ test_pr_titles=(
     "fix(ui): correct layout|Fixed"
 )
 
-for test_case in "${test_pr_titles[@]}"; do
-    IFS='|' read -r pr_title expected_type <<< "$test_case"
+for test_entry in "${test_pr_titles[@]}"; do
+    IFS='|' read -r pr_title expected_type <<< "$test_entry"
     
     # Simulate the logic from changelog-update.yml
     CHANGE_TYPE="Changed"

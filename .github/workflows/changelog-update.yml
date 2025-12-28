@@ -33,6 +33,14 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          
+          # Validate and sanitize PR title to prevent command injection
+          # Check for dangerous characters
+          if [[ "$PR_TITLE" =~ [\`\$\(\)] ]]; then
+            echo "Warning: PR title contains potentially dangerous characters"
+            # Replace dangerous characters with safe alternatives
+            PR_TITLE=$(echo "$PR_TITLE" | tr -d '`$()' | tr '\n' ' ')
+          fi
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
@@ -177,6 +185,7 @@ jobs:
 
       - name: Comment on PR
         if: success()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
