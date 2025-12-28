@@ -49,7 +49,7 @@ interface ComparisonResult {
 
 export class CloudflareBackend {
   private static BASE_URL = import.meta.env.PROD
-    ? "https://boxdbud.pages.dev/api"
+    ? "https://boxdbud.io/api"
     : "http://localhost:8788/api";
 
   static async fetchWatchlist(

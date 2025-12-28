@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/Wootehfook/BoxdBuddies.git"
   },
-  "homepage": "https://boxdbud.pages.dev",
+  "homepage": "https://boxdbud.io",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
