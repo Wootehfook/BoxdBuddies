@@ -1,0 +1,210 @@
+name: Update Changelog on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update-changelog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract PR information
+        id: pr_info
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          
+          # Validate and sanitize PR title to prevent command injection
+          # Check for dangerous characters (expanded to include more shell metacharacters)
+          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)<>] ]]; then
+            echo "Warning: PR title contains potentially dangerous characters"
+            # Replace dangerous characters with safe alternatives
+            PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
+          fi
+          
+          # Ensure PR_TITLE is not empty after sanitization; if it is, use a safe fallback
+          PR_TITLE_TRIMMED=$(echo "$PR_TITLE" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+          if [ -z "$PR_TITLE_TRIMMED" ]; then
+            echo "Warning: PR title is empty after sanitization; using fallback title based on PR number"
+            PR_TITLE="PR #$PR_NUMBER"
+          else
+            PR_TITLE="$PR_TITLE_TRIMMED"
+          fi
+
+          echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+
+          # Determine change type from PR title using conventional commits
+          CHANGE_TYPE="Changed"
+          FOLLOWS_CONVENTION=false
+          
+          if [[ "$PR_TITLE" =~ ^feat(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Added"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^fix(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Fixed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^chore(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^docs(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^refactor(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^perf(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^test(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^build(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^ci(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"
+            FOLLOWS_CONVENTION=true
+          fi
+
+          echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
+          echo "follows_convention=$FOLLOWS_CONVENTION" >> $GITHUB_OUTPUT
+
+          # Clean PR title (remove conventional commit prefix if present)
+          # Note: Uses `sed -E` (extended regex); requires GNU sed or BSD sed with -E support
+          CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
+          echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Update CHANGELOG.md
+        run: |
+          CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
+          CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
+          PR_NUMBER="${{ steps.pr_info.outputs.number }}"
+          PR_AUTHOR="${{ steps.pr_info.outputs.author }}"
+
+          # Create temporary file with updated content
+          awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" -v author="$PR_AUTHOR" '
+          BEGIN { found_unreleased=0; added_entry=0; blank_lines=0; }
+
+          # When we find the Unreleased section
+          /## \[Unreleased\]/ {
+            print $0;
+            found_unreleased=1;
+            blank_lines=0;
+            next;
+          }
+
+          # Track blank lines in the Unreleased section
+          found_unreleased && !added_entry && /^[[:space:]]*$/ {
+            blank_lines++;
+            next;
+          }
+
+          # If we are in unreleased section and find the change type section
+          found_unreleased && !added_entry && $0 ~ "^### " type {
+            # Print any accumulated blank lines
+            for (i = 0; i < blank_lines; i++) print "";
+            blank_lines=0;
+            print $0;
+            print "- " title " (#" pr ") by @" author;
+            added_entry=1;
+            next;
+          }
+
+          # If we are in unreleased section and hit another ## section (next version)
+          found_unreleased && !added_entry && /^## \[/ {
+            # Unreleased section is empty or has no matching subsection
+            # Add the section and entry with proper formatting
+            print "";
+            print "### " type;
+            print "- " title " (#" pr ") by @" author;
+            print "";
+            blank_lines=0;
+            added_entry=1;
+            found_unreleased=0;
+            print $0;
+            next;
+          }
+
+          # If we encounter a subsection in Unreleased but not our type
+          found_unreleased && !added_entry && /^### / {
+            # Print accumulated blank lines and this subsection
+            for (i = 0; i < blank_lines; i++) print "";
+            blank_lines=0;
+            print $0;
+            next;
+          }
+
+          # Print all other lines (reset blank line counter if we printed content)
+          { 
+            if (found_unreleased && !added_entry && blank_lines > 0) {
+              for (i = 0; i < blank_lines; i++) print "";
+              blank_lines=0;
+            }
+            print $0; 
+          }
+          ' CHANGELOG.md > /tmp/changelog_updated.md
+
+          # If we never found an unreleased section, prepend it
+          if ! grep -q "## \[Unreleased\]" /tmp/changelog_updated.md; then
+            {
+              head -n 6 CHANGELOG.md
+              echo ""
+              echo "## [Unreleased]"
+              echo ""
+              echo "### $CHANGE_TYPE"
+              echo "- $CLEAN_TITLE (#$PR_NUMBER) by @$PR_AUTHOR"
+              echo ""
+              tail -n +7 CHANGELOG.md
+            } > /tmp/changelog_updated.md
+          fi
+
+          mv /tmp/changelog_updated.md CHANGELOG.md
+
+      - name: Commit and push changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to CHANGELOG.md"
+            exit 0
+          fi
+
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
+          git push origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Comment on PR
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
+          
+          if [[ "${{ steps.pr_info.outputs.follows_convention }}" != "true" ]]; then
+            COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorized as '**Changed**' by default. Consider using conventional commits for better changelog organization."
+          fi
+          
+          gh pr comment ${{ steps.pr_info.outputs.number }} --body "$COMMENT"
+
+# AI Generated: GitHub Copilot - 2025-12-26

@@ -114,6 +114,36 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 - **Cloudflare Functions**: Follow modern TypeScript and Cloudflare Workers best practices.
 - **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot - 2025-08-15`).
 
+### Versioning and Releases
+
+This project follows [Semantic Versioning](https://semver.org/) and maintains a [CHANGELOG.md](./CHANGELOG.md) following the [Keep a Changelog](https://keepachangelog.com/) format.
+
+**Automated Changelog Updates:**
+- When a PR is merged to `main` or `develop`, the changelog is automatically updated based on the PR title
+- Use [Conventional Commits](https://www.conventionalcommits.org/) format in PR titles:
+  - `feat:` for new features (added to "Added" section)
+  - `fix:` for bug fixes (added to "Fixed" section)
+  - `chore:`, `docs:`, `refactor:`, etc. (added to "Changed" section)
+
+**Creating a Release:**
+1. Ensure all changes are documented in the `[Unreleased]` section of CHANGELOG.md
+2. Go to Actions → "Version Bump and Release" workflow
+3. Click "Run workflow" and select the version bump type:
+   - `patch` for bug fixes (2.1.0 → 2.1.1)
+   - `minor` for new features (2.1.0 → 2.2.0)
+   - `major` for breaking changes (2.1.0 → 3.0.0)
+4. Optionally add release notes
+5. The workflow will:
+   - Update `package.json` version
+   - Move unreleased changes to a new version section in CHANGELOG.md
+   - Create a git tag
+   - Create a GitHub release with the changelog content
+
+**Check Current Version:**
+```bash
+npm run version:current
+```
+
 ---
 
 ## 🛡️ Security Policy
