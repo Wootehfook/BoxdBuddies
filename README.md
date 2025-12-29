@@ -13,7 +13,7 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 
 ## 🚀 Live Application
 
-**[Launch Boxdbud.io →](https://boxdbud.pages.dev)**
+**[Launch Boxdbud.io →](https://boxdbud.io)**
 
 - **No Installation Required**: Instant access from any modern web browser.
 
@@ -33,7 +33,7 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 
 ### Step 1: Access the Application
 
-Navigate to **[boxdbud.pages.dev](https://boxdbud.pages.dev)**.
+Navigate to **[boxdbud.io](https://boxdbud.io)**.
 
 ### Step 2: Enter Usernames
 
@@ -119,6 +119,7 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 This project follows [Semantic Versioning](https://semver.org/) and maintains a [CHANGELOG.md](./CHANGELOG.md) following the [Keep a Changelog](https://keepachangelog.com/) format.
 
 **Automated Changelog Updates:**
+
 - When a PR is merged to `main` or `develop`, the changelog is automatically updated based on the PR title
 - Use [Conventional Commits](https://www.conventionalcommits.org/) format in PR titles:
   - `feat:` for new features (added to "Added" section)
@@ -126,6 +127,7 @@ This project follows [Semantic Versioning](https://semver.org/) and maintains a 
   - `chore:`, `docs:`, `refactor:`, etc. (added to "Changed" section)
 
 **Creating a Release:**
+
 1. Ensure all changes are documented in the `[Unreleased]` section of CHANGELOG.md
 2. Go to Actions → "Version Bump and Release" workflow
 3. Click "Run workflow" and select the version bump type:
@@ -140,6 +142,7 @@ This project follows [Semantic Versioning](https://semver.org/) and maintains a 
    - Create a GitHub release with the changelog content
 
 **Check Current Version:**
+
 ```bash
 npm run version:current
 ```

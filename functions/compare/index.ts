@@ -36,7 +36,7 @@ async function scrapeLetterboxdWatchlist(
     const response = await fetch(url, {
       headers: {
         "User-Agent":
-          "Boxdbud.io/1.1.0 (https://boxdbud.pages.dev) - Watchlist Comparison Tool",
+          "Boxdbud.io/1.1.0 (https://boxdbud.io) - Watchlist Comparison Tool",
       },
     });
 
