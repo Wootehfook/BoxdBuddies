@@ -8,7 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Automated versioning and changelog updates in CI/CD pipeline
+- Automated versioning and changelog management workflows (#162)
+  - Version bump workflow with manual release creation
+  - Automatic changelog updates on PR merge
+  - Comprehensive validation and security measures
+  - Integration with CI test suite
+
+### Changed
+- Updated all site references from dev (boxdbud.pages.dev) to production (boxdbud.io) (#163)
+  - README.md launch link and user guide
+  - package.json homepage field
+  - index.html Open Graph meta tags
+  - API base URLs in backend services
+
+### Updated Dependencies
+- Upgraded multiple dev dependencies to latest versions
+  - actions/checkout from 4 to 6
+  - actions/setup-node from 5 to 6
+  - actions/upload-artifact from 4 to 5
+  - github/codeql-action from 3 to 4
+  - @typescript-eslint/eslint-plugin from 8.43.0 to 8.46.2
+  - @typescript-eslint/parser from 8.45.0 to 8.46.2
+  - eslint-plugin-react-hooks from 5.2.0 to 7.0.1
+  - lint-staged from 16.1.6 to 16.2.6
+  - vite from 7.1.3 to 7.1.12 (security fix)
+  - react and @types/react to 19.2.0
+  - react-dom and @types/react-dom aligned to 19.2.0
 
 ## [2.1.0] - 2025-09-13
 
