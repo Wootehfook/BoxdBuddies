@@ -36,7 +36,7 @@ jobs:
           
           # Validate and sanitize PR title to prevent command injection
           # Check for dangerous characters (expanded to include more shell metacharacters)
-          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)<>] ]]; then
+          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)\<\>] ]]; then
             echo "Warning: PR title contains potentially dangerous characters"
             # Replace dangerous characters with safe alternatives
             PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
