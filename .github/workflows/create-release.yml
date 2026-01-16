@@ -1,0 +1,104 @@
+name: Create GitHub Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    # Only run if the PR was merged and the branch name starts with 'release/'
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract version from branch name
+        id: version_info
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          # Extract version from branch name (e.g., release/v2.1.1 -> 2.1.1)
+          VERSION=$(echo "$BRANCH_NAME" | sed 's/release\/v//')
+          TAG="v$VERSION"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          # Verify the tag doesn't already exist
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract release notes from CHANGELOG
+        id: extract_changelog
+        if: steps.version_info.outputs.tag_exists == 'false'
+        run: |
+          VERSION="${{ steps.version_info.outputs.version }}"
+          
+          # Extract the section for this version from CHANGELOG.md
+          awk -v version="$VERSION" '
+          BEGIN { in_version=0; }
+          $0 ~ "^## \\[" version "\\]" { in_version=1; next; }
+          in_version && /^## \[/ { exit; }
+          in_version { print; }
+          ' CHANGELOG.md > /tmp/release_notes.md
+          
+          # Check if we extracted anything
+          if [ ! -s /tmp/release_notes.md ]; then
+            echo "Could not extract release notes for version $VERSION"
+            echo "### Changes" > /tmp/release_notes.md
+            echo "" >> /tmp/release_notes.md
+            echo "Version $VERSION" >> /tmp/release_notes.md
+          fi
+
+      - name: Create Git tag
+        if: steps.version_info.outputs.tag_exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ steps.version_info.outputs.tag }} -m "Release ${{ steps.version_info.outputs.version }}"
+          git push origin ${{ steps.version_info.outputs.tag }}
+
+      - name: Create GitHub Release
+        if: steps.version_info.outputs.tag_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.version_info.outputs.tag }} \
+            --title "Release ${{ steps.version_info.outputs.version }}" \
+            --notes-file /tmp/release_notes.md \
+            --target main
+
+      - name: Summary
+        if: steps.version_info.outputs.tag_exists == 'false'
+        run: |
+          echo "## Release Created! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ steps.version_info.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Notes" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/release_notes.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Summary (Tag Already Exists)
+        if: steps.version_info.outputs.tag_exists == 'true'
+        run: |
+          echo "## Tag Already Exists ℹ️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Tag ${{ steps.version_info.outputs.tag }} already exists." >> $GITHUB_STEP_SUMMARY
+          echo "No new release was created." >> $GITHUB_STEP_SUMMARY
+
+# AI Generated: GitHub Copilot - 2026-01-16
