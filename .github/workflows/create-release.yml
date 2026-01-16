@@ -49,6 +49,7 @@ jobs:
           VERSION="${{ steps.version_info.outputs.version }}"
           
           # Extract the section for this version from CHANGELOG.md
+          # Pattern matches: ## [VERSION] and captures everything until the next version section
           awk -v version="$VERSION" '
           BEGIN { in_version=0; }
           $0 ~ "^## \\[" version "\\]" { in_version=1; next; }
