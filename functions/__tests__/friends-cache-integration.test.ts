@@ -2,6 +2,8 @@
  * BoxdBuddy - Friends Cache Integration Tests
  * Copyright (C) 2025 Wootehfook
  * AI Generated: Claude Sonnet 4 - 2025-01-02
+ * Modified: GitHub Copilot - 2026-02-07
+ * Change: Mock fetch to prevent real network calls in tests
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -19,6 +21,10 @@ vi.mock("../letterboxd/cache/index.js", () => ({
   releaseLock: mockReleaseLock,
 }));
 
+// Mock globalThis.fetch to prevent real network calls
+const mockFetch = vi.fn();
+globalThis.fetch = mockFetch as any;
+
 // Mock the D1 database
 const mockDatabase = {
   prepare: vi.fn(() => ({
@@ -33,6 +39,12 @@ const mockDatabase = {
 describe("Friends Cache Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset fetch mock to default (returns empty friends list)
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve("<html></html>"),
+    });
   });
 
   const createEnv = (overrides: any = {}) => ({
@@ -272,6 +284,16 @@ describe("Friends Cache Integration", () => {
       // Mock server cache for one friend
       mockGetCount.mockResolvedValue(null); // No server cache available
 
+      // Mock fetch to return a valid HTML response with no friends
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            '<html><body><div class="friends-list"></div></body></html>'
+          ),
+      });
+
       const { onRequestPost } = await import("../letterboxd/friends/index.js");
 
       const request = createRequest({
@@ -286,8 +308,8 @@ describe("Friends Cache Integration", () => {
       const data = await response.json();
 
       expect(data.cached).toBe(false); // Fresh data
-      // Note: Actual scraping might return 0 friends if the user has no friends
-      // The test should reflect realistic behavior
+      // Scraping returns empty friends list (mocked)
+      expect(data.friends).toEqual([]);
     });
   });
 });
