@@ -3,8 +3,8 @@
 ![Boxdbud.io brand](./docs/brand/boxdbud.io.svg)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 
 **Find movies all your friends want to watch.**
@@ -98,7 +98,7 @@ SonarLint provides real-time code quality and security feedback in your IDE. To 
 
 3. **Local-only mode**: SonarLint works without any connection, using default rules
 
-This setup is entirely optional and personal to each developer. The repository's workspace settings intentionally exclude SonarLint configuration to avoid conflicts between different contributors' setups.
+This setup is entirely optional and personal to each developer. The repository includes a SonarLint connected-mode configuration in `.vscode/settings.json`; override or disable it in your personal settings if you prefer local-only rules.
 
 ### Project Structure
 

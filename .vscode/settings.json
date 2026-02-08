@@ -1,16 +1,4 @@
 {
-  "mcp.autoStart": true,
-  "mcp.servers": [
-    "@memory",
-    "@github", 
-    "@sequentialthinking",
-    "@codacy",
-    "@playwright",
-    "@markitdown"
-  ],
-  "mcp.startupDelay": 2000,
-  "mcp.retryOnFailure": true,
-  "mcp.maxRetries": 3,
   "workbench.startupEditor": "none",
   "extensions.autoUpdate": false,
   "terminal.integrated.defaultProfile.linux": "zsh",
@@ -31,5 +19,9 @@
     "**/.git": true
   },
   "github.copilot.chat.alternateGptPrompt.enabled": true,
-  "chat.todoListTool.enabled": true
+  "chat.todoListTool.enabled": true,
+  "sonarlint.connectedMode.project": {
+    "connectionId": "wootehfook",
+    "projectKey": "Wootehfook_BoxdBuddies"
+  }
 }
