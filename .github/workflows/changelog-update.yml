@@ -30,18 +30,18 @@ jobs:
       - name: Extract PR information
         id: pr_info
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          
+          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
+          PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
+          PR_AUTHOR=$(jq -r '.pull_request.user.login' "$GITHUB_EVENT_PATH")
+
           # Validate and sanitize PR title to prevent command injection
           # Check for dangerous characters (expanded to include more shell metacharacters)
-          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)<>] ]]; then
+          if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)\<\>] ]]; then
             echo "Warning: PR title contains potentially dangerous characters"
             # Replace dangerous characters with safe alternatives
             PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
           fi
-          
+
           # Ensure PR_TITLE is not empty after sanitization; if it is, use a safe fallback
           PR_TITLE_TRIMMED=$(echo "$PR_TITLE" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
           if [ -z "$PR_TITLE_TRIMMED" ]; then
@@ -58,7 +58,7 @@ jobs:
           # Determine change type from PR title using conventional commits
           CHANGE_TYPE="Changed"
           FOLLOWS_CONVENTION=false
-          
+
           if [[ "$PR_TITLE" =~ ^feat(\(.*\))?:.*$ ]]; then
             CHANGE_TYPE="Added"
             FOLLOWS_CONVENTION=true
@@ -200,11 +200,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
-          
+
           if [[ "${{ steps.pr_info.outputs.follows_convention }}" != "true" ]]; then
             COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorized as '**Changed**' by default. Consider using conventional commits for better changelog organization."
           fi
-          
+
           gh pr comment ${{ steps.pr_info.outputs.number }} --body "$COMMENT"
 
 # AI Generated: GitHub Copilot - 2025-12-26
