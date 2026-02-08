@@ -56,23 +56,42 @@ const replaceAllSafe = (
   return input.replace(pattern, replacement);
 };
 
+const replaceAllCompat = (
+  input: string,
+  pattern: RegExp,
+  replacement: string | ((substring: string, ...args: string[]) => string)
+) => {
+  const candidate = input as string & {
+    replaceAll?: (
+      p: RegExp,
+      r: string | ((substring: string, ...args: string[]) => string)
+    ) => string;
+  };
+  if (typeof candidate.replaceAll === "function") {
+    return candidate.replaceAll(pattern, replacement);
+  }
+  if (typeof replacement === "string") {
+    return input.replace(pattern, replacement);
+  }
+  return input.replace(pattern, replacement);
+};
+
 // Utility helpers
-const normalizeTitle = (t: string) =>
-  t
-    .toLowerCase()
-    .trim()
-    .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "") // quotes
-    .replace(/[\p{P}\p{S}]/gu, " ") // punctuation and symbols (unicode-aware)
-    .replace(/\s+/g, " ");
+const normalizeTitle = (t: string) => {
+  let out = t.toLowerCase().trim();
+  out = replaceAllCompat(out, /[\u2018\u2019\u201C\u201D'"`]/g, ""); // quotes
+  out = replaceAllCompat(out, /[\p{P}\p{S}]/gu, " "); // punctuation and symbols
+  out = replaceAllCompat(out, /\s+/g, " ");
+  return out;
+};
 
 const decodeHtmlEntities = (str: string): string => {
-  let out = str
-    .replace(/&#(\d+);/g, (_: string, dec: string) =>
-      String.fromCodePoint(Number.parseInt(dec, 10))
-    )
-    .replace(/&#x([0-9a-fA-F]+);/g, (_: string, hex: string) =>
-      String.fromCodePoint(Number.parseInt(hex, 16))
-    );
+  let out = replaceAllCompat(str, /&#(\d+);/g, (_: string, dec: string) =>
+    String.fromCodePoint(Number.parseInt(dec, 10))
+  );
+  out = replaceAllCompat(out, /&#x([0-9a-fA-F]+);/g, (_: string, hex: string) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
+  );
   // Unescape named entities first, then '&' last to avoid double-unescaping
   out = replaceAllSafe(out, "&apos;", "'");
   out = replaceAllSafe(out, "&quot;", '"');
@@ -89,15 +108,34 @@ const parseYear = (date?: string | null): number => {
   return m ? Number.parseInt(m[1], 10) : 0;
 };
 
-const yearRegex = /^(.*?)\s+(\d{4})$/;
+const trimEndWhitespace = (value: string) => {
+  let end = value.length;
+  while (end > 0 && /\s/.test(value[end - 1])) end--;
+  return value.slice(0, end);
+};
+
+const extractTrailingYear = (value: string) => {
+  const trimmed = value.trim();
+  if (trimmed.length < 4) return { title: trimmed, year: 0, hasYear: false };
+  const yearStr = trimmed.slice(-4);
+  if (!/^\d{4}$/.test(yearStr)) {
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+  let title = trimEndWhitespace(trimmed.slice(0, -4));
+  if (title.endsWith("(")) {
+    title = trimEndWhitespace(title.slice(0, -1));
+  }
+  if (!title) return { title: trimmed, year: 0, hasYear: false };
+  return { title, year: Number.parseInt(yearStr, 10), hasYear: true };
+};
 
 const parseTitleYear = (raw: string) => {
   const decoded = decodeHtmlEntities(raw);
-  const ym = yearRegex.exec(decoded);
-  if (ym?.[2]) {
+  const extracted = extractTrailingYear(decoded);
+  if (extracted.hasYear) {
     return {
-      title: decodeHtmlEntities(ym[1]).trim(),
-      year: Number.parseInt(ym[2], 10),
+      title: extracted.title.trim(),
+      year: extracted.year,
     };
   }
   return { title: decoded.trim(), year: 0 };
@@ -117,21 +155,39 @@ const addMovieFromRaw = (
 };
 
 const findNearbyTitle = (chunk: string) =>
-  /data-item-name=["']([^"']+)["']/i.exec(chunk)?.[1] ||
-  /data-film-name=["']([^"']+)["']/i.exec(chunk)?.[1] ||
-  /alt=["']([^"']+)["']/i.exec(chunk)?.[1];
+  /data-item-name=["']([^"'<>]+)["']/i.exec(chunk)?.[1] ||
+  /data-film-name=["']([^"'<>]+)["']/i.exec(chunk)?.[1] ||
+  /alt=["']([^"'<>]+)["']/i.exec(chunk)?.[1];
+
+const sliceBounded = (
+  html: string,
+  startIndex: number,
+  maxLen: number,
+  endTag?: string
+) => {
+  const limit = Math.min(html.length, startIndex + maxLen);
+  if (endTag) {
+    const endIndex = html.indexOf(endTag, startIndex);
+    if (endIndex !== -1) {
+      const end = Math.min(limit, endIndex + endTag.length);
+      if (end > startIndex) return html.slice(startIndex, end);
+    }
+  }
+  return html.slice(startIndex, limit);
+};
 
 const scanGridItems = (
   html: string,
   out: LetterboxdMovie[],
   seenSlugs: Set<string>
 ) => {
-  const gridItemOpenTag = /<li[^>]*class=["'][^"']*griditem[^"']*["'][^>]*>/gi;
+  const gridItemOpenTag =
+    /<li\b[^>]*\bclass=["'][^"']*\bgriditem\b[^"']*["'][^>]*>/gi;
   let m: RegExpExecArray | null;
   while ((m = gridItemOpenTag.exec(html)) !== null) {
     const openTag = m[0];
-    const slug = /data-item-slug=["']([^"']+)["']/i.exec(openTag)?.[1];
-    const name = /data-item-name=["']([^"']+)["']/i.exec(openTag)?.[1];
+    const slug = /data-item-slug=["']([^"'<>]+)["']/i.exec(openTag)?.[1];
+    const name = /data-item-name=["']([^"'<>]+)["']/i.exec(openTag)?.[1];
     if (!slug || !name) continue;
     addMovieFromRaw(out, seenSlugs, slug, name);
   }
@@ -142,14 +198,16 @@ const scanPosterItems = (
   out: LetterboxdMovie[],
   seenSlugs: Set<string>
 ) => {
-  const posterLiRegex =
-    /<li[^>]*class=["'][^"']*poster-container[^"']*["'][^>]*>[\s\S]{0,2000}<\/li>/gi;
+  const posterLiOpenTag =
+    /<li\b[^>]*\bclass=["'][^"']*\bposter-container\b[^"']*["'][^>]*>/gi;
   let liMatch: RegExpExecArray | null;
-  while ((liMatch = posterLiRegex.exec(html)) !== null) {
-    const liBlock = liMatch[0];
-    const slug = /data-film-slug=["']([^"']+)["']/i.exec(liBlock)?.[1];
-    const nameAttr = /data-item-name=["']([^"']+)["']/i.exec(liBlock)?.[1];
-    const imgAlt = /<img[^>]*alt=["']([^"']+)["'][^>]*>/i.exec(liBlock)?.[1];
+  while ((liMatch = posterLiOpenTag.exec(html)) !== null) {
+    const liBlock = sliceBounded(html, liMatch.index, 2000, "</li>");
+    const slug = /data-film-slug=["']([^"'<>]+)["']/i.exec(liBlock)?.[1];
+    const nameAttr = /data-item-name=["']([^"'<>]+)["']/i.exec(liBlock)?.[1];
+    const imgAlt = /<img\b[^>]*\balt=["']([^"'<>]+)["'][^>]*>/i.exec(
+      liBlock
+    )?.[1];
     const raw = nameAttr || imgAlt;
     if (!slug || !raw) continue;
     addMovieFromRaw(out, seenSlugs, slug, raw);
@@ -161,7 +219,7 @@ const scanGenericSlugs = (
   out: LetterboxdMovie[],
   seenSlugs: Set<string>
 ) => {
-  const genericSlugRegex = /data-film-slug=["']([^"']+)["']/gi;
+  const genericSlugRegex = /data-film-slug=["']([a-z0-9-]+)["']/gi;
   let gm: RegExpExecArray | null;
   while ((gm = genericSlugRegex.exec(html)) !== null) {
     const slug = (gm[1] || "").trim();
@@ -184,7 +242,7 @@ const scanLinkFallback = (
     const slug = (lm[1] || "").trim();
     if (!slug || seenSlugs.has(slug)) continue;
     const tail = html.slice(lm.index, Math.min(html.length, lm.index + 400));
-    const altMatch = /alt=["']([^"']+)["']/i.exec(tail);
+    const altMatch = /alt=["']([^"'<>]+)["']/i.exec(tail);
     const raw = altMatch ? altMatch[1].trim() : replaceAllSafe(slug, "-", " ");
     addMovieFromRaw(out, seenSlugs, slug, raw);
   }
@@ -195,13 +253,16 @@ const scanTargetLinkFallback = (
   out: LetterboxdMovie[],
   seenSlugs: Set<string>
 ) => {
-  const targetLinkRegex =
-    /data-target-link=["']\/film\/([a-z0-9-]+)\/["'][\s\S]{0,400}?(?:alt=["']([^"']+)["']|data-item-name=["']([^"']+)["'])/gi;
+  const targetLinkRegex = /data-target-link=["']\/film\/([a-z0-9-]+)\/["']/gi;
   let tm: RegExpExecArray | null;
   while ((tm = targetLinkRegex.exec(html)) !== null) {
     const slug = (tm[1] || "").trim();
-    const raw = (tm[2] || tm[3] || "").trim();
-    if (!slug || !raw || seenSlugs.has(slug)) continue;
+    if (!slug || seenSlugs.has(slug)) continue;
+    const tail = html.slice(tm.index, Math.min(html.length, tm.index + 400));
+    const altMatch = /alt=["']([^"'<>]+)["']/i.exec(tail);
+    const nameMatch = /data-item-name=["']([^"'<>]+)["']/i.exec(tail);
+    const raw = (altMatch?.[1] || nameMatch?.[1] || "").trim();
+    if (!raw) continue;
     addMovieFromRaw(out, seenSlugs, slug, raw);
   }
 };
@@ -211,18 +272,26 @@ const scanFilmPosterFallback = (
   out: LetterboxdMovie[],
   seenSlugs: Set<string>
 ) => {
-  const filmPosterBlock =
-    /<[^>]*class=["'][^"']*film-poster[^"']*["'][^>]*>[\s\S]{0,600}/gi;
-  let fm: RegExpExecArray | null;
-  while ((fm = filmPosterBlock.exec(html)) !== null) {
-    const chunk = fm[0];
+  const marker = "film-poster";
+  let idx = html.indexOf(marker);
+  while (idx !== -1) {
+    const tagStart = html.lastIndexOf("<", idx);
+    const tagEnd = html.indexOf(">", idx);
+    if (tagStart === -1 || tagEnd === -1) break;
+    const tag = html.slice(tagStart, tagEnd + 1);
+    if (!/class=/.test(tag) || !/film-poster/.test(tag)) {
+      idx = html.indexOf(marker, tagEnd + 1);
+      continue;
+    }
+    const chunk = sliceBounded(html, tagStart, 600);
     const slug =
-      /data-film-slug=["']([^"']+)["']/i.exec(chunk)?.[1] ||
-      /data-target-link=["']\/film\/([^"']+)\/["']/i.exec(chunk)?.[1] ||
-      /href=["']\/film\/([^"']+)\/["']/i.exec(chunk)?.[1];
+      /data-film-slug=["']([a-z0-9-]+)["']/i.exec(chunk)?.[1] ||
+      /data-target-link=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1] ||
+      /href=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1];
     const raw = findNearbyTitle(chunk);
     if (!slug || !raw || seenSlugs.has(slug)) continue;
     addMovieFromRaw(out, seenSlugs, slug, raw);
+    idx = html.indexOf(marker, tagEnd + 1);
   }
 };
 
@@ -273,11 +342,9 @@ async function fetchWatchlistPage(
   if (html.length > 0) {
     const bodyStart = html.indexOf("<body");
     const sampleStart = Math.max(bodyStart, 0);
-    const sample = html
-      .slice(sampleStart, sampleStart + 500)
-      .replace(/\s+/g, " ")
-      .trim();
-    debugLog(env, `HTML sample (from body): ${sample}`);
+    const sample = html.slice(sampleStart, sampleStart + 500).trim();
+    const normalizedSample = replaceAllCompat(sample, /\s+/g, " ");
+    debugLog(env, `HTML sample (from body): ${normalizedSample}`);
   }
   return parseMoviesFromHtml(html);
 }
@@ -577,11 +644,10 @@ export async function enhanceWithTMDBData(
   const findRow = async (m: CommonMovie) => {
     let year = Number.isFinite(m.year) ? m.year : 0;
     let title = m.title || "";
-    const ym = /\((\d{4})\)\s*$/.exec(title);
-    if (ym?.[1]) {
-      const p = Number(ym[1]);
-      if (!year) year = p;
-      title = title.replace(/\s*\(\d{4}\)\s*$/, "").trim();
+    const extracted = extractTrailingYear(title);
+    if (extracted.hasYear) {
+      if (!year) year = extracted.year;
+      title = extracted.title.trim();
     }
 
     const key = m.slug || `${m.title}-${m.year}`;
