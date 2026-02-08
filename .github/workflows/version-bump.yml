@@ -144,60 +144,94 @@ jobs:
       - name: Update package-lock.json
         run: npm install --package-lock-only
 
+      - name: Create release branch
+        id: create_branch
+        run: |
+          BRANCH_NAME="release/v${{ steps.bump_version.outputs.new_version }}"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
       - name: Commit changes
         run: |
           git add package.json package-lock.json CHANGELOG.md
           git commit -m "chore: bump version to ${{ steps.bump_version.outputs.new_version }}"
-          git tag ${{ steps.bump_version.outputs.tag }}
 
-      - name: Push changes
+      - name: Push release branch
         run: |
-          git push origin HEAD:${{ github.ref_name }}
-          git push origin ${{ steps.bump_version.outputs.tag }}
+          git push origin ${{ steps.create_branch.outputs.branch_name }}
 
-      - name: Create GitHub Release
+      - name: Create Pull Request
+        id: create_pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_NOTES_FILE=/tmp/release_notes.md
-
-          # Start with the unreleased notes content
-          cp /tmp/unreleased.md "$RELEASE_NOTES_FILE"
-
-          # If additional release notes were provided, append them with spacing and a separator
-          if [ -n "${{ github.event.inputs.release_notes }}" ]; then
-            # Store in variable and sanitize to prevent any command execution
-            RELEASE_NOTES=$(printf '%s\n' "${{ github.event.inputs.release_notes }}")
+          # Prepare PR body with release notes
+          PR_BODY_FILE=/tmp/pr_body.md
+          
+          {
+            echo "## Version Bump: ${{ steps.current_version.outputs.version }} → ${{ steps.bump_version.outputs.new_version }}"
+            echo ""
+            echo "This PR bumps the version from \`${{ steps.current_version.outputs.version }}\` to \`${{ steps.bump_version.outputs.new_version }}\`."
+            echo ""
+            echo "### Changes"
+            echo ""
+            cat /tmp/unreleased.md
             
-            # Enforce a reasonable maximum length to avoid oversized or malformed releases
-            MAX_RELEASE_NOTES_LENGTH=5000
-            if [ "${#RELEASE_NOTES}" -gt "$MAX_RELEASE_NOTES_LENGTH" ]; then
-              echo "Error: release_notes input is too long (${#RELEASE_NOTES} characters). Maximum allowed is $MAX_RELEASE_NOTES_LENGTH." >&2
-              exit 1
+            # If additional release notes were provided, append them
+            if [ -n "${{ github.event.inputs.release_notes }}" ]; then
+              # Store in variable and sanitize to prevent any command execution
+              RELEASE_NOTES=$(printf '%s\n' "${{ github.event.inputs.release_notes }}")
+              
+              # Enforce a reasonable maximum length
+              MAX_RELEASE_NOTES_LENGTH=5000
+              if [ "${#RELEASE_NOTES}" -gt "$MAX_RELEASE_NOTES_LENGTH" ]; then
+                echo "Error: release_notes input is too long (${#RELEASE_NOTES} characters). Maximum allowed is $MAX_RELEASE_NOTES_LENGTH." >&2
+                exit 1
+              fi
+              
+              echo ""
+              echo "---"
+              echo ""
+              echo "### Additional Release Notes"
+              echo ""
+              printf '%s\n' "$RELEASE_NOTES"
             fi
             
-            {
-              echo
-              echo '---'
-              echo
-              printf '%s\n' "$RELEASE_NOTES"
-            } >> "$RELEASE_NOTES_FILE"
-          fi
-
-          gh release create ${{ steps.bump_version.outputs.tag }} \
-            --title "Release ${{ steps.bump_version.outputs.new_version }}" \
-            --notes-file "$RELEASE_NOTES_FILE" \
-            --target ${{ github.ref_name }}
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Note:** After this PR is merged, a GitHub Release will need to be created manually or via a separate workflow."
+            echo ""
+            echo "- **Tag:** \`${{ steps.bump_version.outputs.tag }}\`"
+            echo "- **Target:** \`main\`"
+          } > "$PR_BODY_FILE"
+          
+          # Create the PR without labels first, then try to add them if they exist
+          PR_URL=$(gh pr create \
+            --title "chore: bump version to ${{ steps.bump_version.outputs.new_version }}" \
+            --body-file "$PR_BODY_FILE" \
+            --base main \
+            --head ${{ steps.create_branch.outputs.branch_name }})
+          
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          
+          # Try to add labels if they exist (non-fatal if they don't)
+          gh pr edit "$PR_URL" --add-label "release" 2>/dev/null || echo "Note: 'release' label not found"
+          gh pr edit "$PR_URL" --add-label "automated" 2>/dev/null || echo "Note: 'automated' label not found"
 
       - name: Summary
         run: |
-          echo "## Version Bump Successful! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "## Version Bump PR Created! 🎉" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Previous Version:** ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**New Version:** ${{ steps.bump_version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag:** ${{ steps.bump_version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ steps.create_branch.outputs.branch_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PR:** ${{ steps.create_pr.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Release Notes" >> $GITHUB_STEP_SUMMARY
+          echo "A pull request has been created to merge the version bump into main." >> $GITHUB_STEP_SUMMARY
+          echo "After the PR is merged, create a GitHub Release with tag \`${{ steps.bump_version.outputs.tag }}\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Notes Preview" >> $GITHUB_STEP_SUMMARY
           cat /tmp/unreleased.md >> $GITHUB_STEP_SUMMARY
 
 # AI Generated: GitHub Copilot - 2025-12-26
