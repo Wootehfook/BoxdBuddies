@@ -165,7 +165,7 @@ jobs:
           git add package.json package-lock.json CHANGELOG.md
           git commit -S -m "chore: bump version to ${{ steps.bump_version.outputs.new_version }}"
 
-      - name: Push release branch
+      - name: Push version bump branch
         run: |
           git push origin ${{ steps.create_branch.outputs.branch_name }}
 
