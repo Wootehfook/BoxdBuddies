@@ -116,17 +116,49 @@ const trimEndWhitespace = (value: string) => {
 
 const extractTrailingYear = (value: string) => {
   const trimmed = value.trim();
-  if (trimmed.length < 4) return { title: trimmed, year: 0, hasYear: false };
-  const yearStr = trimmed.slice(-4);
-  if (!/^\d{4}$/.test(yearStr)) {
+  if (trimmed.length < 4) {
     return { title: trimmed, year: 0, hasYear: false };
   }
-  let title = trimEndWhitespace(trimmed.slice(0, -4));
-  if (title.endsWith("(")) {
-    title = trimEndWhitespace(title.slice(0, -1));
+
+  // 1) Handle common "Title (YYYY)" pattern.
+  //    Example: "Movie Title (2024)" -> title: "Movie Title", year: 2024
+  const parenMatch = /^(.*)\((\d{4})\)\s*$/.exec(trimmed);
+  if (parenMatch) {
+    const rawTitle = parenMatch[1];
+    const yearStr = parenMatch[2];
+    const title = trimEndWhitespace(rawTitle);
+    if (!title) {
+      // Avoid returning an empty title for strings like "(2024)"
+      return { title: trimmed, year: 0, hasYear: false };
+    }
+    return {
+      title,
+      year: Number.parseInt(yearStr, 10),
+      hasYear: true,
+    };
   }
-  if (!title) return { title: trimmed, year: 0, hasYear: false };
-  return { title, year: Number.parseInt(yearStr, 10), hasYear: true };
+
+  // 2) Fallback: handle "Title YYYY" or any case where the last 4
+  //    characters (ignoring trailing whitespace) are digits.
+  const yearMatch = /^(.*?)(\d{4})\s*$/.exec(trimmed);
+  if (!yearMatch) {
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+
+  const rawTitle = yearMatch[1];
+  const yearStr = yearMatch[2];
+  const title = trimEndWhitespace(rawTitle);
+  if (!title) {
+    // If removing the year would leave us with an empty title,
+    // treat it as no usable year suffix.
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+
+  return {
+    title,
+    year: Number.parseInt(yearStr, 10),
+    hasYear: true,
+  };
 };
 
 const parseTitleYear = (raw: string) => {
