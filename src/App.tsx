@@ -210,17 +210,20 @@ function App() {
       }, 800);
 
       // Use the enhanced friends endpoint with caching and profile pictures
-      const response = await window.fetch(API_ENDPOINTS.LETTERBOXD_FRIENDS, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-        },
-        body: JSON.stringify({
-          username: username.trim(),
-          _timestamp: Date.now(), // Cache busting
-        }),
-      });
+      const response = await globalThis.fetch(
+        API_ENDPOINTS.LETTERBOXD_FRIENDS,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+          },
+          body: JSON.stringify({
+            username: username.trim(),
+            _timestamp: Date.now(), // Cache busting
+          }),
+        }
+      );
 
       // Clear progress interval and set to 100%
       clearInterval(progressInterval);
@@ -268,7 +271,7 @@ function App() {
       dispatch({ type: "SET_LOADING_WATCHLIST_COUNTS", payload: true });
       const usernames = friendsData.map((f) => f.username);
 
-      const response = await window.fetch(
+      const response = await globalThis.fetch(
         API_ENDPOINTS.LETTERBOXD_WATCHLIST_COUNT,
         {
           method: "POST",
@@ -364,14 +367,17 @@ function App() {
     try {
       const friendUsernames = selectedFriends.map((f) => f.username);
 
-      const response = await window.fetch(API_ENDPOINTS.LETTERBOXD_COMPARE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username.trim(),
-          friends: friendUsernames,
-        }),
-      });
+      const response = await globalThis.fetch(
+        API_ENDPOINTS.LETTERBOXD_COMPARE,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: username.trim(),
+            friends: friendUsernames,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response

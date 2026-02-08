@@ -5,6 +5,7 @@ This document describes the automated versioning and changelog management system
 ## Overview
 
 The project uses:
+
 - **[Semantic Versioning](https://semver.org/)** for version numbers (MAJOR.MINOR.PATCH)
 - **[Keep a Changelog](https://keepachangelog.com/)** format for CHANGELOG.md
 - **[Conventional Commits](https://www.conventionalcommits.org/)** for automatic changelog updates
@@ -16,6 +17,7 @@ The project uses:
 **Trigger:** When a PR is merged to `main` or `develop`
 
 **What it does:**
+
 - Extracts the PR title and determines the change type based on conventional commits:
   - `feat:` → Added section
   - `fix:` → Fixed section
@@ -25,6 +27,7 @@ The project uses:
 - Comments on the PR to confirm the update
 
 **Example:**
+
 - PR title: `feat: add user authentication`
 - Result: Entry added to "Added" section: `- add user authentication (#123) by @username`
 
@@ -33,6 +36,7 @@ The project uses:
 **Trigger:** Manual workflow dispatch via GitHub Actions UI
 
 **What it does:**
+
 1. Bumps the version in package.json (patch, minor, or major)
 2. Moves all `[Unreleased]` changes to a new version section in CHANGELOG.md
 3. Updates package-lock.json
@@ -42,6 +46,7 @@ The project uses:
 7. Creates a Pull Request to main with detailed release notes
 
 **How to use:**
+
 1. Ensure all unreleased changes are documented in CHANGELOG.md
 2. Go to GitHub Actions → "Version Bump and Release"
 3. Click "Run workflow"
@@ -61,6 +66,7 @@ The project uses:
 **Trigger:** When a PR with branch name starting with `release/v` is merged to main
 
 **What it does:**
+
 1. Extracts the version number from the merged branch name
 2. Verifies the git tag doesn't already exist
 3. Creates a git tag (e.g., `v2.2.0`)
@@ -98,11 +104,13 @@ The changelog will be automatically updated with your changes.
 ## Manual Operations
 
 ### Check Current Version
+
 ```bash
 npm run version:current
 ```
 
 ### View Version-Related Scripts
+
 ```bash
 npm run version:patch  # Instructions for patch release
 npm run version:minor  # Instructions for minor release
@@ -117,17 +125,21 @@ npm run version:major  # Instructions for major release
 ## [Unreleased]
 
 ### Added
+
 - New features that have been merged but not released
 
 ### Changed
+
 - Changes to existing functionality
 
 ### Fixed
+
 - Bug fixes
 
 ## [2.1.0] - 2025-09-13
 
 ### Added
+
 - Feature X
 - Feature Y
 
@@ -137,17 +149,17 @@ npm run version:major  # Instructions for major release
 
 ## Conventional Commit Types
 
-| Type | Description | Changelog Section |
-|------|-------------|-------------------|
-| `feat` | New feature | Added |
-| `fix` | Bug fix | Fixed |
-| `chore` | Maintenance task | Changed |
-| `docs` | Documentation | Changed |
-| `refactor` | Code refactoring | Changed |
-| `perf` | Performance improvement | Changed |
-| `test` | Test updates | Changed |
-| `build` | Build system changes | Changed |
-| `ci` | CI/CD changes | Changed |
+| Type       | Description             | Changelog Section |
+| ---------- | ----------------------- | ----------------- |
+| `feat`     | New feature             | Added             |
+| `fix`      | Bug fix                 | Fixed             |
+| `chore`    | Maintenance task        | Changed           |
+| `docs`     | Documentation           | Changed           |
+| `refactor` | Code refactoring        | Changed           |
+| `perf`     | Performance improvement | Changed           |
+| `test`     | Test updates            | Changed           |
+| `build`    | Build system changes    | Changed           |
+| `ci`       | CI/CD changes           | Changed           |
 
 ## Troubleshooting
 
@@ -178,6 +190,7 @@ npm run version:major  # Instructions for major release
 ### I need to make changes to a release
 
 If a release was created with errors:
+
 1. Delete the GitHub Release (not the tag yet)
 2. Delete the git tag locally and remotely:
    ```bash
