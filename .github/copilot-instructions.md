@@ -1,4 +1,4 @@
-// AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-08
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-08 -->
 
 <!-- Copilot / AI contributor instructions for Boxdbud.io -->
 
@@ -94,7 +94,7 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 
 ## 9) Contributing rules (must follow)
 
-- AI attribution header format (required): `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD`.
+- AI attribution header format (required): `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD` for code files, and `<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD -->` for Markdown.
 - Keep diffs small, ~100-column width, TypeScript strictness (avoid `any`).
 - When adding server endpoints: include `onRequestOptions`, `debugLog`, rate limiting, and DI setters for tests.
 - Use Prettier/ESLint scripts before committing (`npm run format`, `npm run lint`).

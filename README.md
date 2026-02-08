@@ -67,13 +67,13 @@ git clone https://github.com/your-username/BoxdBuddies.git
 cd BoxdBuddies
 ```
 
-2. **Install dependencies**:
+1. **Install dependencies**:
 
    ```bash
    npm install
    ```
 
-3. **Start the development server**:
+1. **Start the development server**:
 
    ```bash
    npm run dev
@@ -98,7 +98,7 @@ SonarLint provides real-time code quality and security feedback in your IDE. To 
 
 3. **Local-only mode**: SonarLint works without any connection, using default rules
 
-This setup is entirely optional and personal to each developer. The repository includes a SonarLint connected-mode configuration in `.vscode/settings.json`; override or disable it in your personal settings if you prefer local-only rules.
+This setup is entirely optional and personal to each developer. SonarLint connected-mode settings should remain in your personal IDE configuration and should not be committed to the repository.
 
 ### Project Structure
 
@@ -131,7 +131,7 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 
 - **TypeScript/React**: Adheres to the project's ESLint and Prettier configurations.
 - **Cloudflare Functions**: Follow modern TypeScript and Cloudflare Workers best practices.
-- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot - 2025-08-15`).
+- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2025-08-15`).
 
 ### Versioning and Releases
 
