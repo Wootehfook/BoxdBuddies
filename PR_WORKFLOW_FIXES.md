@@ -11,7 +11,7 @@ This PR addresses critical issues in the automated versioning and changelog work
 **Files**: `.github/workflows/changelog-update.yml`
 
 - Hardened regex pattern validation to prevent false positives
-- Improved handling of special characters in PR titles  
+- Improved handling of special characters in PR titles
 - Enhanced error detection and reporting
 
 ### 2. Version Bump Workflow - PR-Based Process
@@ -37,7 +37,16 @@ This PR addresses critical issues in the automated versioning and changelog work
 - Added vulnerability reporting guidelines
 - Clarified security contact procedures
 
-### 5. Workflow File Updates
+### 5. Security Vulnerability Fix
+
+**Files**: `package-lock.json`
+
+- Updated wrangler from 4.51.0 to 4.63.0 to fix HIGH severity OS Command Injection vulnerability (GHSA-36p8-mvp6-cv38)
+- Fixed moderate severity vulnerabilities in transitive dependencies (undici, miniflare)
+- All security audits now pass with 0 vulnerabilities
+- Justification: Wrangler is used in CI/CD workflows, making this security fix directly relevant to workflow improvements
+
+### 6. Workflow File Updates
 
 **Files**: Multiple workflow files updated for consistency
 
@@ -53,40 +62,47 @@ This PR addresses critical issues in the automated versioning and changelog work
 ## Scope Changes
 
 **REMOVED from original PR** (in response to review feedback):
+
 - Runtime code changes in Functions (tmdb-sync, watchlist-comparison, friends)
 - New PowerShell sync script
 - Test file additions
 - Editor configuration changes
-- Package dependency updates
 
 **KEPT in this PR**:
+
 - Workflow fixes and improvements only
 - Security policy documentation
+- Security vulnerability fixes in build tooling (wrangler)
 - No runtime behavior changes
 
 ## Why This Matters
 
 These workflow fixes are critical for:
+
 - Preventing CI/CD pipeline failures
 - Ensuring proper branch protection and code review
 - Maintaining security best practices for releases
 - Automating changelog and version management
 
-## Files Changed (12 files)
+## Files Changed (13 files)
 
 All changes are limited to:
+
 - GitHub Actions workflows (`.github/workflows/`)
 - Security documentation (`SECURITY.md`)
+- Dependency security fixes (`package-lock.json`)
 
 No application runtime code is modified in this PR.
 
 ## Validation
 
 ### Workflow Syntax
+
 - All YAML files pass GitHub Actions syntax validation
 - Workflow triggers and permissions properly configured
 
 ### Security
+
 - No secrets or credentials exposed
 - Proper use of environment variables and GitHub tokens
 
