@@ -122,185 +122,6 @@ async function getMovieDetails(
   return { movie, director };
 }
 
-async function loadGenresMap(apiKey: string): Promise<Map<number, string>> {
-  const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
-  const genres: Map<number, string> = new Map();
-  genresData.genres.forEach((genre: TMDBGenre) => {
-    genres.set(genre.id, genre.name);
-  });
-  return genres;
-}
-
-function deriveGenres(
-  movieDetails: TMDBMovie,
-  fallbackGenreIds: number[] | undefined,
-  genres: Map<number, string>,
-  sentinel: string
-): string[] {
-  let movieGenres: string[] = [];
-  if (Array.isArray(movieDetails.genres) && movieDetails.genres.length) {
-    movieGenres = movieDetails.genres
-      .map((g: { id: number; name: string }) => g?.name)
-      .filter(Boolean);
-  } else if (Array.isArray(fallbackGenreIds) && fallbackGenreIds.length) {
-    movieGenres = fallbackGenreIds
-      .map((id: number) => genres.get(id))
-      .filter(Boolean) as string[];
-  }
-
-  return Array.isArray(movieGenres) && movieGenres.length > 0
-    ? movieGenres
-    : [sentinel];
-}
-
-function getReleaseYear(releaseDate?: string | null): number | null {
-  return releaseDate ? new Date(releaseDate).getFullYear() : null;
-}
-
-async function upsertMovie(
-  database: any,
-  movieDetails: TMDBMovie,
-  director: string,
-  finalGenres: string[],
-  year: number | null
-): Promise<void> {
-  await database
-    .prepare(
-      `
-      INSERT OR REPLACE INTO tmdb_movies (
-        id, title, original_title, release_date, year, overview, 
-        poster_path, backdrop_path, vote_average, vote_count, 
-        popularity, adult, genres, director, runtime, status, 
-        tagline, last_updated
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `
-    )
-    .bind(
-      movieDetails.id,
-      movieDetails.title,
-      movieDetails.original_title,
-      movieDetails.release_date,
-      year,
-      movieDetails.overview,
-      movieDetails.poster_path,
-      movieDetails.backdrop_path,
-      movieDetails.vote_average,
-      movieDetails.vote_count,
-      movieDetails.popularity,
-      movieDetails.adult ? 1 : 0,
-      JSON.stringify(finalGenres),
-      director,
-      movieDetails.runtime,
-      movieDetails.status,
-      movieDetails.tagline
-    )
-    .run();
-}
-
-async function updateSyncMetadata(
-  database: any,
-  key: string,
-  value: string
-): Promise<void> {
-  await database
-    .prepare(
-      `
-      INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) 
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-    `
-    )
-    .bind(key, value)
-    .run();
-}
-
-function isTimeBudgetExceeded(startTime: number, budgetMs: number): boolean {
-  return Date.now() - startTime > budgetMs;
-}
-
-async function fetchPopularPage(
-  apiKey: string,
-  page: number
-): Promise<TMDBResponse> {
-  return fetchTMDBData(`/movie/popular?page=${page}`, apiKey);
-}
-
-async function fetchDiscoverPage(
-  apiKey: string,
-  page: number,
-  releaseYearStart: string,
-  releaseYearEnd: string
-): Promise<TMDBResponse> {
-  const queryParams = [
-    `page=${page}`,
-    `primary_release_date.gte=${releaseYearStart}`,
-    `primary_release_date.lte=${releaseYearEnd}`,
-    `sort_by=primary_release_date.desc`,
-  ].join("&");
-  return fetchTMDBData(`/discover/movie?${queryParams}`, apiKey);
-}
-
-async function processPopularResults(options: {
-  database: any;
-  apiKey: string;
-  results: TMDBMovie[];
-  genres: Map<number, string>;
-  sentinel: string;
-  startTime: number;
-  timeBudgetMs: number;
-  onSynced: () => void;
-  onError: (movieTitle: string, error: unknown) => void;
-}): Promise<{ synced: number; errors: number; timeUp: boolean }> {
-  const {
-    database,
-    apiKey,
-    results,
-    genres,
-    sentinel,
-    startTime,
-    timeBudgetMs,
-    onSynced,
-    onError,
-  } = options;
-  let pageSynced = 0;
-  let pageErrors = 0;
-  const batchSize = 10;
-
-  for (let i = 0; i < results.length; i += batchSize) {
-    const batch = results.slice(i, i + batchSize);
-
-    for (const tmdbMovie of batch) {
-      try {
-        if (isTimeBudgetExceeded(startTime, timeBudgetMs)) {
-          debugLog(undefined, "⏱️ Time budget reached inside batch; stopping");
-          return { synced: pageSynced, errors: pageErrors, timeUp: true };
-        }
-        if (tmdbMovie.adult) continue;
-
-        const { movie: movieDetails, director } = await getMovieDetails(
-          tmdbMovie.id,
-          apiKey
-        );
-        const finalGenres = deriveGenres(
-          movieDetails,
-          tmdbMovie.genre_ids,
-          genres,
-          sentinel
-        );
-        const year = getReleaseYear(movieDetails.release_date);
-        await upsertMovie(database, movieDetails, director, finalGenres, year);
-
-        pageSynced++;
-        onSynced();
-      } catch (movieError) {
-        onError(tmdbMovie.title, movieError);
-        pageErrors++;
-      }
-    }
-  }
-
-  return { synced: pageSynced, errors: pageErrors, timeUp: false };
-}
-
 async function syncTMDBMoviesByID(
   database: any,
   apiKey: string,
@@ -321,12 +142,16 @@ async function syncTMDBMoviesByID(
   const TIME_BUDGET_MS = 25000; // Try to return within ~25s to avoid CF 30s cap
 
   // Get genre list first
-  const genres = await loadGenresMap(apiKey);
+  const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
+  const genres: Map<number, string> = new Map();
+  genresData.genres.forEach((genre: TMDBGenre) => {
+    genres.set(genre.id, genre.name);
+  });
 
   debugLog(undefined, `📚 Loaded ${genres.size} genres`);
 
   while (syncedCount < maxMovies) {
-    if (isTimeBudgetExceeded(startTime, TIME_BUDGET_MS)) {
+    if (Date.now() - startTime > TIME_BUDGET_MS) {
       debugLog(
         undefined,
         "⏱️ Time budget reached, returning early to avoid timeout"
@@ -350,14 +175,65 @@ async function syncTMDBMoviesByID(
         continue;
       }
 
-      const finalGenres = deriveGenres(
-        movieDetails,
-        movieDetails.genre_ids,
-        genres,
-        sentinel
-      );
-      const year = getReleaseYear(movieDetails.release_date);
-      await upsertMovie(database, movieDetails, director, finalGenres, year);
+      // Derive genre names from movie details; prefer detailed `genres` array fallback to `genre_ids`
+      let movieGenres: string[] = [];
+      if (Array.isArray(movieDetails.genres) && movieDetails.genres.length) {
+        movieGenres = movieDetails.genres
+          .map((g: { id: number; name: string }) => g?.name)
+          .filter(Boolean);
+      } else if (
+        Array.isArray(movieDetails.genre_ids) &&
+        movieDetails.genre_ids.length
+      ) {
+        movieGenres = movieDetails.genre_ids
+          .map((id: number) => genres.get(id))
+          .filter(Boolean) as string[];
+      }
+
+      // If no genres were derived, write a sentinel so downstream processes don't repeatedly treat
+      // this row as missing. Use ['Unknown'] to indicate attempted lookup with no TMDB match.
+      const finalGenres =
+        Array.isArray(movieGenres) && movieGenres.length > 0
+          ? movieGenres
+          : [sentinel];
+
+      // Extract year from release date
+      const year = movieDetails.release_date
+        ? new Date(movieDetails.release_date).getFullYear()
+        : null;
+
+      // Insert or update movie in database
+      await database
+        .prepare(
+          `
+        INSERT OR REPLACE INTO tmdb_movies (
+          id, title, original_title, release_date, year, overview, 
+          poster_path, backdrop_path, vote_average, vote_count, 
+          popularity, adult, genres, director, runtime, status, 
+          tagline, last_updated
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `
+        )
+        .bind(
+          movieDetails.id,
+          movieDetails.title,
+          movieDetails.original_title,
+          movieDetails.release_date,
+          year,
+          movieDetails.overview,
+          movieDetails.poster_path,
+          movieDetails.backdrop_path,
+          movieDetails.vote_average,
+          movieDetails.vote_count,
+          movieDetails.popularity,
+          movieDetails.adult ? 1 : 0,
+          JSON.stringify(finalGenres),
+          director,
+          movieDetails.runtime,
+          movieDetails.status,
+          movieDetails.tagline
+        )
+        .run();
 
       syncedCount++;
       highestProcessedId = currentId;
@@ -397,11 +273,15 @@ async function syncTMDBMoviesByID(
   }
 
   // Update sync metadata with highest processed ID
-  await updateSyncMetadata(
-    database,
-    "highest_movie_id_synced",
-    highestProcessedId.toString()
-  );
+  await database
+    .prepare(
+      `
+    INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) 
+    VALUES ('highest_movie_id_synced', ?, CURRENT_TIMESTAMP)
+  `
+    )
+    .bind(highestProcessedId.toString())
+    .run();
 
   debugLog(
     undefined,
@@ -430,9 +310,10 @@ async function syncTMDBChanges(
 
   try {
     // Build changes URL with optional date parameter
-    const changesUrl = startDate
-      ? `/movie/changes?start_date=${startDate}`
-      : "/movie/changes";
+    let changesUrl = "/movie/changes";
+    if (startDate) {
+      changesUrl += `?start_date=${startDate}`;
+    }
 
     const changesResponse = await fetchTMDBData(changesUrl, apiKey);
     const changedMovieIds = changesResponse.results.map((item: any) => item.id);
@@ -443,7 +324,11 @@ async function syncTMDBChanges(
     );
 
     // Get genre list
-    const genres = await loadGenresMap(apiKey);
+    const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
+    const genres: Map<number, string> = new Map();
+    genresData.genres.forEach((genre: TMDBGenre) => {
+      genres.set(genre.id, genre.name);
+    });
 
     // Process changed movies in batches
     const batchSize = 10;
@@ -460,20 +345,62 @@ async function syncTMDBChanges(
           // Skip adult content
           if (movieDetails.adult) continue;
 
-          const finalGenres = deriveGenres(
-            movieDetails,
-            movieDetails.genre_ids,
-            genres,
-            sentinel
-          );
-          const year = getReleaseYear(movieDetails.release_date);
-          await upsertMovie(
-            database,
-            movieDetails,
-            director,
-            finalGenres,
-            year
-          );
+          // Derive genre names from detailed response
+          let movieGenres: string[] = [];
+          if (
+            Array.isArray(movieDetails.genres) &&
+            movieDetails.genres.length
+          ) {
+            movieGenres = movieDetails.genres
+              .map((g: { id: number; name: string }) => g?.name)
+              .filter(Boolean);
+          } else if (
+            Array.isArray(movieDetails.genre_ids) &&
+            movieDetails.genre_ids.length
+          ) {
+            movieGenres = movieDetails.genre_ids
+              .map((id: number) => genres.get(id))
+              .filter(Boolean) as string[];
+          }
+          const finalGenres =
+            Array.isArray(movieGenres) && movieGenres.length > 0
+              ? movieGenres
+              : [sentinel];
+          const year = movieDetails.release_date
+            ? new Date(movieDetails.release_date).getFullYear()
+            : null;
+
+          await database
+            .prepare(
+              `
+            INSERT OR REPLACE INTO tmdb_movies (
+              id, title, original_title, release_date, year, overview, 
+              poster_path, backdrop_path, vote_average, vote_count, 
+              popularity, adult, genres, director, runtime, status, 
+              tagline, last_updated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          `
+            )
+            .bind(
+              movieDetails.id,
+              movieDetails.title,
+              movieDetails.original_title,
+              movieDetails.release_date,
+              year,
+              movieDetails.overview,
+              movieDetails.poster_path,
+              movieDetails.backdrop_path,
+              movieDetails.vote_average,
+              movieDetails.vote_count,
+              movieDetails.popularity,
+              movieDetails.adult ? 1 : 0,
+              JSON.stringify(finalGenres),
+              director,
+              movieDetails.runtime,
+              movieDetails.status,
+              movieDetails.tagline
+            )
+            .run();
 
           syncedCount++;
         } catch (movieError) {
@@ -487,11 +414,15 @@ async function syncTMDBChanges(
     }
 
     // Update last changes sync date
-    await updateSyncMetadata(
-      database,
-      "last_changes_sync",
-      new Date().toISOString()
-    );
+    await database
+      .prepare(
+        `
+      INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) 
+      VALUES ('last_changes_sync', ?, CURRENT_TIMESTAMP)
+    `
+      )
+      .bind(new Date().toISOString())
+      .run();
   } catch (error) {
     console.error("❌ Error fetching changes:", error);
     errorCount++;
@@ -529,138 +460,35 @@ async function syncTMDBMovies(
   let errorCount = 0;
   const startTime = Date.now();
   const TIME_BUDGET_MS = 25000; // Stay below CF 30s cap
+  let timeUp = false;
 
-  const genres = await loadGenresMap(apiKey);
+  // Get genre list first
+  const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
+  const genres: Map<number, string> = new Map();
+  genresData.genres.forEach((genre: TMDBGenre) => {
+    genres.set(genre.id, genre.name);
+  });
 
   debugLog(undefined, `📚 Loaded ${genres.size} genres`);
-
-  const syncPopularPage = async (page: number) => {
-    debugLog(undefined, `📄 Processing page ${page}/${actualMaxPages}`);
-    if (isTimeBudgetExceeded(startTime, TIME_BUDGET_MS)) {
-      debugLog(
-        undefined,
-        "⏱️ Time budget reached during page sync; returning early"
-      );
-      return {
-        synced: 0,
-        errors: 0,
-        timeUp: true,
-        totalPages: 0,
-        hasResults: false,
-      };
-    }
-
-    const response = await fetchPopularPage(apiKey, page);
-    if (!response.results || response.results.length === 0) {
-      debugLog(undefined, `⚠️ No results on page ${page}, ending sync`);
-      return {
-        synced: 0,
-        errors: 0,
-        timeUp: false,
-        totalPages: response.total_pages,
-        hasResults: false,
-      };
-    }
-
-    const processResult = await processPopularResults({
-      database,
-      apiKey,
-      results: response.results,
-      genres,
-      sentinel,
-      startTime,
-      timeBudgetMs: TIME_BUDGET_MS,
-      onSynced: () => {
-        syncedCount++;
-        if (syncedCount % 50 === 0) {
-          debugLog(undefined, `✅ Synced ${syncedCount} movies so far...`);
-        }
-      },
-      onError: (movieTitle, movieError) => {
-        console.error(`❌ Error syncing movie ${movieTitle}:`, movieError);
-        errorCount++;
-      },
-    });
-
-    return {
-      synced: processResult.synced,
-      errors: processResult.errors,
-      timeUp: processResult.timeUp,
-      totalPages: response.total_pages,
-      hasResults: true,
-    };
-  };
 
   for (let page = startPage; page <= actualMaxPages; page++) {
     try {
-      const pageResult = await syncPopularPage(page);
-      if (!pageResult.hasResults) break;
-      if (page >= pageResult.totalPages) {
+      debugLog(undefined, `📄 Processing page ${page}/${actualMaxPages}`);
+
+      // Time budget check
+      if (Date.now() - startTime > TIME_BUDGET_MS) {
         debugLog(
           undefined,
-          `🏁 Reached end of available pages (${pageResult.totalPages})`
+          "⏱️ Time budget reached during page sync; returning early"
         );
+        timeUp = true;
         break;
       }
-      if (pageResult.timeUp) break;
-    } catch (pageError) {
-      console.error(`❌ Error processing page ${page}:`, pageError);
-      errorCount++;
-    }
-  }
 
-  // Update sync metadata
-  await updateSyncMetadata(
-    database,
-    "last_full_sync",
-    new Date().toISOString()
-  );
-  await updateSyncMetadata(
-    database,
-    "total_movies_synced",
-    syncedCount.toString()
-  );
-
-  debugLog(
-    undefined,
-    `🎉 Sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
-  );
-  return { synced: syncedCount, errors: errorCount };
-}
-
-async function syncTMDBCurrentYear(
-  database: any,
-  apiKey: string,
-  releaseYearStart: string,
-  releaseYearEnd: string,
-  maxPages: number = 10,
-  sentinel: string = "Unknown"
-): Promise<{ synced: number; errors: number }> {
-  debugLog(
-    undefined,
-    `📅 Starting TMDB current-year sync from ${releaseYearStart} to ${releaseYearEnd} (max ${maxPages} pages)`
-  );
-
-  let syncedCount = 0;
-  let errorCount = 0;
-  const startTime = Date.now();
-  const TIME_BUDGET_MS = 25000;
-
-  const genres = await loadGenresMap(apiKey);
-  debugLog(undefined, `📚 Loaded ${genres.size} genres`);
-
-  for (let page = 1; page <= maxPages; page++) {
-    if (isTimeBudgetExceeded(startTime, TIME_BUDGET_MS)) {
-      debugLog(undefined, "⏱️ Time budget reached during current-year sync");
-      break;
-    }
-
-    try {
-      const response = await fetchDiscoverPage(
-        apiKey,
-        page,
-        releaseYearStart,
-        releaseYearEnd
+      // Get popular movies for this page
+      const response: TMDBResponse = await fetchTMDBData(
+        `/movie/popular?page=${page}`,
+        apiKey
       );
 
       if (!response.results || response.results.length === 0) {
@@ -668,34 +496,148 @@ async function syncTMDBCurrentYear(
         break;
       }
 
-      const processResult = await processPopularResults({
-        database,
-        apiKey,
-        results: response.results,
-        genres,
-        sentinel,
-        startTime,
-        timeBudgetMs: TIME_BUDGET_MS,
-        onSynced: () => {
-          syncedCount++;
-        },
-        onError: (movieTitle, movieError) => {
-          console.error(`❌ Error syncing movie ${movieTitle}:`, movieError);
-          errorCount++;
-        },
-      });
+      // Process movies in batches to avoid overwhelming the database
+      const batchSize = 10;
+      for (let i = 0; i < response.results.length; i += batchSize) {
+        const batch = response.results.slice(i, i + batchSize);
 
-      if (processResult.timeUp) break;
-      if (page >= response.total_pages) break;
+        for (const tmdbMovie of batch) {
+          try {
+            if (Date.now() - startTime > TIME_BUDGET_MS) {
+              debugLog(
+                undefined,
+                "⏱️ Time budget reached inside batch; stopping"
+              );
+              timeUp = true;
+              break;
+            }
+            // Skip adult content
+            if (tmdbMovie.adult) {
+              continue;
+            }
+
+            // Get detailed movie information including director
+            const { movie: movieDetails, director } = await getMovieDetails(
+              tmdbMovie.id,
+              apiKey
+            );
+
+            // Convert to genre names; prefer details.genres, fallback to list's genre_ids
+            let movieGenres: string[] = [];
+            if (
+              Array.isArray(movieDetails.genres) &&
+              movieDetails.genres.length
+            ) {
+              movieGenres = movieDetails.genres
+                .map((g: { id: number; name: string }) => g?.name)
+                .filter(Boolean);
+            } else if (
+              Array.isArray(tmdbMovie.genre_ids) &&
+              tmdbMovie.genre_ids.length
+            ) {
+              movieGenres = tmdbMovie.genre_ids
+                .map((id: number) => genres.get(id))
+                .filter(Boolean) as string[];
+            }
+
+            const finalGenres =
+              Array.isArray(movieGenres) && movieGenres.length > 0
+                ? movieGenres
+                : [sentinel];
+
+            // Extract year from release date
+            const year = movieDetails.release_date
+              ? new Date(movieDetails.release_date).getFullYear()
+              : null;
+
+            // Insert or update movie in database
+            await database
+              .prepare(
+                `
+              INSERT OR REPLACE INTO tmdb_movies (
+                id, title, original_title, release_date, year, overview, 
+                poster_path, backdrop_path, vote_average, vote_count, 
+                popularity, adult, genres, director, runtime, status, 
+                tagline, last_updated
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `
+              )
+              .bind(
+                movieDetails.id,
+                movieDetails.title,
+                movieDetails.original_title,
+                movieDetails.release_date,
+                year,
+                movieDetails.overview,
+                movieDetails.poster_path,
+                movieDetails.backdrop_path,
+                movieDetails.vote_average,
+                movieDetails.vote_count,
+                movieDetails.popularity,
+                movieDetails.adult ? 1 : 0,
+                JSON.stringify(finalGenres),
+                director,
+                movieDetails.runtime,
+                movieDetails.status,
+                movieDetails.tagline
+              )
+              .run();
+
+            syncedCount++;
+
+            if (syncedCount % 50 === 0) {
+              debugLog(undefined, `✅ Synced ${syncedCount} movies so far...`);
+            }
+          } catch (movieError) {
+            console.error(
+              `❌ Error syncing movie ${tmdbMovie.title}:`,
+              movieError
+            );
+            errorCount++;
+          }
+        }
+        if (timeUp) break;
+      }
+
+      // If we've processed all pages available
+      if (page >= response.total_pages) {
+        debugLog(
+          undefined,
+          `🏁 Reached end of available pages (${response.total_pages})`
+        );
+        break;
+      }
     } catch (pageError) {
-      console.error(`❌ Error processing discover page ${page}:`, pageError);
+      console.error(`❌ Error processing page ${page}:`, pageError);
       errorCount++;
     }
+    if (timeUp) break;
   }
+
+  // Update sync metadata
+  await database
+    .prepare(
+      `
+    INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) 
+    VALUES ('last_full_sync', ?, CURRENT_TIMESTAMP)
+  `
+    )
+    .bind(new Date().toISOString())
+    .run();
+
+  await database
+    .prepare(
+      `
+    INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) 
+    VALUES ('total_movies_synced', ?, CURRENT_TIMESTAMP)
+  `
+    )
+    .bind(syncedCount.toString())
+    .run();
 
   debugLog(
     undefined,
-    `🎉 Current-year sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
+    `🎉 Sync complete! Synced: ${syncedCount}, Errors: ${errorCount}`
   );
   return { synced: syncedCount, errors: errorCount };
 }
@@ -785,32 +727,6 @@ async function backfillGenres(
       ? Math.max(0, userLimit - processed)
       : Number.POSITIVE_INFINITY;
 
-  const processRow = async (row: { id: number }) => {
-    try {
-      const names = await fetchNames(row.id);
-      const finalNames =
-        Array.isArray(names) && names.length > 0 ? names : [sentinel];
-      await updateRow(row.id, finalNames);
-      updated++;
-    } catch (e) {
-      console.error(`Failed to backfill genres for movie ${row.id}:`, e);
-      errors++;
-    } finally {
-      processed++;
-      lastId = row.id;
-    }
-  };
-
-  const processBatch = async (rows: Array<{ id: number }>) => {
-    for (const row of rows) {
-      if (!withinBudget()) break;
-      await processRow(row);
-      if (Number.isFinite(limitRemaining()) && processed >= (userLimit ?? 0)) {
-        break;
-      }
-    }
-  };
-
   while (withinBudget()) {
     const remainingNow = limitRemaining();
     if (remainingNow === 0) break;
@@ -819,203 +735,29 @@ async function backfillGenres(
       : BATCH_SIZE;
     const rows = await selectBatch(lastId, toFetch);
     if (!rows.length) break;
-    await processBatch(rows);
+
+    for (const row of rows) {
+      if (!withinBudget()) break;
+      try {
+        const names = await fetchNames(row.id);
+        // If no genres found, write a sentinel value so the row won't be repeatedly selected as "missing".
+        // Use sentinel from env (default "Unknown") to indicate attempted lookup with no TMDB match or an error.
+        const finalNames =
+          Array.isArray(names) && names.length > 0 ? names : [sentinel];
+        await updateRow(row.id, finalNames);
+        updated++;
+      } catch (e) {
+        console.error(`Failed to backfill genres for movie ${row.id}:`, e);
+        errors++;
+      } finally {
+        processed++;
+        lastId = row.id;
+      }
+      if (Number.isFinite(remainingNow) && processed >= (userLimit ?? 0)) break;
+    }
   }
 
   return { updated, errors };
-}
-
-type SyncRequest = {
-  startPage?: number;
-  maxPages?: number;
-  syncType?: string;
-  startMovieId?: number;
-  maxMovies?: number;
-  startDate?: string;
-  releaseYearStart?: string;
-  releaseYearEnd?: string;
-  limit?: number;
-  mode?: "missing" | "all";
-};
-
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-function isAuthorized(authHeader: string | null, env?: Env): boolean {
-  const rawHeader = (authHeader || "").trim();
-  const token = rawHeader.toLowerCase().startsWith("bearer ")
-    ? rawHeader.slice(7).trim()
-    : rawHeader;
-
-  // Preferred path: use ADMIN_SECRET for exact-match authorization
-  if (env?.ADMIN_SECRET) {
-    return token === env.ADMIN_SECRET;
-  }
-
-  // Backward-compatible fallback when ADMIN_SECRET is not configured
-  return Boolean(
-    rawHeader &&
-    (rawHeader.includes("admin-sync-token") ||
-      rawHeader.includes("test-token"))
-  );
-}
-
-async function parseSyncRequest(request: Request): Promise<SyncRequest> {
-  return (await request.json().catch(() => ({}))) as SyncRequest;
-}
-
-function getSentinel(env: Env): string {
-  return env.TMDB_GENRE_SENTINEL || "Unknown";
-}
-
-async function handleMovieIdSync(
-  body: SyncRequest,
-  env: Env
-): Promise<Response> {
-  if (!body.startMovieId) {
-    throw new Error("startMovieId is required for movieId sync type");
-  }
-
-  const result = await syncTMDBMoviesByID(
-    env.MOVIES_DB,
-    env.TMDB_API_KEY,
-    body.startMovieId,
-    body.maxMovies ?? 100,
-    getSentinel(env)
-  );
-
-  return jsonResponse(200, {
-    success: true,
-    message: "ID-based sync completed successfully",
-    synced: result.synced,
-    errors: result.errors,
-    highestId: result.highestId,
-    syncType: "movieId",
-    timestamp: new Date().toISOString(),
-  });
-}
-
-async function handleChangesSync(
-  body: SyncRequest,
-  env: Env
-): Promise<Response> {
-  const result = await syncTMDBChanges(
-    env.MOVIES_DB,
-    env.TMDB_API_KEY,
-    body.startDate,
-    getSentinel(env)
-  );
-
-  return jsonResponse(200, {
-    success: true,
-    message: "Changes sync completed successfully",
-    synced: result.synced,
-    errors: result.errors,
-    syncType: "changes",
-    timestamp: new Date().toISOString(),
-  });
-}
-
-async function handleBackfillGenresSync(
-  body: SyncRequest,
-  env: Env
-): Promise<Response> {
-  const result = await backfillGenres(env.MOVIES_DB, env.TMDB_API_KEY, {
-    limit: body.limit,
-    mode: body.mode,
-  });
-
-  return jsonResponse(200, {
-    success: true,
-    message: "Backfill completed",
-    updated: result.updated,
-    errors: result.errors,
-    syncType: "backfillGenres",
-    timestamp: new Date().toISOString(),
-  });
-}
-
-function assertCurrentYearWindow(body: SyncRequest): {
-  releaseYearStart: string;
-  releaseYearEnd: string;
-} {
-  if (!body.releaseYearStart) {
-    throw new Error("releaseYearStart is required for current_year sync");
-  }
-  if (!body.releaseYearEnd) {
-    throw new Error("releaseYearEnd is required for current_year sync");
-  }
-
-  return {
-    releaseYearStart: body.releaseYearStart,
-    releaseYearEnd: body.releaseYearEnd,
-  };
-}
-
-async function handleCurrentYearSync(
-  body: SyncRequest,
-  env: Env
-): Promise<Response> {
-  const window = assertCurrentYearWindow(body);
-  const result = await syncTMDBCurrentYear(
-    env.MOVIES_DB,
-    env.TMDB_API_KEY,
-    window.releaseYearStart,
-    window.releaseYearEnd,
-    body.maxPages ?? 10,
-    getSentinel(env)
-  );
-
-  return jsonResponse(200, {
-    success: true,
-    message: "Current-year sync completed successfully",
-    synced: result.synced,
-    errors: result.errors,
-    syncType: "current_year",
-    releaseYearStart: window.releaseYearStart,
-    releaseYearEnd: window.releaseYearEnd,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-async function handlePageSync(body: SyncRequest, env: Env): Promise<Response> {
-  const result = await syncTMDBMovies(
-    env.MOVIES_DB,
-    env.TMDB_API_KEY,
-    body.startPage ?? 1,
-    body.maxPages ?? 500,
-    getSentinel(env)
-  );
-
-  return jsonResponse(200, {
-    success: true,
-    message: "Page-based sync completed successfully",
-    synced: result.synced,
-    errors: result.errors,
-    syncType: "pages",
-    timestamp: new Date().toISOString(),
-  });
-}
-
-function getSyncHandler(
-  syncType: string
-): (body: SyncRequest, env: Env) => Promise<Response> {
-  const handlers: Record<
-    string,
-    (body: SyncRequest, env: Env) => Promise<Response>
-  > = {
-    movieId: handleMovieIdSync,
-    changes: handleChangesSync,
-    backfillGenres: handleBackfillGenresSync,
-    current_year: handleCurrentYearSync,
-    pages: handlePageSync,
-  };
-
-  return handlers[syncType] ?? handlePageSync;
 }
 
 export async function onRequestPost(context: {
@@ -1027,11 +769,17 @@ export async function onRequestPost(context: {
   // Check if TMDB API key is available
   if (!env.TMDB_API_KEY) {
     console.error("❌ TMDB_API_KEY not found in environment");
-    return jsonResponse(500, {
-      success: false,
-      error: "TMDB API key not configured",
-      timestamp: new Date().toISOString(),
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "TMDB API key not configured",
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   // Basic authentication check - allow both admin-sync-token and bypass for testing
@@ -1041,27 +789,146 @@ export async function onRequestPost(context: {
     `🔑 Auth header received: ${authHeader ? "Bearer token present" : "No auth header"}`
   );
 
-  if (!isAuthorized(authHeader)) {
+  if (
+    !authHeader ||
+    (!authHeader.includes("admin-sync-token") &&
+      !authHeader.includes("test-token"))
+  ) {
     console.error("❌ Invalid or missing authorization token");
-    return jsonResponse(401, {
-      success: false,
-      error: "Invalid authorization token",
-      timestamp: new Date().toISOString(),
-    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Invalid authorization token",
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
-    const body = await parseSyncRequest(request);
-    const syncType = body.syncType ?? "pages";
+    const {
+      startPage = 1,
+      maxPages = 500,
+      syncType = "pages",
+      startMovieId,
+      maxMovies = 100,
+      startDate,
+      limit,
+      mode,
+    } = await request.json().catch(() => ({}));
+
     debugLog(undefined, `🚀 Starting TMDB sync - Type: ${syncType}`);
-    const handler = getSyncHandler(syncType);
-    return await handler(body, env);
+
+    let result;
+
+    if (syncType === "movieId") {
+      // Incremental sync by movie ID
+      if (!startMovieId) {
+        throw new Error("startMovieId is required for movieId sync type");
+      }
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
+      result = await syncTMDBMoviesByID(
+        env.MOVIES_DB,
+        env.TMDB_API_KEY,
+        startMovieId,
+        maxMovies,
+        sentinelVal
+      );
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `ID-based sync completed successfully`,
+          synced: result.synced,
+          errors: result.errors,
+          highestId: result.highestId,
+          syncType: "movieId",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } else if (syncType === "changes") {
+      // Incremental sync by changes
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
+      result = await syncTMDBChanges(
+        env.MOVIES_DB,
+        env.TMDB_API_KEY,
+        startDate,
+        sentinelVal
+      );
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Changes sync completed successfully`,
+          synced: result.synced,
+          errors: result.errors,
+          syncType: "changes",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } else if (syncType === "backfillGenres") {
+      const result = await backfillGenres(env.MOVIES_DB, env.TMDB_API_KEY, {
+        limit,
+        mode,
+      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Backfill completed`,
+          updated: result.updated,
+          errors: result.errors,
+          syncType: "backfillGenres",
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } else {
+      // Traditional page-based sync (default)
+      const sentinelVal = env.TMDB_GENRE_SENTINEL || "Unknown";
+      result = await syncTMDBMovies(
+        env.MOVIES_DB,
+        env.TMDB_API_KEY,
+        startPage,
+        maxPages,
+        sentinelVal
+      );
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Page-based sync completed successfully`,
+          synced: result.synced,
+          errors: result.errors,
+          syncType: "pages",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
   } catch (error) {
     console.error("❌ TMDB sync failed:", error);
-    return jsonResponse(500, {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: new Date().toISOString(),
-    });
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
