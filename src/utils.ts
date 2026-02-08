@@ -76,291 +76,166 @@ export function getUserColors(username: string) {
 
 // AI Generated: GitHub Copilot - 2025-08-29T10:15:00Z
 // Famous movie quotes for progress display
-export const FAMOUS_MOVIE_QUOTES = [
-  {
-    quote:
-      "I have come here to chew bubblegum and kick ass... and I'm all out of bubblegum.",
-    movie: "They Live",
-  },
-  { quote: "Groovy.", movie: "Evil Dead II" },
-  {
-    quote: "Where we're going, we won't need eyes to see.",
-    movie: "Event Horizon",
-  },
-  { quote: "Garbage day!", movie: "Silent Night, Deadly Night Part 2" },
-  {
-    quote: "It’s screaming. It’s screaming like a banshee!",
-    movie: "The Blob (1988)",
-  },
-  { quote: "Be afraid. Be very afraid.", movie: "The Fly" },
-  {
-    quote:
-      "They're eating her! And then they're going to eat me! Oh my Goooooood!",
-    movie: "Troll 2",
-  },
-  { quote: "I gave him life!", movie: "Re-Animator" },
-  { quote: "Long live the new flesh.", movie: "Videodrome" },
-  { quote: "Kill it! Kill it with fire!", movie: "The Thing" },
-  {
-    quote: "Welcome to prime time, bitch.",
-    movie: "A Nightmare on Elm Street 3: Dream Warriors",
-  },
-  { quote: "Send more paramedics.", movie: "The Return of the Living Dead" },
-  { quote: "I kick arse for the Lord!", movie: "Braindead (Dead Alive)" },
-  { quote: "Not the bees! NOT THE BEES!", movie: "The Wicker Man" },
-  { quote: "Sleep? I'll sleep when I'm dead.", movie: "Saturn 3" },
-  { quote: "Klaatu barada nikto.", movie: "The Day the Earth Stood Still" },
-  {
-    quote: "Even a man who is pure in heart and says his prayers by night...",
-    movie: "The Wolf Man",
-  },
-  { quote: "He didn't get out of the cock-a-doodie car!", movie: "Misery" },
-  {
-    quote:
-      "One thing about living in Santa Carla I never could stomach: all the damn vampires.",
-    movie: "The Lost Boys",
-  },
-  { quote: "It's all in the reflexes.", movie: "Big Trouble in Little China" },
-  { quote: "Man is the warmest place to hide.", movie: "The Thing" },
-  { quote: "Eat to live, don't live to eat.", movie: "Stuff" },
-  { quote: "We have such sights to show you.", movie: "Hellraiser" },
-  { quote: "Stupid, stupid, stupid!", movie: "Plan 9 from Outer Space" },
-  {
-    quote: "I'm your boyfriend now, Nancy.",
-    movie: "A Nightmare on Elm Street",
-  },
-  { quote: "Good? Bad? I'm the guy with the gun.", movie: "Army of Darkness" },
-  {
-    quote:
-      "There are two kinds of people in this world, my friend: Those with loaded guns and those who dig.",
-    movie: "The Good, the Bad and the Ugly",
-  },
-  {
-    quote:
-      "Psychos do not explode when sunlight hits them, I don't give a fuck how crazy they are!",
-    movie: "From Dusk Till Dawn",
-  },
-  { quote: "Wolfman's got nards!", movie: "The Monster Squad" },
-  { quote: "I am a god! The golden god!", movie: "Five Gods" },
-  {
-    quote: "I'm sorry, Dave. I'm afraid I can't do that.",
-    movie: "2001: A Space Odyssey",
-  },
-  { quote: "Game over, man! Game over!", movie: "Aliens" },
-  {
-    quote: "Listen to them. Children of the night. What music they make.",
-    movie: "Dracula",
-  },
-  { quote: "Redrum. Redrum.", movie: "The Shining" },
-  { quote: "If it bleeds, we can kill it.", movie: "Predator" },
-  { quote: "They're here.", movie: "Poltergeist" },
-  { quote: "Sometimes, dead is better.", movie: "Pet Sematary" },
-  {
-    quote: "Your suffering will be legendary, even in hell.",
-    movie: "Hellraiser II: Hellbound",
-  },
-  {
-    quote: "We're gonna need some more FBI guys, I guess.",
-    movie: "The Frighteners",
-  },
-  { quote: "See you at the party, Richter!", movie: "Total Recall" },
-  { quote: "Dead or alive, you're coming with me.", movie: "RoboCop" },
-  { quote: "Soylent Green is people!", movie: "Soylent Green" },
-  { quote: "Get away from her, you bitch!", movie: "Aliens" },
-  { quote: "Hail to the king, baby.", movie: "Army of Darkness" },
-  {
-    quote: "I know you're out there. I can feel you now.",
-    movie: "The Matrix",
-  },
-  { quote: "It's alive! It's alive!", movie: "Frankenstein" },
-  { quote: "The power of Christ compels you!", movie: "The Exorcist" },
-  { quote: "Here's Johnny!", movie: "The Shining" },
-  {
-    quote: "Whatever you do, don't fall asleep.",
-    movie: "A Nightmare on Elm Street",
-  },
-  { quote: "Do you like scary movies?", movie: "Scream" },
-  {
-    quote:
-      "I've seen things you people wouldn't believe. Attack ships on fire off the shoulder of Orion.",
-    movie: "Blade Runner",
-  },
-  { quote: "Leeloo Dallas multipass.", movie: "The Fifth Element" },
-  { quote: "I'd buy that for a dollar!", movie: "RoboCop" },
-  { quote: "Service guarantees citizenship.", movie: "Starship Troopers" },
-  {
-    quote: "No matter where you go, there you are.",
-    movie: "The Adventures of Buckaroo Banzai Across the 8th Dimension",
-  },
-  {
-    quote: "Broke into the wrong goddamn rec room, didn't ya you bastard!",
-    movie: "Tremors",
-  },
-  {
-    quote: "He doesn't know how to use the three seashells!",
-    movie: "Demolition Man",
-  },
-  {
-    quote: "By Grabthar's Hammer, you shall be avenged.",
-    movie: "Galaxy Quest",
-  },
-  { quote: "Consider that a divorce.", movie: "Total Recall" },
-  { quote: "Welcome to Costco, I love you.", movie: "Idiocracy" },
-  { quote: "The spice must flow.", movie: "Dune (1984)" },
-  { quote: "Thrill me.", movie: "Night of the Creeps" },
-  { quote: "Gordon's alive?!", movie: "Flash Gordon" },
-  { quote: "Number 5 is alive!", movie: "Short Circuit" },
-  { quote: "I aim to misbehave.", movie: "Serenity" },
-  { quote: "Why are you wearing that stupid man suit?", movie: "Donnie Darko" },
-  { quote: "There is no spoon.", movie: "The Matrix" },
-  {
-    quote: "Take your stinking paws off me, you damned dirty ape!",
-    movie: "Planet of the Apes",
-  },
-  { quote: "Get your fookin' tentacle out of my face!", movie: "District 9" },
-  { quote: "Witness me!", movie: "Mad Max: Fury Road" },
-  { quote: "The only winning move is not to play.", movie: "WarGames" },
-  { quote: "Call me Snake.", movie: "Escape from New York" },
-  { quote: "Here is Subzero! Now, plain zero!", movie: "The Running Man" },
-  { quote: "Don't run! We are your friends!", movie: "Mars Attacks!" },
-  { quote: "Elvis is not dead. He just went home.", movie: "Men in Black" },
-  { quote: "I never saved anything for the swim back.", movie: "Gattaca" },
-  { quote: "End of line.", movie: "Tron" },
-  { quote: "Run, Runner!", movie: "Logan's Run" },
-  { quote: "Open the pod bay doors, HAL.", movie: "2001: A Space Odyssey" },
-  { quote: "There's always time for lubricant!", movie: "Evolution" },
-  { quote: "Kneel before Zod!", movie: "Superman II" },
-  { quote: "Tetsuooooo!", movie: "Akira" },
-  { quote: "I knew it. I'm surrounded by Assholes.", movie: "Spaceballs" },
-  { quote: "Allow it.", movie: "Attack the Block" },
-  { quote: "The life of a repo man is always intense.", movie: "Repo Man" },
-  { quote: "Death to the demoness Allegra Geller!", movie: "eXistenZ" },
-  { quote: "I'm gonna suck your brain dry!", movie: "Scanners" },
-  {
-    quote: "What're you gonna do with those pies, boys?",
-    movie: "Killer Klowns from Outer Space",
-  },
-  { quote: "Sanity is a calibrated camera.", movie: "Videodrome" },
-  { quote: "Negative, I am a meat popsicle.", movie: "The Fifth Element" },
-  { quote: "Kill me.", movie: "Alien Resurrection" },
-  { quote: "Welcome to the desert of the real.", movie: "The Matrix" },
-  { quote: "Does this unit have a soul?", movie: "Mass Effect" },
-  {
-    quote: "Ray, when someone asks you if you're a god, you say YES!",
-    movie: "Ghostbusters",
-  },
-  { quote: "Sleep now.", movie: "Dark City" },
-  { quote: "I want to believe.", movie: "The X-Files: Fight the Future" },
-  {
-    quote: "Where we're going, we don't need roads.",
-    movie: "Back to the Future",
-  },
-  { quote: "Humanity is a virus.", movie: "The Matrix" },
-  {
-    quote: "Are you telling me you built a time machine... out of a DeLorean?",
-    movie: "Back to the Future",
-  },
-  { quote: "I am a leaf on the wind. Watch how I soar.", movie: "Serenity" },
-  {
-    quote: "You can't piss on hospitality! I won't allow it!",
-    movie: "Troll 2",
-  },
-  {
-    quote: "How'd it get burned? HOW'D IT GET BURNED?!",
-    movie: "The Wicker Man (2006)",
-  },
-  {
-    quote:
-      "I am going to make you as happy as a baby Psychlo on a straight diet of Kerbango.",
-    movie: "Battlefield Earth",
-  },
-  {
-    quote: "Killing me won't bring back your goddamn honey!",
-    movie: "The Wicker Man (2006)",
-  },
-  {
-    quote: "Future events such as these will affect you in the future.",
-    movie: "Plan 9 from Outer Space",
-  },
-  { quote: "The Gun is good! The Penis is evil!", movie: "Zardoz" },
-  { quote: "Stop eating my sesame cake!", movie: "Congo" },
-  {
-    quote: "Deepest, bluest, my hat is like a shark's fin.",
-    movie: "Deep Blue Sea",
-  },
-  { quote: "There's snakes out there dis big?", movie: "Anaconda" },
-  { quote: "Trick or treat, motherfucker!", movie: "Halloween: Resurrection" },
-  { quote: "Trust the fungus.", movie: "Super Mario Bros. (1993)" },
-  { quote: "Too bad you... will die.", movie: "Mortal Kombat: Annihilation" },
-  { quote: "Allow me to break the ice.", movie: "Batman & Robin" },
-  { quote: "Cheese and crackers!", movie: "The Happening" },
-  { quote: "I'm a vampire! I'm a vampire!", movie: "Vampire's Kiss" },
-  {
-    quote: "Honey, this machine's calling me an asshole!",
-    movie: "Maximum Overdrive",
-  },
-  { quote: "No more Mr. Nice Duck.", movie: "Howard the Duck" },
-  { quote: "Quick, change the channel!", movie: "Street Fighter" },
-  { quote: "The moon... it's hollow.", movie: "Moonfall" },
-  { quote: "Like a turd... in the wind.", movie: "Venom" },
-  { quote: "I create life! And I destroy it!", movie: "Jupiter Ascending" },
-  {
-    quote: "I don't know anything about any artifacts!",
-    movie: "Alone in the Dark",
-  },
-  { quote: "Imperial Battleship, halt the flow of time!", movie: "Starcrash" },
-  { quote: "Eat shit and die, Ricky!", movie: "Sleepaway Camp" },
-  { quote: "Look Ma, I'm a snowman!", movie: "Jack Frost" },
-  { quote: "Nilbog! It's Goblin spelled backwards!", movie: "Troll 2" },
-  { quote: "Mother... you're alive.", movie: "Mortal Kombat: Annihilation" },
-  {
-    quote:
-      "I hate sand. It's coarse and rough and irritating and it gets everywhere.",
-    movie: "Star Wars: Episode II – Attack of the Clones",
-  },
-  { quote: "Punish!", movie: "Silent Night, Deadly Night" },
-  { quote: "Gobble gobble, motherfucker.", movie: "Thankskilling" },
-  { quote: "Wanna date?", movie: "Frankenhooker" },
-  { quote: "All you of Earth are idiots!", movie: "Plan 9 from Outer Space" },
-  {
-    quote: "I cannot, yet I must. How do you calculate that?",
-    movie: "Robot Monster",
-  },
-  {
-    quote:
-      "Do you know what happens to a toad when it's struck by lightning? The same thing that happens to everything else.",
-    movie: "X-Men",
-  },
-  { quote: "Sharknado!", movie: "Sharknado" },
-  { quote: "Bring me my legs!", movie: "Piranha 3DD" },
-  {
-    quote: "They're sharks. They're scary. They don't want to be your friend.",
-    movie: "Sharknado",
-  },
-  { quote: "We are Martians!", movie: "Santa Claus Conquers the Martians" },
-  { quote: "Man-animal!", movie: "Battlefield Earth" },
-  {
-    quote: "Somehow, Palpatine returned.",
-    movie: "Star Wars: The Rise of Skywalker",
-  },
-  { quote: "Chill out!", movie: "Batman & Robin" },
-  { quote: "Amy want green drop drink.", movie: "Congo" },
-  { quote: "Unobtainium.", movie: "The Core" },
-  { quote: "Damn you! God damn you all to hell!", movie: "Planet of the Apes" },
-  {
-    quote:
-      "Flash, I love you, but we only have fourteen hours to save the Earth!",
-    movie: "Flash Gordon",
-  },
-  { quote: "Bio-digital jazz, man.", movie: "Tron: Legacy" },
-  { quote: "You ate my bird!", movie: "Deep Blue Sea" },
-  { quote: "Mexican Geostorm!", movie: "Geostorm" },
-  { quote: "Welcome to my world, bitch!", movie: "Freddy vs. Jason" },
-  {
-    quote: "Just when you thought it was safe to go back in the water...",
-    movie: "Jaws 2",
-  },
-];
+const FAMOUS_MOVIE_QUOTES_RAW = `
+I have come here to chew bubblegum and kick ass... and I'm all out of bubblegum.|They Live
+Groovy.|Evil Dead II
+Where we're going, we won't need eyes to see.|Event Horizon
+Garbage day!|Silent Night, Deadly Night Part 2
+It’s screaming. It’s screaming like a banshee!|The Blob (1988)
+Be afraid. Be very afraid.|The Fly
+They're eating her! And then they're going to eat me! Oh my Goooooood!|Troll 2
+I gave him life!|Re-Animator
+Long live the new flesh.|Videodrome
+Kill it! Kill it with fire!|The Thing
+Welcome to prime time, bitch.|A Nightmare on Elm Street 3: Dream Warriors
+Send more paramedics.|The Return of the Living Dead
+I kick arse for the Lord!|Braindead (Dead Alive)
+Not the bees! NOT THE BEES!|The Wicker Man
+Sleep? I'll sleep when I'm dead.|Saturn 3
+Klaatu barada nikto.|The Day the Earth Stood Still
+Even a man who is pure in heart and says his prayers by night...|The Wolf Man
+He didn't get out of the cock-a-doodie car!|Misery
+One thing about living in Santa Carla I never could stomach: all the damn vampires.|The Lost Boys
+It's all in the reflexes.|Big Trouble in Little China
+Man is the warmest place to hide.|The Thing
+Eat to live, don't live to eat.|Stuff
+We have such sights to show you.|Hellraiser
+Stupid, stupid, stupid!|Plan 9 from Outer Space
+I'm your boyfriend now, Nancy.|A Nightmare on Elm Street
+Good? Bad? I'm the guy with the gun.|Army of Darkness
+There are two kinds of people in this world, my friend: Those with loaded guns and those who dig.|The Good, the Bad and the Ugly
+Psychos do not explode when sunlight hits them, I don't give a fuck how crazy they are!|From Dusk Till Dawn
+Wolfman's got nards!|The Monster Squad
+I am a god! The golden god!|Five Gods
+I'm sorry, Dave. I'm afraid I can't do that.|2001: A Space Odyssey
+Game over, man! Game over!|Aliens
+Listen to them. Children of the night. What music they make.|Dracula
+Redrum. Redrum.|The Shining
+If it bleeds, we can kill it.|Predator
+They're here.|Poltergeist
+Sometimes, dead is better.|Pet Sematary
+Your suffering will be legendary, even in hell.|Hellraiser II: Hellbound
+We're gonna need some more FBI guys, I guess.|The Frighteners
+See you at the party, Richter!|Total Recall
+Dead or alive, you're coming with me.|RoboCop
+Soylent Green is people!|Soylent Green
+Get away from her, you bitch!|Aliens
+Hail to the king, baby.|Army of Darkness
+I know you're out there. I can feel you now.|The Matrix
+It's alive! It's alive!|Frankenstein
+The power of Christ compels you!|The Exorcist
+Here's Johnny!|The Shining
+Whatever you do, don't fall asleep.|A Nightmare on Elm Street
+Do you like scary movies?|Scream
+I've seen things you people wouldn't believe. Attack ships on fire off the shoulder of Orion.|Blade Runner
+Leeloo Dallas multipass.|The Fifth Element
+I'd buy that for a dollar!|RoboCop
+Service guarantees citizenship.|Starship Troopers
+No matter where you go, there you are.|The Adventures of Buckaroo Banzai Across the 8th Dimension
+Broke into the wrong goddamn rec room, didn't ya you bastard!|Tremors
+He doesn't know how to use the three seashells!|Demolition Man
+By Grabthar's Hammer, you shall be avenged.|Galaxy Quest
+Consider that a divorce.|Total Recall
+Welcome to Costco, I love you.|Idiocracy
+The spice must flow.|Dune (1984)
+Thrill me.|Night of the Creeps
+Gordon's alive?!|Flash Gordon
+Number 5 is alive!|Short Circuit
+I aim to misbehave.|Serenity
+Why are you wearing that stupid man suit?|Donnie Darko
+There is no spoon.|The Matrix
+Take your stinking paws off me, you damned dirty ape!|Planet of the Apes
+Get your fookin' tentacle out of my face!|District 9
+Witness me!|Mad Max: Fury Road
+The only winning move is not to play.|WarGames
+Call me Snake.|Escape from New York
+Here is Subzero! Now, plain zero!|The Running Man
+Don't run! We are your friends!|Mars Attacks!
+Elvis is not dead. He just went home.|Men in Black
+I never saved anything for the swim back.|Gattaca
+End of line.|Tron
+Run, Runner!|Logan's Run
+Open the pod bay doors, HAL.|2001: A Space Odyssey
+There's always time for lubricant!|Evolution
+Kneel before Zod!|Superman II
+Tetsuooooo!|Akira
+I knew it. I'm surrounded by Assholes.|Spaceballs
+Allow it.|Attack the Block
+The life of a repo man is always intense.|Repo Man
+Death to the demoness Allegra Geller!|eXistenZ
+I'm gonna suck your brain dry!|Scanners
+What're you gonna do with those pies, boys?|Killer Klowns from Outer Space
+Sanity is a calibrated camera.|Videodrome
+Negative, I am a meat popsicle.|The Fifth Element
+Kill me.|Alien Resurrection
+Welcome to the desert of the real.|The Matrix
+Does this unit have a soul?|Mass Effect
+Ray, when someone asks you if you're a god, you say YES!|Ghostbusters
+Sleep now.|Dark City
+I want to believe.|The X-Files: Fight the Future
+Where we're going, we don't need roads.|Back to the Future
+Humanity is a virus.|The Matrix
+Are you telling me you built a time machine... out of a DeLorean?|Back to the Future
+I am a leaf on the wind. Watch how I soar.|Serenity
+You can't piss on hospitality! I won't allow it!|Troll 2
+How'd it get burned? HOW'D IT GET BURNED?!|The Wicker Man (2006)
+I am going to make you as happy as a baby Psychlo on a straight diet of Kerbango.|Battlefield Earth
+Killing me won't bring back your goddamn honey!|The Wicker Man (2006)
+Future events such as these will affect you in the future.|Plan 9 from Outer Space
+The Gun is good! The Penis is evil!|Zardoz
+Stop eating my sesame cake!|Congo
+Deepest, bluest, my hat is like a shark's fin.|Deep Blue Sea
+There's snakes out there dis big?|Anaconda
+Trick or treat, motherfucker!|Halloween: Resurrection
+Trust the fungus.|Super Mario Bros. (1993)
+Too bad you... will die.|Mortal Kombat: Annihilation
+Allow me to break the ice.|Batman & Robin
+Cheese and crackers!|The Happening
+I'm a vampire! I'm a vampire!|Vampire's Kiss
+Honey, this machine's calling me an asshole!|Maximum Overdrive
+No more Mr. Nice Duck.|Howard the Duck
+Quick, change the channel!|Street Fighter
+The moon... it's hollow.|Moonfall
+Like a turd... in the wind.|Venom
+I create life! And I destroy it!|Jupiter Ascending
+I don't know anything about any artifacts!|Alone in the Dark
+Imperial Battleship, halt the flow of time!|Starcrash
+Eat shit and die, Ricky!|Sleepaway Camp
+Look Ma, I'm a snowman!|Jack Frost
+Nilbog! It's Goblin spelled backwards!|Troll 2
+Mother... you're alive.|Mortal Kombat: Annihilation
+I hate sand. It's coarse and rough and irritating and it gets everywhere.|Star Wars: Episode II – Attack of the Clones
+Punish!|Silent Night, Deadly Night
+Gobble gobble, motherfucker.|Thankskilling
+Wanna date?|Frankenhooker
+All you of Earth are idiots!|Plan 9 from Outer Space
+I cannot, yet I must. How do you calculate that?|Robot Monster
+Do you know what happens to a toad when it's struck by lightning? The same thing that happens to everything else.|X-Men
+Sharknado!|Sharknado
+Bring me my legs!|Piranha 3DD
+They're sharks. They're scary. They don't want to be your friend.|Sharknado
+We are Martians!|Santa Claus Conquers the Martians
+Man-animal!|Battlefield Earth
+Somehow, Palpatine returned.|Star Wars: The Rise of Skywalker
+Chill out!|Batman & Robin
+Amy want green drop drink.|Congo
+Unobtainium.|The Core
+Damn you! God damn you all to hell!|Planet of the Apes
+Flash, I love you, but we only have fourteen hours to save the Earth!|Flash Gordon
+Bio-digital jazz, man.|Tron: Legacy
+You ate my bird!|Deep Blue Sea
+Mexican Geostorm!|Geostorm
+Welcome to my world, bitch!|Freddy vs. Jason
+Just when you thought it was safe to go back in the water...|Jaws 2
+`;
+
+export const FAMOUS_MOVIE_QUOTES = FAMOUS_MOVIE_QUOTES_RAW.split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
+    const [quote, movie] = line.split("|");
+    return { quote, movie };
+  });
 
 // AI Generated: GitHub Copilot - 2025-08-29T10:15:00Z
 // Secure URL validation for Letterboxd images to prevent domain spoofing
