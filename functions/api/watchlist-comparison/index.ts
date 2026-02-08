@@ -278,9 +278,10 @@ const scanFilmPosterFallback = (
     const tagStart = html.lastIndexOf("<", idx);
     const tagEnd = html.indexOf(">", idx);
     if (tagStart === -1 || tagEnd === -1) break;
+    const nextIdx = html.indexOf(marker, tagEnd + 1);
     const tag = html.slice(tagStart, tagEnd + 1);
     if (!/class=/.test(tag) || !/film-poster/.test(tag)) {
-      idx = html.indexOf(marker, tagEnd + 1);
+      idx = nextIdx;
       continue;
     }
     const chunk = sliceBounded(html, tagStart, 600);
@@ -289,9 +290,12 @@ const scanFilmPosterFallback = (
       /data-target-link=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1] ||
       /href=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1];
     const raw = findNearbyTitle(chunk);
-    if (!slug || !raw || seenSlugs.has(slug)) continue;
+    if (!slug || !raw || seenSlugs.has(slug)) {
+      idx = nextIdx;
+      continue;
+    }
     addMovieFromRaw(out, seenSlugs, slug, raw);
-    idx = html.indexOf(marker, tagEnd + 1);
+    idx = nextIdx;
   }
 };
 
