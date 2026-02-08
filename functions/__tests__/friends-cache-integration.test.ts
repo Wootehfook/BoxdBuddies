@@ -299,6 +299,21 @@ describe("Friends Cache Integration", () => {
             '<html><body><div class="friends-list"></div></body></html>'
           ),
       });
+      const sampleHtml = `
+        <table>
+          <tr>
+            <td>
+              <a href="/friend1/">Friend One</a>
+              <img class="avatar" src="https://a.ltrbxd.com/avatar.jpg" />
+            </td>
+          </tr>
+        </table>
+      `;
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => sampleHtml,
+      } as any);
 
       const { onRequestPost } = await import("../letterboxd/friends/index.js");
 

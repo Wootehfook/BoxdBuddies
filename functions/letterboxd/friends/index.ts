@@ -39,6 +39,120 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
+const friendRowPatterns = [
+  /<tr[^>]*>(.*?)<\/tr>/gis,
+  /<div[^>]*class="[^"]*person-summary[^"]*"[^>]*>(.*?)<\/div>/gis,
+  /<article[^>]*class="[^"]*profile-person[^"]*"[^>]*>(.*?)<\/article>/gis,
+];
+
+const namePatterns = [
+  /<a[^>]+href="\/[^/]+\/"[^>]*>([^<]+)<\/a>/i,
+  /<h3[^>]*>([^<]+)<\/h3>/i,
+  /<span[^>]*class="[^"]*name[^"]*"[^>]*>([^<]+)<\/span>/i,
+];
+
+const avatarPatterns = [
+  /<img[^>]+class="[^"]*avatar[^"]*"[^>]+src="([^"]+)"/i,
+  /<img[^>]+src="([^"]+)"[^>]*class="[^"]*avatar[^"]*"/i,
+  /<img[^>]+src="([^"]+avatar[^"]*)"[^>]*>/i,
+  /<img[^>]+src="([^"]+profile[^"]*)"[^>]*>/i,
+  /<img[^>]+src="([^"]+letterboxd[^"]*)"[^>]*>/i,
+  /<img[^>]+src="([^"]+)"[^>]*>/i,
+];
+
+function extractFriendUsername(elementHtml: string): string | null {
+  const usernameMatch = /<a[^>]+href="\/([^/]+)\/"[^>]*>/i.exec(elementHtml);
+  return usernameMatch?.[1] ?? null;
+}
+
+function extractDisplayName(
+  elementHtml: string,
+  friendUsername: string
+): string | undefined {
+  for (const namePattern of namePatterns) {
+    const nameMatch = namePattern.exec(elementHtml);
+    const candidate = nameMatch?.[1]?.trim();
+    if (candidate && candidate !== friendUsername) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function normalizeProfileImageUrl(src: string): string | undefined {
+  if (src.includes("placeholder") || src.includes("default") || !src.trim()) {
+    return undefined;
+  }
+  if (src.startsWith("http")) return src;
+  if (src.startsWith("//")) return `https:${src}`;
+  if (src.startsWith("/")) return `https://letterboxd.com${src}`;
+  return src;
+}
+
+function extractProfileImageUrl(
+  elementHtml: string,
+  friendUsername: string,
+  env?: CacheEnv
+): string | undefined {
+  for (const avatarPattern of avatarPatterns) {
+    const avatarMatch = avatarPattern.exec(elementHtml);
+    const src = avatarMatch?.[1];
+    if (!src) continue;
+    const normalized = normalizeProfileImageUrl(src);
+    if (!normalized) continue;
+    if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(normalized)) {
+      debugLog(env, `Found avatar for ${friendUsername}: ${normalized}`);
+      return normalized;
+    }
+  }
+  return undefined;
+}
+
+function parseFriendsFromHtml(
+  html: string,
+  username: string,
+  env?: CacheEnv
+): Friend[] {
+  const friends: Friend[] = [];
+
+  for (const pattern of friendRowPatterns) {
+    const matches = html.matchAll(pattern);
+
+    for (const match of matches) {
+      const elementHtml = match[1];
+      const friendUsername = extractFriendUsername(elementHtml);
+      if (!friendUsername) continue;
+      if (
+        friendUsername === username ||
+        friendUsername.includes("/") ||
+        friendUsername.length < 2
+      ) {
+        continue;
+      }
+
+      const displayName = extractDisplayName(elementHtml, friendUsername);
+      const profileImageUrl = extractProfileImageUrl(
+        elementHtml,
+        friendUsername,
+        env
+      );
+
+      friends.push({
+        username: friendUsername,
+        displayName: displayName === friendUsername ? undefined : displayName,
+        watchlistCount: undefined,
+        profileImageUrl,
+      });
+    }
+
+    if (friends.length > 0) {
+      break;
+    }
+  }
+
+  return friends;
+}
+
 export async function scrapeLetterboxdFriends(
   username: string,
   env?: CacheEnv
@@ -64,134 +178,14 @@ export async function scrapeLetterboxdFriends(
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error();
+        throw new Error("Letterboxd user not found");
       }
       throw new Error(`Failed to fetch friends page: HTTP ${response.status}`);
     }
 
     const html = await response.text();
 
-    // Parse friends from the following page using proper DOM parsing approach
-    const friends: Friend[] = [];
-
-    // Look for friend elements - Letterboxd uses table rows or person summary elements
-    const friendRowPatterns = [
-      /<tr[^>]*>(.*?)<\/tr>/gis,
-      /<div[^>]*class="[^"]*person-summary[^"]*"[^>]*>(.*?)<\/div>/gis,
-      /<article[^>]*class="[^"]*profile-person[^"]*"[^>]*>(.*?)<\/article>/gis,
-    ];
-
-    for (const pattern of friendRowPatterns) {
-      const matches = html.matchAll(pattern);
-
-      for (const match of matches) {
-        const elementHtml = match[1];
-
-        // Extract username from links
-        const usernameMatch = elementHtml.match(
-          /<a[^>]+href="\/([^\/]+)\/"[^>]*>/i
-        );
-        if (!usernameMatch) continue;
-
-        const friendUsername = usernameMatch[1];
-
-        // Skip if this is the user themselves or invalid usernames
-        if (
-          friendUsername === username ||
-          friendUsername.includes("/") ||
-          friendUsername.length < 2
-        ) {
-          continue;
-        }
-
-        // Extract display name
-        let displayName: string | undefined;
-        const namePatterns = [
-          /<a[^>]+href=\"\/[^\/]+\/\"[^>]*>([^<]+)<\/a>/i,
-          /<h3[^>]*>([^<]+)<\/h3>/i,
-          /<span[^>]*class=\"[^\"]*name[^\"]*\"[^>]*>([^<]+)<\/span>/i,
-        ];
-
-        for (const namePattern of namePatterns) {
-          const nameMatch = elementHtml.match(namePattern);
-          if (
-            nameMatch &&
-            nameMatch[1] &&
-            nameMatch[1].trim() !== friendUsername
-          ) {
-            displayName = nameMatch[1].trim();
-            break;
-          }
-        }
-
-        // Extract avatar using desktop version's approach
-        let profileImageUrl: string | undefined;
-        const avatarPatterns = [
-          /<img[^>]+class="[^"]*avatar[^"]*"[^>]+src="([^"]+)"/i,
-          /<img[^>]+src="([^"]+)"[^>]*class="[^"]*avatar[^"]*"/i,
-          /<img[^>]+src="([^"]+avatar[^"]*)"[^>]*>/i,
-          /<img[^>]+src="([^"]+profile[^"]*)"[^>]*>/i,
-          /<img[^>]+src="([^"]+letterboxd[^"]*)"[^>]*>/i,
-          /<img[^>]+src="([^"]+)"[^>]*>/i,
-        ];
-
-        for (const avatarPattern of avatarPatterns) {
-          const avatarMatch = elementHtml.match(avatarPattern);
-          if (avatarMatch && avatarMatch[1]) {
-            const src = avatarMatch[1];
-
-            // Skip placeholder or default images
-            if (
-              src.includes("placeholder") ||
-              src.includes("default") ||
-              !src.trim()
-            ) {
-              continue;
-            }
-
-            // Normalize URL
-            if (src.startsWith("http")) {
-              profileImageUrl = src;
-            } else if (src.startsWith("/")) {
-              profileImageUrl = `https://letterboxd.com${src}`;
-            } else if (src.startsWith("//")) {
-              profileImageUrl = `https:${src}`;
-            } else {
-              profileImageUrl = src;
-            }
-
-            // Validate it looks like an image URL
-            if (
-              profileImageUrl &&
-              /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(profileImageUrl)
-            ) {
-              debugLog(
-                env,
-                `Found avatar for ${friendUsername}: ${profileImageUrl}`
-              );
-              break;
-            } else {
-              profileImageUrl = undefined;
-            }
-          }
-        }
-
-        // Skip watchlist count fetching for now - will be enhanced in next step
-        let watchlistCount: number | undefined;
-
-        friends.push({
-          username: friendUsername,
-          displayName: displayName !== friendUsername ? displayName : undefined,
-          watchlistCount,
-          profileImageUrl,
-        });
-      }
-
-      // If we found friends with this pattern, stop trying other patterns
-      if (friends.length > 0) {
-        break;
-      }
-    }
+    const friends = parseFriendsFromHtml(html, username, env);
 
     debugLog(env, `Found ${friends.length} friends for ${username}`);
     return friends;
@@ -228,6 +222,12 @@ export async function onRequestPost(context: {
 
     const cleanUsername = username.trim().toLowerCase();
 
+    let cachedForFallback: {
+      friends: Friend[];
+      lastUpdated: number;
+      expiresAt: number;
+    } | null = null;
+
     // Check cache first unless force refresh requested
     if (!forceRefresh) {
       const cached = await getCachedFriends(
@@ -260,6 +260,10 @@ export async function onRequestPost(context: {
           }
         );
       }
+
+      if (cached) {
+        cachedForFallback = cached;
+      }
     }
 
     // Validate username format
@@ -275,7 +279,46 @@ export async function onRequestPost(context: {
 
     debugLog(context.env, `Fetching fresh friends for user: ${cleanUsername}`);
 
-    const friends = await scrapeLetterboxdFriends(cleanUsername, context.env);
+    let friends: Friend[] = [];
+    try {
+      friends = await scrapeLetterboxdFriends(cleanUsername, context.env);
+    } catch (error) {
+      console.error(
+        "Failed to scrape friends, using fallback if available:",
+        error
+      );
+
+      if (cachedForFallback) {
+        const friendsWithCounts = await attachWatchlistCounts(
+          cachedForFallback.friends,
+          watchlistCache,
+          context.env
+        );
+
+        return new Response(
+          JSON.stringify({
+            friends: friendsWithCounts,
+            cached: true,
+            lastUpdated: new Date(cachedForFallback.lastUpdated).toISOString(),
+          }),
+          {
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
+      // No cached fallback available; surface the failure instead of
+      // returning and caching an empty friends list.
+      return new Response(
+        JSON.stringify({
+          error: "failed to fetch friends from Letterboxd",
+        }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     // Attach watchlist counts to fresh friends
     const friendsWithCounts = await attachWatchlistCounts(
@@ -333,8 +376,8 @@ async function attachWatchlistCounts(
     const friendWithCount = { ...friend };
 
     // First try client cache
-    if (clientWatchlistCache && clientWatchlistCache[friend.username]) {
-      const clientEntry = clientWatchlistCache[friend.username];
+    const clientEntry = clientWatchlistCache?.[friend.username];
+    if (clientEntry) {
       if (typeof clientEntry.count === "number") {
         friendWithCount.watchlistCount = clientEntry.count;
         friendsWithCounts.push(friendWithCount);
