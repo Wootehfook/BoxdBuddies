@@ -1,3 +1,5 @@
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-08 -->
+
 <!-- Copilot / AI contributor instructions for Boxdbud.io -->
 
 # Boxdbud.io — AI Assistant Quick Guide
@@ -22,7 +24,8 @@ Data flow (big picture)
 - `npm install`
 - `npm run dev` (frontend)
 - `npm run type-check`, `npm run lint`, `npm run test` (Vitest)
-- `npm run cloudflare:dev` (Functions preview)
+- `npm run cloudflare:dev` (Functions preview; serves `dist/` so run `npm run build` first)
+- Formatting: `npm run format` (or `npm run format:check` in CI)
 
 ## 3) Critical backend patterns
 
@@ -33,10 +36,7 @@ Data flow (big picture)
 
 ## 4) Server data contract (important)
 
-- `poster_path` returned by server endpoints is a TMDB relative path (e.g. `/kqjL17yufvn9OVLyXYpvtyrFfak.jpg`) or `null`.
-- Clients should prefix the TMDB image base and desired size when building image URLs, e.g. `https://image.tmdb.org/t/p/w300${poster_path}`.
-
-Rationale: returning a relative path keeps payloads smaller and lets clients choose an image size.
+See `functions/README.md` and `functions/_lib/common.js` for contract details (including `poster_path` handling). Keep client URL construction aligned with those sources to avoid drift.
 
 ## 5) Files & places to look (high ROI)
 
@@ -46,6 +46,7 @@ Rationale: returning a relative path keeps payloads smaller and lets clients cho
 - `functions/compare/index.ts` and `functions/api/watchlist-comparison/index.ts` — compare/watchlist logic.
 - `src/components/ResultsPage.tsx` — movie card rendering and poster handling.
 - `src/index.css` — canonical stylesheet; `src/App.css` is legacy.
+- `docs/ai-attribution-update-guide.md` — attribution UI rules and accessibility requirements.
 
 ## 6) Quick templates (copy/paste when adding code)
 
@@ -73,7 +74,7 @@ export async function onRequestPost(ctx) {
 }
 ```
 
-Migration checklist: add `migrations/0NN_description.sql`; run via `wrangler d1 execute MOVIES_DB --file=migrations/0NN_description.sql` (see `package.json` scripts).
+Migration checklist: add `migrations/0NN_description.sql`; run via `wrangler d1 execute MOVIES_DB --file=migrations/0NN_description.sql` (note: current script only runs `001_create_tmdb_catalog.sql`).
 
 Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunctionForTesting`) found in `functions/__tests__/` examples.
 
@@ -91,97 +92,23 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 - Cache integration coverage: `functions/__tests__/friends-cache-integration.test.ts` and `functions/__tests__/cache.unit.test.ts`.
 - Modal testing (jsdom): `src/__tests__/attribution-modal.test.tsx` uses `userEvent.setup()` and DOM queries.
 
-## 9) Contributing (AI-specific rules)
+## 9) Contributing rules (must follow)
 
-- Add at top of AI-authored files: `// AI Generated: GitHub Copilot - YYYY-MM-DD`.
+- AI attribution header format (required): `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD` for code files, and `<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD -->` for Markdown.
 - Keep diffs small, ~100-column width, TypeScript strictness (avoid `any`).
 - When adding server endpoints: include `onRequestOptions`, `debugLog`, rate limiting, and DI setters for tests.
+- Use Prettier/ESLint scripts before committing (`npm run format`, `npm run lint`).
+- Follow Conventional Commits and PR-title rules (changelog automation depends on this). See `README.md`.
 
-References: `README.md`, `functions/_lib/common.js`, `functions/letterboxd/cache/index.ts`, `migrations/`, `docs/server-watchlist-cache-design.md`.
+## 10) Security & secrets (must follow)
 
-If you'd like, I can add a new file template (Function + test) under `tools/templates/` — tell me to proceed and I'll create it.
+- Never commit secrets or API keys. Use Cloudflare secrets (`wrangler secret put TMDB_API_KEY`, `wrangler secret put ADMIN_SECRET`).
+- If code needs new env vars, add placeholders to a local `.env` (do **not** commit) and document usage in `README.md`.
+- Treat user input and external responses as untrusted; validate and sanitize server-side.
 
-## 10) MCP servers and VS Code extensions (for AI agents)
+## 11) Canonical references
 
-This repo includes helper scripts and conventions to improve AI agent capabilities via MCP (Model Context Protocol). Below is what’s available, how to start it, and safe defaults.
-
-### Available MCP servers (by role)
-
-- Primary (recommended):
-  - `@memory` — persistent knowledge/memory graph to keep context across steps.
-  - `@github` — GitHub operations (PRs, issues, reviews, releases, searches) when authorized.
-  - `@sequentialthinking` — planning/analysis helper for stepwise problem-solving.
-- Secondary (optional):
-  - `@codacy` — code quality checks via Codacy CLI.
-  - `@playwright` — UI testing helpers.
-  - `@markitdown` — content rendering/markdown utilities.
-
-Note: These are logical server names mirrored by our scripts; the actual runtime is provided by your MCP-capable client/extension.
-
-### Ensure MCP servers are running
-
-Choose the path that matches your environment.
-
-1. Dev Container or Linux-like shell (recommended)
-
-- Scripts:
-  - `scripts/mcp-restart.sh` — stop then start MCP servers via the devcontainer bootstrap.
-  - `scripts/mcp-status.sh` — status check. Use `MCP_STATUS_VERBOSE=1` for details.
-  - `scripts/mcp-stop.sh` — stop MCP-related processes.
-- Commands (run inside the Dev Container, WSL, or Git Bash):
-
-```bash
-# Restart servers
-bash ./scripts/mcp-restart.sh
-
-# Check status (verbose)
-MCP_STATUS_VERBOSE=1 bash ./scripts/mcp-status.sh
-```
-
-Notes:
-
-- Startup uses `.devcontainer/start-mcp-servers.sh` and attempts to prepare common MCP servers.
-- These scripts use Linux utilities (`pgrep`, etc.) and the VS Code CLI (`code`). They won’t run in plain Windows PowerShell without WSL/Git Bash.
-
-2. Windows host without Dev Container
-
-- Install a VS Code extension that can host MCP servers. Keep it local-first; only enable what you need for this repo.
-- Verify/install extensions from PowerShell (examples):
-
-```powershell
-# List common assistants you may already have installed
-code --list-extensions | Select-String -Pattern 'github.copilot|github.copilot-chat|Continue.continue'
-
-# Install GitHub Copilot and Copilot Chat
-code --install-extension GitHub.copilot
-code --install-extension GitHub.copilot-chat
-
-# Optional: a local-first MCP-capable host
-code --install-extension Continue.continue
-```
-
-- In your MCP host extension settings, enable the servers you want (`@memory`, `@github`, `@sequentialthinking`). The exact UI varies by extension (look for “MCP servers” / “Providers”).
-
-### Security guidance (least privilege)
-
-- Prefer local-first MCP hosts; keep optional network access disabled by default.
-- GitHub access:
-  - Use a short-lived Personal Access Token with minimal scopes (e.g., `repo:read`, `read:org` only if needed).
-  - Store tokens in VS Code Secret Storage or the extension’s credential store. Never commit tokens to the repo.
-- Disable telemetry in third-party extensions unless required.
-- Periodically review enabled MCP servers and disable anything not needed for this repo.
-- Follow org security policies on managed devices.
-
-### Troubleshooting
-
-- Status script fails on Windows: run it in WSL/Git Bash or use the Dev Container.
-- MCP servers not detected: ensure your MCP host extension is installed and that `@memory`, `@github`, and `@sequentialthinking` are enabled.
-- `code` CLI not found: install VS Code and ensure `code` is on `PATH`.
-- Script suggests `npm run mcp:start`: this repo doesn’t define that script; use `bash ./scripts/mcp-restart.sh` instead.
-
-### Why this helps here
-
-- Our workflows benefit from:
-  - `@github` for PR/review automation and repository insights.
-  - `@sequentialthinking` for multi-step plans across frontend and Functions code.
-  - `@memory` for keeping context between edits and test runs.
+- `README.md` — dev setup, Conventional Commits, release workflow.
+- `functions/README.md` — endpoint contracts and server conventions.
+- `docs/ai-attribution-update-guide.md` — attribution UI rules.
+- `docs/server-watchlist-cache-design.md` — cache design rationale (may be ahead of current implementation).

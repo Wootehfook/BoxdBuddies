@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix navigator.onLine test isolation in watchlistFetcher (#180)
 
 ### Changed
+
 - Prevent changelog PR loop and update changelog (#184)
 - Opened PR for changelog updates (#181)
 - Updated all site references from dev (boxdbud.pages.dev) to production (boxdbud.io) (#163)

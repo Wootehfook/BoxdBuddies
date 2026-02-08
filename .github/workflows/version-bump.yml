@@ -25,21 +25,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238
         with:
           node-version: "20"
           cache: "npm"
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config commit.gpgsign true
+          git config user.signingkey "${{ steps.import_gpg.outputs.keyid }}"
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -144,19 +153,19 @@ jobs:
       - name: Update package-lock.json
         run: npm install --package-lock-only --ignore-scripts
 
-      - name: Create release branch
+      - name: Create version bump branch
         id: create_branch
         run: |
-          BRANCH_NAME="release/v${{ steps.bump_version.outputs.new_version }}"
+          BRANCH_NAME="chore/version-bump/v${{ steps.bump_version.outputs.new_version }}"
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Commit changes
         run: |
           git add package.json package-lock.json CHANGELOG.md
-          git commit -m "chore: bump version to ${{ steps.bump_version.outputs.new_version }}"
+          git commit -S -m "chore: bump version to ${{ steps.bump_version.outputs.new_version }}"
 
-      - name: Push release branch
+      - name: Push version bump branch
         run: |
           git push origin ${{ steps.create_branch.outputs.branch_name }}
 
@@ -236,4 +245,4 @@ jobs:
           echo "### Release Notes Preview" >> $GITHUB_STEP_SUMMARY
           cat /tmp/unreleased.md >> $GITHUB_STEP_SUMMARY
 
-# AI Generated: GitHub Copilot - 2025-12-26
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-08

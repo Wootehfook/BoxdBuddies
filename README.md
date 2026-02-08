@@ -3,8 +3,8 @@
 ![Boxdbud.io brand](./docs/brand/boxdbud.io.svg)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 
 **Find movies all your friends want to watch.**
@@ -98,7 +98,7 @@ SonarLint provides real-time code quality and security feedback in your IDE. To 
 
 3. **Local-only mode**: SonarLint works without any connection, using default rules
 
-This setup is entirely optional and personal to each developer. The repository's workspace settings intentionally exclude SonarLint configuration to avoid conflicts between different contributors' setups.
+This setup is entirely optional and personal to each developer. SonarLint connected-mode settings should remain in your personal IDE configuration and should not be committed to the repository.
 
 ### Project Structure
 
@@ -131,7 +131,7 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 
 - **TypeScript/React**: Adheres to the project's ESLint and Prettier configurations.
 - **Cloudflare Functions**: Follow modern TypeScript and Cloudflare Workers best practices.
-- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot - 2025-08-15`).
+- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2025-08-15`).
 
 ### Versioning and Releases
 
