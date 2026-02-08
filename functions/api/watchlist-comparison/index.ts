@@ -39,177 +39,308 @@ interface Movie {
   source?: string;
 }
 
+interface ComparisonRequestBody {
+  username?: string;
+  friends?: string[];
+  usernames?: string[]; // Legacy support
+}
+
+const replaceAllSafe = (
+  input: string,
+  pattern: RegExp | string,
+  replacement: string
+) => {
+  if (typeof pattern === "string") {
+    return input.split(pattern).join(replacement);
+  }
+  return input.replace(pattern, replacement);
+};
+
+const replaceAllCompat = (
+  input: string,
+  pattern: RegExp,
+  replacement: string | ((substring: string, ...args: string[]) => string)
+) => {
+  const candidate = input as string & {
+    replaceAll?: (
+      p: RegExp,
+      r: string | ((substring: string, ...args: string[]) => string)
+    ) => string;
+  };
+  if (typeof candidate.replaceAll === "function") {
+    return candidate.replaceAll(pattern, replacement);
+  }
+  if (typeof replacement === "string") {
+    return input.replace(pattern, replacement);
+  }
+  return input.replace(pattern, replacement);
+};
+
 // Utility helpers
-const normalizeTitle = (t: string) =>
-  t
-    .toLowerCase()
-    .trim()
-    .replace(/[\u2018\u2019\u201C\u201D'"`]/g, "") // quotes
-    .replace(/[\p{P}\p{S}]/gu, " ") // punctuation and symbols (unicode-aware)
-    .replace(/\s+/g, " ");
+const normalizeTitle = (t: string) => {
+  let out = t.toLowerCase().trim();
+  out = replaceAllCompat(out, /[\u2018\u2019\u201C\u201D'"`]/g, ""); // quotes
+  out = replaceAllCompat(out, /[\p{P}\p{S}]/gu, " "); // punctuation and symbols
+  out = replaceAllCompat(out, /\s+/g, " ");
+  return out;
+};
 
 const decodeHtmlEntities = (str: string): string => {
-  return (
-    str
-      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
-      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-      )
-      // Unescape named entities first, then '&' last to avoid double-unescaping
-      .replace(/&apos;/g, "'")
-      .replace(/&quot;/g, '"')
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&copy;/g, "©")
-      .replace(/&amp;/g, "&")
+  let out = replaceAllCompat(str, /&#(\d+);/g, (_: string, dec: string) =>
+    String.fromCodePoint(Number.parseInt(dec, 10))
   );
+  out = replaceAllCompat(out, /&#x([0-9a-fA-F]+);/g, (_: string, hex: string) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
+  );
+  // Unescape named entities first, then '&' last to avoid double-unescaping
+  out = replaceAllSafe(out, "&apos;", "'");
+  out = replaceAllSafe(out, "&quot;", '"');
+  out = replaceAllSafe(out, "&lt;", "<");
+  out = replaceAllSafe(out, "&gt;", ">");
+  out = replaceAllSafe(out, "&copy;", "©");
+  out = replaceAllSafe(out, "&amp;", "&");
+  return out;
 };
 
 const parseYear = (date?: string | null): number => {
   if (!date) return 0;
   const m = /^(\d{4})/.exec(date);
-  return m ? parseInt(m[1], 10) : 0;
+  return m ? Number.parseInt(m[1], 10) : 0;
+};
+
+const trimEndWhitespace = (value: string) => {
+  let end = value.length;
+  while (end > 0 && /\s/.test(value[end - 1])) end--;
+  return value.slice(0, end);
+};
+
+const extractTrailingYear = (value: string) => {
+  const trimmed = value.trim();
+  if (trimmed.length < 4) {
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+
+  // 1) Handle common "Title (YYYY)" pattern.
+  //    Example: "Movie Title (2024)" -> title: "Movie Title", year: 2024
+  const parenMatch = /^(.*)\((\d{4})\)\s*$/.exec(trimmed);
+  if (parenMatch) {
+    const rawTitle = parenMatch[1];
+    const yearStr = parenMatch[2];
+    const title = trimEndWhitespace(rawTitle);
+    if (!title) {
+      // Avoid returning an empty title for strings like "(2024)"
+      return { title: trimmed, year: 0, hasYear: false };
+    }
+    return {
+      title,
+      year: Number.parseInt(yearStr, 10),
+      hasYear: true,
+    };
+  }
+
+  // 2) Fallback: handle "Title YYYY" or any case where the last 4
+  //    characters (ignoring trailing whitespace) are digits.
+  const yearMatch = /^(.*?)(\d{4})\s*$/.exec(trimmed);
+  if (!yearMatch) {
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+
+  const rawTitle = yearMatch[1];
+  const yearStr = yearMatch[2];
+  const title = trimEndWhitespace(rawTitle);
+  if (!title) {
+    // If removing the year would leave us with an empty title,
+    // treat it as no usable year suffix.
+    return { title: trimmed, year: 0, hasYear: false };
+  }
+
+  return {
+    title,
+    year: Number.parseInt(yearStr, 10),
+    hasYear: true,
+  };
+};
+
+const parseTitleYear = (raw: string) => {
+  const decoded = decodeHtmlEntities(raw);
+  const extracted = extractTrailingYear(decoded);
+  if (extracted.hasYear) {
+    return {
+      title: extracted.title.trim(),
+      year: extracted.year,
+    };
+  }
+  return { title: decoded.trim(), year: 0 };
+};
+
+const addMovieFromRaw = (
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>,
+  slug: string,
+  raw: string
+) => {
+  const s = slug.trim();
+  if (!s || seenSlugs.has(s)) return;
+  const { title, year } = parseTitleYear(raw);
+  out.push({ title, year, slug: s });
+  seenSlugs.add(s);
+};
+
+const findNearbyTitle = (chunk: string) =>
+  /data-item-name=["']([^"'<>]+)["']/i.exec(chunk)?.[1] ||
+  /data-film-name=["']([^"'<>]+)["']/i.exec(chunk)?.[1] ||
+  /alt=["']([^"'<>]+)["']/i.exec(chunk)?.[1];
+
+const sliceBounded = (
+  html: string,
+  startIndex: number,
+  maxLen: number,
+  endTag?: string
+) => {
+  const limit = Math.min(html.length, startIndex + maxLen);
+  if (endTag) {
+    const endIndex = html.indexOf(endTag, startIndex);
+    if (endIndex !== -1) {
+      const end = Math.min(limit, endIndex + endTag.length);
+      if (end > startIndex) return html.slice(startIndex, end);
+    }
+  }
+  return html.slice(startIndex, limit);
+};
+
+const scanGridItems = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const gridItemOpenTag =
+    /<li\b[^>]*\bclass=["'][^"']*\bgriditem\b[^"']*["'][^>]*>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = gridItemOpenTag.exec(html)) !== null) {
+    const openTag = m[0];
+    const slug = /data-item-slug=["']([^"'<>]+)["']/i.exec(openTag)?.[1];
+    const name = /data-item-name=["']([^"'<>]+)["']/i.exec(openTag)?.[1];
+    if (!slug || !name) continue;
+    addMovieFromRaw(out, seenSlugs, slug, name);
+  }
+};
+
+const scanPosterItems = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const posterLiOpenTag =
+    /<li\b[^>]*\bclass=["'][^"']*\bposter-container\b[^"']*["'][^>]*>/gi;
+  let liMatch: RegExpExecArray | null;
+  while ((liMatch = posterLiOpenTag.exec(html)) !== null) {
+    const liBlock = sliceBounded(html, liMatch.index, 2000, "</li>");
+    const slug = /data-film-slug=["']([^"'<>]+)["']/i.exec(liBlock)?.[1];
+    const nameAttr = /data-item-name=["']([^"'<>]+)["']/i.exec(liBlock)?.[1];
+    const imgAlt = /<img\b[^>]*\balt=["']([^"'<>]+)["'][^>]*>/i.exec(
+      liBlock
+    )?.[1];
+    const raw = nameAttr || imgAlt;
+    if (!slug || !raw) continue;
+    addMovieFromRaw(out, seenSlugs, slug, raw);
+  }
+};
+
+const scanGenericSlugs = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const genericSlugRegex = /data-film-slug=["']([a-z0-9-]+)["']/gi;
+  let gm: RegExpExecArray | null;
+  while ((gm = genericSlugRegex.exec(html)) !== null) {
+    const slug = (gm[1] || "").trim();
+    if (!slug || seenSlugs.has(slug)) continue;
+    const tail = html.slice(gm.index, Math.min(html.length, gm.index + 400));
+    const raw = findNearbyTitle(tail);
+    if (!raw) continue;
+    addMovieFromRaw(out, seenSlugs, slug, raw);
+  }
+};
+
+const scanLinkFallback = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const linkRegex = /href=["']\/film\/([a-z0-9-]+)\/["'][^>]*>/gi;
+  let lm: RegExpExecArray | null;
+  while ((lm = linkRegex.exec(html)) !== null) {
+    const slug = (lm[1] || "").trim();
+    if (!slug || seenSlugs.has(slug)) continue;
+    const tail = html.slice(lm.index, Math.min(html.length, lm.index + 400));
+    const altMatch = /alt=["']([^"'<>]+)["']/i.exec(tail);
+    const raw = altMatch ? altMatch[1].trim() : replaceAllSafe(slug, "-", " ");
+    addMovieFromRaw(out, seenSlugs, slug, raw);
+  }
+};
+
+const scanTargetLinkFallback = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const targetLinkRegex = /data-target-link=["']\/film\/([a-z0-9-]+)\/["']/gi;
+  let tm: RegExpExecArray | null;
+  while ((tm = targetLinkRegex.exec(html)) !== null) {
+    const slug = (tm[1] || "").trim();
+    if (!slug || seenSlugs.has(slug)) continue;
+    const tail = html.slice(tm.index, Math.min(html.length, tm.index + 400));
+    const altMatch = /alt=["']([^"'<>]+)["']/i.exec(tail);
+    const nameMatch = /data-item-name=["']([^"'<>]+)["']/i.exec(tail);
+    const raw = (altMatch?.[1] || nameMatch?.[1] || "").trim();
+    if (!raw) continue;
+    addMovieFromRaw(out, seenSlugs, slug, raw);
+  }
+};
+
+const scanFilmPosterFallback = (
+  html: string,
+  out: LetterboxdMovie[],
+  seenSlugs: Set<string>
+) => {
+  const marker = "film-poster";
+  let idx = html.indexOf(marker);
+  while (idx !== -1) {
+    const tagStart = html.lastIndexOf("<", idx);
+    const tagEnd = html.indexOf(">", idx);
+    if (tagStart === -1 || tagEnd === -1) break;
+    const nextIdx = html.indexOf(marker, tagEnd + 1);
+    const tag = html.slice(tagStart, tagEnd + 1);
+    if (!/class=/.test(tag) || !/film-poster/.test(tag)) {
+      idx = nextIdx;
+      continue;
+    }
+    const chunk = sliceBounded(html, tagStart, 600);
+    const slug =
+      /data-film-slug=["']([a-z0-9-]+)["']/i.exec(chunk)?.[1] ||
+      /data-target-link=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1] ||
+      /href=["']\/film\/([a-z0-9-]+)\/["']/i.exec(chunk)?.[1];
+    const raw = findNearbyTitle(chunk);
+    if (!slug || !raw || seenSlugs.has(slug)) {
+      idx = nextIdx;
+      continue;
+    }
+    addMovieFromRaw(out, seenSlugs, slug, raw);
+    idx = nextIdx;
+  }
 };
 
 // Parse Letterboxd watchlist page HTML for grid items. Lightweight and resilient.
 function parseMoviesFromHtml(html: string): LetterboxdMovie[] {
   const out: LetterboxdMovie[] = [];
   const seenSlugs = new Set<string>();
-  // 1) Modern grid markup variant: <li class="griditem" data-item-slug="..." data-item-name="Title 2021">
-  const gridItemOpenTag = /<li[^>]*class=["'][^"']*griditem[^"']*["'][^>]*>/gi;
-  let m: RegExpExecArray | null;
-  const yearRegex = /^(.*?)\s+(\d{4})$/;
-  while ((m = gridItemOpenTag.exec(html)) !== null) {
-    const openTag = m[0];
-    const slug = /data-item-slug=["']([^"']+)["']/i.exec(openTag)?.[1];
-    const name = /data-item-name=["']([^"']+)["']/i.exec(openTag)?.[1];
-    if (!slug || !name) continue;
-    const decodedName = decodeHtmlEntities(name);
-    const ym = yearRegex.exec(decodedName);
-    const push = () => {
-      if (seenSlugs.has(slug.trim())) return;
-      if (ym?.[2])
-        out.push({
-          title: decodeHtmlEntities(ym[1]).trim(),
-          year: parseInt(ym[2], 10),
-          slug: slug.trim(),
-        });
-      else out.push({ title: decodedName.trim(), year: 0, slug: slug.trim() });
-      seenSlugs.add(slug.trim());
-    };
-    push();
-  }
-
-  // 2) Legacy/alternate markup: <li class="poster-container" data-film-slug="..."> ... <img alt="Title 2021">
-  const posterLiRegex =
-    /<li[^>]*class=["'][^"']*poster-container[^"']*["'][^>]*>[\s\S]*?<\/li>/gi;
-  let liMatch: RegExpExecArray | null;
-  while ((liMatch = posterLiRegex.exec(html)) !== null) {
-    const liBlock = liMatch[0];
-    const slug = /data-film-slug=["']([^"']+)["']/i.exec(liBlock)?.[1];
-    // Accept either data-item-name or <img alt="...">
-    const nameAttr = /data-item-name=["']([^"']+)["']/i.exec(liBlock)?.[1];
-    const imgAlt = /<img[^>]*alt=["']([^"']+)["'][^>]*>/i.exec(liBlock)?.[1];
-    const raw = nameAttr || imgAlt;
-    if (!slug || !raw) continue;
-    const decodedRaw = decodeHtmlEntities(raw);
-    const ym = yearRegex.exec(decodedRaw);
-    const s = slug.trim();
-    if (seenSlugs.has(s)) continue;
-    if (ym?.[2])
-      out.push({
-        title: decodeHtmlEntities(ym[1]).trim(),
-        year: parseInt(ym[2], 10),
-        slug: s,
-      });
-    else out.push({ title: decodedRaw.trim(), year: 0, slug: s });
-    seenSlugs.add(s);
-  }
-
-  // 3) Generic fallback: scan for data-film-slug and capture a nearby title via
-  // data-item-name, data-film-name, or img alt regardless of surrounding tags
-  // This helps when the class names change but attribute semantics remain.
-  const genericRegex =
-    /data-film-slug=["']([^"']+)["'][\s\S]{0,400}?(?:data-item-name=["']([^"']+)["']|data-film-name=["']([^"']+)["']|alt=["']([^"']+)["'])/gi;
-  let gm: RegExpExecArray | null;
-  while ((gm = genericRegex.exec(html)) !== null) {
-    const slug = (gm[1] || "").trim();
-    const raw = (gm[2] || gm[3] || gm[4] || "").trim();
-    if (!slug || !raw) continue;
-    if (seenSlugs.has(slug)) continue;
-    const decodedRaw = decodeHtmlEntities(raw);
-    const ym = yearRegex.exec(decodedRaw);
-    if (ym?.[2])
-      out.push({
-        title: decodeHtmlEntities(ym[1]).trim(),
-        year: parseInt(ym[2], 10),
-        slug,
-      });
-    else out.push({ title: decodedRaw.trim(), year: 0, slug });
-    seenSlugs.add(slug);
-  }
-
-  // 4) Link-based fallback: scan for /film/<slug>/ anchors and attempt to capture
-  // a nearby <img alt="Title 2021"> within a small window. This is resilient to
-  // class/attribute churn as long as the link structure remains.
-  const linkRegex = /href=["']\/film\/([a-z0-9-]+)\/["'][^>]*>/gi;
-  let lm: RegExpExecArray | null;
-  while ((lm = linkRegex.exec(html)) !== null) {
-    const slug = (lm[1] || "").trim();
-    if (!slug || seenSlugs.has(slug)) continue;
-    // Look ahead up to 400 chars for an alt title
-    const tail = html.slice(lm.index, Math.min(html.length, lm.index + 400));
-    const altMatch = /alt=["']([^"']+)["']/i.exec(tail);
-    const raw = altMatch ? altMatch[1].trim() : slug.replace(/-/g, " ");
-    const decodedRaw = decodeHtmlEntities(raw);
-    const ym = yearRegex.exec(decodedRaw);
-    const title = ym?.[1]
-      ? decodeHtmlEntities(ym[1]).trim()
-      : decodedRaw.trim();
-    const year = ym?.[2] ? parseInt(ym[2], 10) : 0;
-    out.push({ title, year, slug });
-    seenSlugs.add(slug);
-  }
-
-  // 5) Additional fallback: data-target-link="/film/slug/" with nearby img alt
-  const targetLinkRegex =
-    /data-target-link=["']\/film\/([a-z0-9-]+)\/["'][\s\S]{0,400}?(?:alt=["']([^"']+)["']|data-item-name=["']([^"']+)["'])/gi;
-  let tm: RegExpExecArray | null;
-  while ((tm = targetLinkRegex.exec(html)) !== null) {
-    const slug = (tm[1] || "").trim();
-    const raw = (tm[2] || tm[3] || "").trim();
-    if (!slug || !raw || seenSlugs.has(slug)) continue;
-    const decodedRaw = decodeHtmlEntities(raw);
-    const ym = yearRegex.exec(decodedRaw);
-    if (ym?.[2])
-      out.push({
-        title: decodeHtmlEntities(ym[1]).trim(),
-        year: parseInt(ym[2], 10),
-        slug,
-      });
-    else out.push({ title: decodedRaw.trim(), year: 0, slug });
-    seenSlugs.add(slug);
-  }
-
-  // 6) Film-poster class fallback: <div class="film-poster"> or similar with data attributes
-  const filmPosterRegex =
-    /<[^>]*class=["'][^"']*film-poster[^"']*["'][^>]*>[\s\S]{0,500}?(?:data-film-slug=["']([^"']+)["']|data-target-link=["']\/film\/([^"']+)\/["']|href=["']\/film\/([^"']+)\/["'])[\s\S]{0,200}?(?:alt=["']([^"']+)["']|data-item-name=["']([^"']+)["'])/gi;
-  let fm: RegExpExecArray | null;
-  while ((fm = filmPosterRegex.exec(html)) !== null) {
-    const slug = (fm[1] || fm[2] || fm[3] || "").trim();
-    const raw = (fm[4] || fm[5] || "").trim();
-    if (!slug || !raw || seenSlugs.has(slug)) continue;
-    const decodedRaw = decodeHtmlEntities(raw);
-    const ym = yearRegex.exec(decodedRaw);
-    if (ym?.[2])
-      out.push({
-        title: decodeHtmlEntities(ym[1]).trim(),
-        year: parseInt(ym[2], 10),
-        slug,
-      });
-    else out.push({ title: decodedRaw.trim(), year: 0, slug });
-    seenSlugs.add(slug);
-  }
+  scanGridItems(html, out, seenSlugs);
+  scanPosterItems(html, out, seenSlugs);
+  scanGenericSlugs(html, out, seenSlugs);
+  scanLinkFallback(html, out, seenSlugs);
+  scanTargetLinkFallback(html, out, seenSlugs);
+  scanFilmPosterFallback(html, out, seenSlugs);
 
   return out;
 }
@@ -246,15 +377,215 @@ async function fetchWatchlistPage(
   );
   if (html.length > 0) {
     const bodyStart = html.indexOf("<body");
-    const sampleStart = bodyStart > 0 ? bodyStart : 0;
-    const sample = html
-      .slice(sampleStart, sampleStart + 500)
-      .replace(/\s+/g, " ")
-      .trim();
-    debugLog(env, `HTML sample (from body): ${sample}`);
+    const sampleStart = Math.max(bodyStart, 0);
+    const sample = html.slice(sampleStart, sampleStart + 500).trim();
+    const normalizedSample = replaceAllCompat(sample, /\s+/g, " ");
+    debugLog(env, `HTML sample (from body): ${normalizedSample}`);
   }
   return parseMoviesFromHtml(html);
 }
+
+const getUsernamesFromBody = (body: ComparisonRequestBody) => {
+  if (body.username && body.friends) {
+    return { userList: [body.username, ...body.friends] };
+  }
+  if (body.usernames && Array.isArray(body.usernames)) {
+    return { userList: body.usernames };
+  }
+  return {
+    userList: [],
+    error: "Either { username, friends } or { usernames } is required",
+  };
+};
+
+const initDebugInfo = (usernames: string[]) => ({
+  requestReceived: {
+    usernames: usernames,
+    timestamp: new Date().toISOString(),
+  },
+  scrapingResults: {},
+  movieCounts: {},
+  sampleMovies: {},
+  matchingInfo: {
+    totalUnique: 0,
+    commonCount: 0,
+    commonMovies: [],
+  },
+  db: {
+    tmdb_catalog_count: null,
+    enrichment_hits: 0,
+    enrichment_misses: 0,
+  },
+});
+
+const scrapeAllWatchlists = async (
+  usernames: string[],
+  env: Env,
+  debugInfo: any
+) => {
+  const watchlistPromises = usernames.map(async (username, index) => {
+    const baseDelay = 500; // Start with 500ms
+    const maxDelay = 3000; // Max 3 seconds
+    const delay = Math.min(baseDelay * Math.pow(1.5, index), maxDelay);
+
+    if (index > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const startTime = Date.now();
+    try {
+      const movies = await scrapeLetterboxdWatchlist(username, env);
+      const duration = Date.now() - startTime;
+      debugLog(
+        env,
+        `Scraped ${username}: ${movies.length} movies in ${duration}ms`
+      );
+
+      debugInfo.scrapingResults[username] = {
+        count: movies.length,
+        timeMs: duration,
+        success: movies.length > 0,
+      };
+      debugInfo.movieCounts[username] = movies.length;
+      debugInfo.sampleMovies[username] = movies.slice(0, 3).map((m) => ({
+        title: m.title,
+        year: m.year,
+      }));
+
+      return { username, movies, duration };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`Failed to scrape ${username} after ${duration}ms:`, error);
+
+      debugInfo.scrapingResults[username] = {
+        count: 0,
+        timeMs: duration,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error instanceof Error ? error.constructor.name : "Unknown",
+        stack: error instanceof Error ? error.stack : undefined,
+      };
+
+      throw error;
+    }
+  });
+
+  const scrapingTimeout = 30000; // 30 second timeout
+  return Promise.race([
+    Promise.all(watchlistPromises),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Watchlist scraping timeout")),
+        scrapingTimeout
+      )
+    ),
+  ]);
+};
+
+const logWatchlistSamples = (watchlists: any[], env: Env) => {
+  watchlists.forEach((watchlist) => {
+    debugLog(
+      env,
+      `${watchlist.username} sample movies:`,
+      watchlist.movies
+        .slice(0, 5)
+        .map((m: LetterboxdMovie) => `"${m.title}" (${m.year})`)
+    );
+    debugLog(
+      env,
+      `${watchlist.username} normalized samples:`,
+      watchlist.movies.slice(0, 3).map((m: LetterboxdMovie) => {
+        const normalized = normalizeTitle(m.title);
+        return `"${normalized}" (${m.year})`;
+      })
+    );
+  });
+};
+
+const updateMatchingDebug = (
+  watchlists: { username: string; movies: LetterboxdMovie[] }[],
+  commonMovies: CommonMovie[],
+  debugInfo: any
+) => {
+  debugInfo.matchingInfo.totalUnique = new Set(
+    watchlists.flatMap((w) => w.movies.map((m) => `${m.title}-${m.year}`))
+  ).size;
+  debugInfo.matchingInfo.commonCount = commonMovies.length;
+  debugInfo.matchingInfo.commonMovies = commonMovies.slice(0, 5).map((m) => ({
+    title: m.title,
+    year: m.year,
+    users: m.friendList,
+  }));
+};
+
+const reportTmdbCatalogCount = async (env: Env, debugInfo: any) => {
+  try {
+    const countRes = await env.MOVIES_DB.prepare(
+      `SELECT COUNT(*) as c FROM tmdb_movies`
+    ).first();
+    debugInfo.db.tmdb_catalog_count =
+      (countRes && (countRes.c || countRes["c"])) || 0;
+  } catch (err) {
+    debugInfo.db.tmdb_catalog_count = null;
+    debugLog(
+      env,
+      "Failed to read tmdb_movies count for debug:",
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+};
+
+const enhanceCommonMovies = async (
+  commonMovies: CommonMovie[],
+  env: Env,
+  debugInfo: any
+) => {
+  const { isDebug } = await import("../../_lib/common");
+  const enableMatchingDebug = Boolean(
+    isDebug(env) || (env && (env as any).DEBUG_MATCHING)
+  );
+  const enhancedMovies = await enhanceWithTMDBData(
+    commonMovies,
+    env,
+    enableMatchingDebug ? debugInfo : undefined
+  );
+  if (!enableMatchingDebug && debugInfo?.matchingInfo) {
+    delete debugInfo.matchingInfo.candidates;
+  }
+  return { enhancedMovies, enableMatchingDebug };
+};
+
+const updateEnrichmentStats = (
+  enhancedMovies: Movie[],
+  debugInfo: any,
+  env: Env
+) => {
+  try {
+    enhancedMovies.forEach((m) => {
+      if ((m.source || "db") === "db") debugInfo.db.enrichment_hits++;
+      else debugInfo.db.enrichment_misses++;
+    });
+  } catch (err) {
+    debugLog(
+      env,
+      "Failed to compute enrichment telemetry:",
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+
+  const sourceCounts: Record<string, number> = {};
+  enhancedMovies.forEach((m) => {
+    const src = m.source || "unknown";
+    sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+  });
+  debugInfo.enrichment = { sourceCounts };
+};
+
+let fallbackIdCounter = 0;
+const nextFallbackId = () => {
+  fallbackIdCounter = (fallbackIdCounter + 1) % 1_000_000;
+  return fallbackIdCounter;
+};
 
 export async function scrapeLetterboxdWatchlist(
   username: string,
@@ -316,7 +647,7 @@ export async function enhanceWithTMDBData(
 
   const mapTmdb = (row: any, base: CommonMovie, source: string): Movie => {
     // Parse genres via shared helper
-    const gnames = parseGenresToNames((row as any).genres);
+    const gnames = parseGenresToNames(row.genres);
     const genres: string[] | undefined = gnames ? [...gnames] : undefined;
 
     return {
@@ -349,11 +680,10 @@ export async function enhanceWithTMDBData(
   const findRow = async (m: CommonMovie) => {
     let year = Number.isFinite(m.year) ? m.year : 0;
     let title = m.title || "";
-    const ym = /\((\d{4})\)\s*$/.exec(title);
-    if (ym?.[1]) {
-      const p = Number(ym[1]);
-      if (!year) year = p;
-      title = title.replace(/\s*\(\d{4}\)\s*$/, "").trim();
+    const extracted = extractTrailingYear(title);
+    if (extracted.hasYear) {
+      if (!year) year = extracted.year;
+      title = extracted.title.trim();
     }
 
     const key = m.slug || `${m.title}-${m.year}`;
@@ -453,7 +783,7 @@ export async function enhanceWithTMDBData(
           if (r) return mapTmdb(r, m, "db");
           debugLog(env, `D1 miss for "${m.title}" (${m.year})`);
           return {
-            id: Math.floor(Math.random() * 1_000_000),
+            id: nextFallbackId(),
             title: m.title,
             year: m.year,
             letterboxdSlug: m.slug,
@@ -464,7 +794,7 @@ export async function enhanceWithTMDBData(
         } catch (err) {
           console.error("Enhancement error for", m.title, err);
           return {
-            id: Math.floor(Math.random() * 1_000_000),
+            id: nextFallbackId(),
             title: m.title,
             year: m.year,
             letterboxdSlug: m.slug,
@@ -486,39 +816,22 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as {
-      username?: string;
-      friends?: string[];
-      usernames?: string[]; // Legacy support
-    };
-
-    // Support both formats: new format { username, friends } and legacy { usernames }
-    let allUsernames: string[];
-    if (body.username && body.friends) {
-      // New format: user + friends
-      allUsernames = [body.username, ...body.friends];
-    } else if (body.usernames && Array.isArray(body.usernames)) {
-      // Legacy format
-      allUsernames = body.usernames;
-    } else {
-      return Response.json(
-        { error: "Either { username, friends } or { usernames } is required" },
-        { status: 400 }
-      );
+    const body = (await request.json()) as ComparisonRequestBody;
+    const { userList, error } = getUsernamesFromBody(body);
+    if (error) {
+      return Response.json({ error }, { status: 400 });
     }
-
-    if (allUsernames.length < 2) {
+    if (userList.length < 2) {
       return Response.json(
         { error: "At least 2 usernames are required for comparison" },
         { status: 400 }
       );
     }
 
-    const usernames = allUsernames
+    const usernames = userList
       .filter((u) => u.trim())
       .map((u) => u.trim())
-      .slice(0, 10); // Limit to 10 users
-
+      .slice(0, 10);
     if (usernames.length < 2) {
       return Response.json(
         { error: "At least 2 valid usernames are required" },
@@ -528,94 +841,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
-    // Create debug data structure for troubleshooting
-    const debugInfo: any = {
-      requestReceived: {
-        usernames: usernames,
-        timestamp: new Date().toISOString(),
-      },
-      scrapingResults: {},
-      movieCounts: {},
-      sampleMovies: {},
-      matchingInfo: {
-        totalUnique: 0,
-        commonCount: 0,
-        commonMovies: [],
-      },
-      db: {
-        tmdb_catalog_count: null,
-        enrichment_hits: 0,
-        enrichment_misses: 0,
-      },
-    };
+    const debugInfo: any = initDebugInfo(usernames);
 
     // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
     // Performance Optimization: Smart Rate Limiting - Optimized parallel scraping with intelligent delays
-    const watchlistPromises = usernames.map(async (username, index) => {
-      // Implement exponential backoff for rate limiting
-      const baseDelay = 500; // Start with 500ms
-      const maxDelay = 3000; // Max 3 seconds
-      const delay = Math.min(baseDelay * Math.pow(1.5, index), maxDelay);
-
-      if (index > 0) {
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-
-      const startTime = Date.now();
-      try {
-        const movies = await scrapeLetterboxdWatchlist(username, env);
-        const duration = Date.now() - startTime;
-        debugLog(
-          env,
-          `Scraped ${username}: ${movies.length} movies in ${duration}ms`
-        );
-
-        // Capture debug info
-        debugInfo.scrapingResults[username] = {
-          count: movies.length,
-          timeMs: duration,
-          success: movies.length > 0,
-        };
-        debugInfo.movieCounts[username] = movies.length;
-        debugInfo.sampleMovies[username] = movies.slice(0, 3).map((m) => ({
-          title: m.title,
-          year: m.year,
-        }));
-
-        return { username, movies, duration };
-      } catch (error) {
-        const duration = Date.now() - startTime;
-        console.error(
-          `Failed to scrape ${username} after ${duration}ms:`,
-          error
-        );
-
-        // Capture error in debug info
-        debugInfo.scrapingResults[username] = {
-          count: 0,
-          timeMs: duration,
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-          errorType:
-            error instanceof Error ? error.constructor.name : "Unknown",
-          stack: error instanceof Error ? error.stack : undefined,
-        };
-
-        throw error;
-      }
-    });
-
-    // Execute all scraping operations with timeout protection
-    const scrapingTimeout = 30000; // 30 second timeout
-    const watchlists = await Promise.race([
-      Promise.all(watchlistPromises),
-      new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Watchlist scraping timeout")),
-          scrapingTimeout
-        )
-      ),
-    ]);
+    const watchlists = await scrapeAllWatchlists(usernames, env, debugInfo);
 
     debugLog(
       env,
@@ -626,37 +856,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     );
 
     // Add debug logging for the first few movies from each user
-    watchlists.forEach((watchlist) => {
-      debugLog(
-        env,
-        `${watchlist.username} sample movies:`,
-        watchlist.movies.slice(0, 5).map((m) => `"${m.title}" (${m.year})`)
-      );
-
-      // Also show normalized versions to help debug matching issues
-      debugLog(
-        env,
-        `${watchlist.username} normalized samples:`,
-        watchlist.movies.slice(0, 3).map((m) => {
-          const normalized = normalizeTitle(m.title);
-          return `"${normalized}" (${m.year})`;
-        })
-      );
-    });
+    logWatchlistSamples(watchlists, env);
 
     // Find common movies
     const commonMovies = findCommonMovies(watchlists);
 
     // Update debug info with matching results
-    debugInfo.matchingInfo.totalUnique = new Set(
-      watchlists.flatMap((w) => w.movies.map((m) => `${m.title}-${m.year}`))
-    ).size;
-    debugInfo.matchingInfo.commonCount = commonMovies.length;
-    debugInfo.matchingInfo.commonMovies = commonMovies.slice(0, 5).map((m) => ({
-      title: m.title,
-      year: m.year,
-      users: m.friendList,
-    }));
+    updateMatchingDebug(watchlists, commonMovies, debugInfo);
 
     debugLog(env, `Common movies found: ${commonMovies.length}`);
     if (commonMovies.length > 0) {
@@ -671,55 +877,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Enhance with TMDB data
     // Report TMDB catalog size (best-effort) to help debug empty DB issues
-    try {
-      const countRes = await env.MOVIES_DB.prepare(
-        `SELECT COUNT(*) as c FROM tmdb_movies`
-      ).first();
-      debugInfo.db.tmdb_catalog_count =
-        (countRes && (countRes.c || countRes["c"])) || 0;
-    } catch (err) {
-      // Best-effort only: if the DB read fails, record null but continue
-      debugInfo.db.tmdb_catalog_count = null;
-      debugLog(
-        env,
-        "Failed to read tmdb_movies count for debug:",
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+    await reportTmdbCatalogCount(env, debugInfo);
 
-    // Gate detailed matching candidates telemetry. Enable when isDebug(env) or env.DEBUG_MATCHING is truthy.
-    // Use shared helper isDebug to decide whether to enable verbose matching telemetry
-    const { isDebug } = await import("../../_lib/common");
-    const enableMatchingDebug = Boolean(
-      isDebug(env) || (env && (env as any).DEBUG_MATCHING)
-    );
-    const enhancedMovies = await enhanceWithTMDBData(
+    const { enhancedMovies } = await enhanceCommonMovies(
       commonMovies,
       env,
-      enableMatchingDebug ? debugInfo : undefined
+      debugInfo
     );
-
-    // Count how many movies were enriched from DB vs fallback
-    try {
-      enhancedMovies.forEach((m) => {
-        if ((m.source || "db") === "db") debugInfo.db.enrichment_hits++;
-        else debugInfo.db.enrichment_misses++;
-      });
-    } catch (err) {
-      debugLog(
-        env,
-        "Failed to compute enrichment telemetry:",
-        err instanceof Error ? err.message : String(err)
-      );
-    }
-
-    // Append simple enrichment stats to debug
-    const sourceCounts: Record<string, number> = {};
-    enhancedMovies.forEach((m) => {
-      const src = m.source || "unknown";
-      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
-    });
-    debugInfo.enrichment = { sourceCounts };
+    updateEnrichmentStats(enhancedMovies, debugInfo, env);
 
     // Sort by vote average (rating)
     enhancedMovies.sort(
@@ -735,11 +900,6 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const cacheHeader = allFromDb
       ? "public, max-age=60, s-maxage=60, stale-while-revalidate=60"
       : "no-store, no-cache, must-revalidate";
-
-    // If matching debug is disabled, strip verbose candidates from debug info before returning
-    if (!enableMatchingDebug && debugInfo?.matchingInfo) {
-      delete debugInfo.matchingInfo.candidates;
-    }
 
     return Response.json(
       {

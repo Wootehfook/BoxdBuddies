@@ -28,10 +28,26 @@
     1. Parse PR title           1. Extract unreleased changes
     2. Determine type           2. Bump package.json version
        (feat/fix/chore)         3. Move changes to new section
-    3. Add to Unreleased        4. Create git tag
-    4. Commit & push            5. Push changes & tag
-    5. Comment on PR            6. Create GitHub Release
+    3. Add to Unreleased        4. Create release branch
+    4. Commit & push            5. Create PR to main
+    5. Comment on PR                         │
               │                               │
+              │                               ▼
+              │                     ┌─────────────────────────┐
+              │                     │   PR Review & Merge      │
+              │                     └─────────────────────────┘
+              │                               │
+              │                               ▼
+              │                     ┌─────────────────────────┐
+              │                     │ create-release.yml       │
+              │                     │ (Automatic on merge)     │
+              │                     └─────────────────────────┘
+              │                               │
+              │                               ▼
+              │                     1. Extract version from branch
+              │                     2. Create git tag
+              │                     3. Extract release notes
+              │                     4. Create GitHub Release
               │                               │
               ▼                               ▼
     ┌─────────────────────────┐    ┌─────────────────────────┐
@@ -53,8 +69,11 @@ BoxdBuddies/
 │   ├── changelog-update.yml ────┤
 │   │   (updates on PR merge)    │
 │   │                             │
-│   └── version-bump.yml ─────────┤
-│       (releases)          │     │
+│   ├── version-bump.yml ─────────┤
+│   │   (creates release PR) │   │
+│   │                         │   │
+│   └── create-release.yml ───────┤
+│       (creates release)    │   │
 │                           │     │
 ├── docs/                   │     │
 │   └── versioning-and-releases.md
@@ -119,24 +138,33 @@ Day 31: Release Day
       │
       ├── Moves all Unreleased to [2.2.0] section
       │
-      ├── Creates tag v2.2.0
+      ├── Creates release/v2.2.0 branch
       │
-      └── Creates GitHub Release
+      └── Creates PR to main
           │
-          └── Release notes contain all changes:
-              - add user auth (#123)
-              - login bug (#124)
-              - update deps (#125)
+          └── After PR review and merge:
+              │
+              ├── create-release.yml triggers
+              │
+              ├── Creates tag v2.2.0
+              │
+              └── Creates GitHub Release
+                  │
+                  └── Release notes contain all changes:
+                      - add user auth (#123)
+                      - login bug (#124)
+                      - update deps (#125)
 ```
 
 ## Key Benefits
 
 1. **Automated Tracking**: Every PR automatically updates the changelog
 2. **Consistent Format**: Follows Keep a Changelog and Semantic Versioning
-3. **Easy Releases**: One-click release process via GitHub Actions
-4. **Full History**: Complete audit trail of all changes
-5. **Attribution**: Every change credited to PR and author
-6. **Zero Manual Work**: No need to manually edit CHANGELOG or create releases
+3. **Easy Releases**: Streamlined release process via GitHub Actions with PR review
+4. **Branch Protection**: Respects all repository rules and required checks
+5. **Full History**: Complete audit trail of all changes
+6. **Attribution**: Every change credited to PR and author
+7. **Minimal Manual Work**: Automated changelog updates and release creation
 
 ## Quick Reference
 
