@@ -306,6 +306,18 @@ export async function onRequestPost(context: {
           }
         );
       }
+
+      // No cached fallback available; surface the failure instead of
+      // returning and caching an empty friends list.
+      return new Response(
+        JSON.stringify({
+          error: "failed to fetch friends from Letterboxd",
+        }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     // Attach watchlist counts to fresh friends
