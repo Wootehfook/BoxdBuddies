@@ -46,6 +46,12 @@ describe("WatchlistFetcher", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
+    // Reset navigator.onLine to ensure test isolation
+    Object.defineProperty(globalThis.navigator, "onLine", {
+      writable: true,
+      value: true,
+    });
+
     // Spy on cache service static methods
     getWatchlistCountEntrySpy = vi.spyOn(
       WebCacheService,
