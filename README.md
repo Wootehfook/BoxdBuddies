@@ -67,13 +67,13 @@ git clone https://github.com/your-username/BoxdBuddies.git
 cd BoxdBuddies
 ```
 
-1. **Install dependencies**:
+2. **Install dependencies**:
 
    ```bash
    npm install
    ```
 
-1. **Start the development server**:
+3. **Start the development server**:
 
    ```bash
    npm run dev
