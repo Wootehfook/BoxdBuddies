@@ -9,6 +9,32 @@ describe("TMDB Sync - Current Year Mode", () => {
   let mockRun: any;
   let mockFirst: any;
 
+  const createRequest = (body: Record<string, unknown>) =>
+    new Request("http://localhost/admin/tmdb-sync", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer admin-sync-token",
+      },
+      body: JSON.stringify(body),
+    });
+
+  const mockJsonResponse = (data: unknown) => ({
+    ok: true,
+    json: () => Promise.resolve(data),
+  });
+
+  const mockFetchRoutes = (routes: Array<[string, unknown]>) => {
+    (globalThis.fetch as any).mockImplementation((url: string) => {
+      for (const [needle, payload] of routes) {
+        if (url.includes(needle)) {
+          return Promise.resolve(mockJsonResponse(payload));
+        }
+      }
+      return Promise.reject(new Error("Unknown URL"));
+    });
+  };
+
   beforeEach(() => {
     mockRun = vi.fn().mockResolvedValue({ success: true });
     mockFirst = vi.fn().mockResolvedValue(null);
@@ -31,17 +57,10 @@ describe("TMDB Sync - Current Year Mode", () => {
   });
 
   it("should require releaseYearStart parameter", async () => {
-    const request = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer admin-sync-token",
-      },
-      body: JSON.stringify({
-        syncType: "current_year",
-        releaseYearEnd: "2025-12-31",
-        maxPages: 10,
-      }),
+    const request = createRequest({
+      syncType: "current_year",
+      releaseYearEnd: "2025-12-31",
+      maxPages: 10,
     });
 
     // Dynamically import to get fresh module state
@@ -55,17 +74,10 @@ describe("TMDB Sync - Current Year Mode", () => {
   });
 
   it("should require releaseYearEnd parameter", async () => {
-    const request = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer admin-sync-token",
-      },
-      body: JSON.stringify({
-        syncType: "current_year",
-        releaseYearStart: "2025-01-01",
-        maxPages: 10,
-      }),
+    const request = createRequest({
+      syncType: "current_year",
+      releaseYearStart: "2025-01-01",
+      maxPages: 10,
     });
 
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
@@ -132,38 +144,17 @@ describe("TMDB Sync - Current Year Mode", () => {
       },
     };
 
-    (globalThis.fetch as any).mockImplementation((url: string) => {
-      if (url.includes("/genre/movie/list")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(genresResponse),
-        });
-      } else if (url.includes("/discover/movie")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(discoverResponse),
-        });
-      } else if (url.includes("/movie/12345")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(movieDetailsResponse),
-        });
-      }
-      return Promise.reject(new Error("Unknown URL"));
-    });
+    mockFetchRoutes([
+      ["/genre/movie/list", genresResponse],
+      ["/discover/movie", discoverResponse],
+      ["/movie/12345", movieDetailsResponse],
+    ]);
 
-    const request = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer admin-sync-token",
-      },
-      body: JSON.stringify({
-        syncType: "current_year",
-        releaseYearStart: "2025-01-01",
-        releaseYearEnd: "2025-12-31",
-        maxPages: 1,
-      }),
+    const request = createRequest({
+      syncType: "current_year",
+      releaseYearStart: "2025-01-01",
+      releaseYearEnd: "2025-12-31",
+      maxPages: 1,
     });
 
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
@@ -230,38 +221,17 @@ describe("TMDB Sync - Current Year Mode", () => {
       credits: { crew: [] },
     };
 
-    (globalThis.fetch as any).mockImplementation((url: string) => {
-      if (url.includes("/genre/movie/list")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(genresResponse),
-        });
-      } else if (url.includes("/discover/movie")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(discoverResponse),
-        });
-      } else if (url.includes("/movie/99999")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(movieDetailsResponse),
-        });
-      }
-      return Promise.reject(new Error("Unknown URL"));
-    });
+    mockFetchRoutes([
+      ["/genre/movie/list", genresResponse],
+      ["/discover/movie", discoverResponse],
+      ["/movie/99999", movieDetailsResponse],
+    ]);
 
-    const request = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer admin-sync-token",
-      },
-      body: JSON.stringify({
-        syncType: "current_year",
-        releaseYearStart: "2025-01-01",
-        releaseYearEnd: "2025-12-31",
-        maxPages: 1,
-      }),
+    const request = createRequest({
+      syncType: "current_year",
+      releaseYearStart: "2025-01-01",
+      releaseYearEnd: "2025-12-31",
+      maxPages: 1,
     });
 
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
