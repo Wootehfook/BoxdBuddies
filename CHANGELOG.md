@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Prevent changelog PR loop and update changelog (#184)
 - Opened PR for changelog updates (#181)
 - Updated all site references from dev (boxdbud.pages.dev) to production (boxdbud.io) (#163)
   - README.md launch link and user guide
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - API base URLs in backend services
 - Update v2.1.0 release documentation (#122)
 - Update CHANGELOG unreleased section with PRs merged since 9/13/2025 (#164)
+- Open PRs for automated changelog updates (#181)
 - Update CHANGELOG for PR #181 (#182)
 
 #### Updated dependencies
