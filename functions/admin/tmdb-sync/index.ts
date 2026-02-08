@@ -845,11 +845,22 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
   });
 }
 
-function isAuthorized(authHeader: string | null): boolean {
+function isAuthorized(authHeader: string | null, env?: Env): boolean {
+  const rawHeader = (authHeader || "").trim();
+  const token = rawHeader.toLowerCase().startsWith("bearer ")
+    ? rawHeader.slice(7).trim()
+    : rawHeader;
+
+  // Preferred path: use ADMIN_SECRET for exact-match authorization
+  if (env?.ADMIN_SECRET) {
+    return token === env.ADMIN_SECRET;
+  }
+
+  // Backward-compatible fallback when ADMIN_SECRET is not configured
   return Boolean(
-    authHeader &&
-    (authHeader.includes("admin-sync-token") ||
-      authHeader.includes("test-token"))
+    rawHeader &&
+    (rawHeader.includes("admin-sync-token") ||
+      rawHeader.includes("test-token"))
   );
 }
 
