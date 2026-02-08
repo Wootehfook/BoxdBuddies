@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies (cached)
         run: |
           # Use npm ci for faster, deterministic installs
-          npm ci --prefer-offline --no-audit
+          npm ci --prefer-offline --no-audit --ignore-scripts
 
       - name: Run npm audit
         run: |

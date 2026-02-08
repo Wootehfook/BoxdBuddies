@@ -81,6 +81,25 @@ cd BoxdBuddies
 
    The application will be available at `http://localhost:5173`.
 
+### Optional Developer Tools
+
+#### SonarLint Integration
+
+SonarLint provides real-time code quality and security feedback in your IDE. To use SonarLint with this project:
+
+1. **Install the SonarLint extension** for your IDE (VS Code, IntelliJ, etc.)
+2. **Optional: Connect to SonarCloud** (for team-shared rules and analysis):
+   - Open SonarLint settings in your IDE
+   - Add a new connection to SonarCloud
+   - Configure the connection with:
+     - Connection ID: Your choice (e.g., your GitHub username)
+     - Project Key: `Wootehfook_BoxdBuddies`
+   - Note: This configuration is personal and should not be committed to the repository
+
+3. **Local-only mode**: SonarLint works without any connection, using default rules
+
+This setup is entirely optional and personal to each developer. The repository's workspace settings intentionally exclude SonarLint configuration to avoid conflicts between different contributors' setups.
+
 ### Project Structure
 
 ```text

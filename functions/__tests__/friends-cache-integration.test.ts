@@ -272,6 +272,22 @@ describe("Friends Cache Integration", () => {
       // Mock server cache for one friend
       mockGetCount.mockResolvedValue(null); // No server cache available
 
+      const sampleHtml = `
+        <table>
+          <tr>
+            <td>
+              <a href="/friend1/">Friend One</a>
+              <img class="avatar" src="https://a.ltrbxd.com/avatar.jpg" />
+            </td>
+          </tr>
+        </table>
+      `;
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => sampleHtml,
+      } as any);
+
       const { onRequestPost } = await import("../letterboxd/friends/index.js");
 
       const request = createRequest({

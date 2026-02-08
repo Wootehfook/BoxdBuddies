@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies (CI)
         run: |
-          npm ci --prefer-offline --no-audit
+          npm ci --prefer-offline --no-audit --ignore-scripts
 
       - name: Run pages build (simulate Cloudflare Pages)
         run: |
