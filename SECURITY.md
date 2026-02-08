@@ -8,6 +8,13 @@ Please do not include sensitive data (API keys, secrets) in public issues. If yo
 
 Maintainers will triage and respond to reports within a reasonable timeframe.
 
+## CI Supply-Chain Hardening
+
+To reduce supply-chain risk, our GitHub Actions workflows install dependencies
+with `--ignore-scripts`, which prevents package lifecycle scripts from running
+during CI installs. If a workflow legitimately requires install scripts, it must
+be explicitly justified and documented in the workflow or security notes.
+
 ## Supported Versions
 
 | Version | Status    |

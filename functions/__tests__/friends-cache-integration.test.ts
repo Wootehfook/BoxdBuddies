@@ -2,9 +2,11 @@
  * BoxdBuddy - Friends Cache Integration Tests
  * Copyright (C) 2025 Wootehfook
  * AI Generated: Claude Sonnet 4 - 2025-01-02
+ * Modified: GitHub Copilot - 2026-02-07
+ * Change: Mock fetch to prevent real network calls in tests
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock the cache module
 const mockGetCount = vi.fn();
@@ -18,6 +20,9 @@ vi.mock("../letterboxd/cache/index.js", () => ({
   acquireLock: mockAcquireLock,
   releaseLock: mockReleaseLock,
 }));
+
+// Mock fetch to prevent real network calls
+const mockFetch = vi.fn();
 
 // Mock the D1 database
 const mockDatabase = {
@@ -33,6 +38,19 @@ const mockDatabase = {
 describe("Friends Cache Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Stub global fetch to prevent real network calls
+    vi.stubGlobal("fetch", mockFetch);
+    // Reset fetch mock to default (returns empty friends list)
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve("<html></html>"),
+    });
+  });
+
+  afterEach(() => {
+    // Restore global fetch to prevent leaking into other tests
+    vi.unstubAllGlobals();
   });
 
   const createEnv = (overrides: any = {}) => ({
@@ -272,6 +290,24 @@ describe("Friends Cache Integration", () => {
       // Mock server cache for one friend
       mockGetCount.mockResolvedValue(null); // No server cache available
 
+      // Mock fetch to return a valid HTML response with a single friend
+      const sampleHtml = `
+        <table>
+          <tr>
+            <td>
+              <a href="/friend1/">Friend One</a>
+              <img class="avatar" src="https://a.ltrbxd.com/avatar.jpg" />
+            </td>
+          </tr>
+        </table>
+      `;
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(sampleHtml),
+      });
+
       const { onRequestPost } = await import("../letterboxd/friends/index.js");
 
       const request = createRequest({
@@ -286,8 +322,13 @@ describe("Friends Cache Integration", () => {
       const data = await response.json();
 
       expect(data.cached).toBe(false); // Fresh data
-      // Note: Actual scraping might return 0 friends if the user has no friends
-      // The test should reflect realistic behavior
+      expect(data.friends).toHaveLength(1);
+      expect(data.friends[0]).toMatchObject({
+        username: "friend1",
+        displayName: "Friend One",
+        profileImageUrl: "https://a.ltrbxd.com/avatar.jpg",
+      });
+      expect(data.friends[0]).not.toHaveProperty("watchlistCount");
     });
   });
 });
