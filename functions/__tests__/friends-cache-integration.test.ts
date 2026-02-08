@@ -6,7 +6,7 @@
  * Change: Mock fetch to prevent real network calls in tests
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock the cache module
 const mockGetCount = vi.fn();
@@ -21,9 +21,8 @@ vi.mock("../letterboxd/cache/index.js", () => ({
   releaseLock: mockReleaseLock,
 }));
 
-// Mock globalThis.fetch to prevent real network calls
+// Mock fetch to prevent real network calls
 const mockFetch = vi.fn();
-globalThis.fetch = mockFetch as any;
 
 // Mock the D1 database
 const mockDatabase = {
@@ -39,12 +38,19 @@ const mockDatabase = {
 describe("Friends Cache Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Stub global fetch to prevent real network calls
+    vi.stubGlobal("fetch", mockFetch);
     // Reset fetch mock to default (returns empty friends list)
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       text: () => Promise.resolve("<html></html>"),
     });
+  });
+
+  afterEach(() => {
+    // Restore global fetch to prevent leaking into other tests
+    vi.unstubAllGlobals();
   });
 
   const createEnv = (overrides: any = {}) => ({
