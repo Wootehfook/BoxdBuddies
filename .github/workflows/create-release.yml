@@ -27,13 +27,17 @@ jobs:
         id: version_info
         run: |
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          if [[ ! "$BRANCH_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release branch name: $BRANCH_NAME" >&2
+            exit 1
+          fi
           # Extract version from branch name (e.g., release/v2.1.1 -> 2.1.1)
-          VERSION=$(echo "$BRANCH_NAME" | sed 's/release\/v//')
+          VERSION="${BRANCH_NAME#release/v}"
           TAG="v$VERSION"
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          
+
           # Verify the tag doesn't already exist
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists"
@@ -47,7 +51,7 @@ jobs:
         if: steps.version_info.outputs.tag_exists == 'false'
         run: |
           VERSION="${{ steps.version_info.outputs.version }}"
-          
+
           # Extract the section for this version from CHANGELOG.md
           # Pattern matches: ## [VERSION] and captures everything until the next version section
           awk -v version="$VERSION" '
@@ -56,7 +60,7 @@ jobs:
           in_version && /^## \[/ { exit; }
           in_version { print; }
           ' CHANGELOG.md > /tmp/release_notes.md
-          
+
           # Check if we extracted anything
           if [ ! -s /tmp/release_notes.md ]; then
             echo "Could not extract release notes for version $VERSION"
