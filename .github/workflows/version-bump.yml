@@ -230,8 +230,8 @@ jobs:
           echo "**PR:** ${{ steps.create_pr.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "A pull request has been created to merge the version bump into main." >> $GITHUB_STEP_SUMMARY
-          echo "After the PR is merged, the \"Create GitHub Release\" workflow will create the tag and release automatically." >> $GITHUB_STEP_SUMMARY
-          echo "If the release is missing, check the Actions run or create the release manually." >> $GITHUB_STEP_SUMMARY
+          echo "After the PR is merged, the \"Create GitHub Release\" workflow will automatically create the tag and release." >> $GITHUB_STEP_SUMMARY
+          echo "If the release is not created, check the Actions tab for the \"Create GitHub Release\" workflow run to see if it failed." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Release Notes Preview" >> $GITHUB_STEP_SUMMARY
           cat /tmp/unreleased.md >> $GITHUB_STEP_SUMMARY
