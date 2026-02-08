@@ -16,26 +16,44 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Skip changelog-only PRs
+      - name: Evaluate changelog guard
+        id: skip_guard
         run: |
           PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-          if [[ "$PR_TITLE" =~ ^docs(\(.*\))?:\ update\ CHANGELOG ]]; then
-            echo "Skipping changelog-only PR to avoid recursion."
+          PR_BRANCH=$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")
+          PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+          if [[ "$PR_BRANCH" =~ ^changelog/update-pr- ]]; then
+            echo "Skipping changelog update PR (branch guard) to avoid recursion."
+            echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
+          if [[ "$PR_BODY" == *"<!-- changelog-update -->"* ]]; then
+            echo "Skipping changelog update PR (body marker) to avoid recursion."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [[ "$PR_TITLE" =~ ^docs(\(.*\))?:\ update\ CHANGELOG ]]; then
+            echo "Skipping changelog-only PR to avoid recursion."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
+        if: steps.skip_guard.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
+        if: steps.skip_guard.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Extract PR information
+        if: steps.skip_guard.outputs.skip != 'true'
         id: pr_info
         run: |
           PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
@@ -105,6 +123,7 @@ jobs:
           echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
 
       - name: Update CHANGELOG.md
+        if: steps.skip_guard.outputs.skip != 'true'
         run: |
           CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
           CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
@@ -191,6 +210,7 @@ jobs:
           mv /tmp/changelog_updated.md CHANGELOG.md
 
       - name: Commit and open changelog PR
+        if: steps.skip_guard.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -201,25 +221,30 @@ jobs:
 
           BRANCH_NAME="changelog/update-pr-${{ steps.pr_info.outputs.number }}"
 
-          git checkout -b "$BRANCH_NAME"
-          git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
-          git push origin "$BRANCH_NAME"
-
           EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
             echo "Changelog PR already exists: #$EXISTING_PR"
             exit 0
           fi
 
+          if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+            echo "Remote changelog branch already exists: $BRANCH_NAME"
+            exit 0
+          fi
+
+          git checkout -b "$BRANCH_NAME"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
+          git push origin "$BRANCH_NAME"
+
           gh pr create \
             --title "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}" \
-            --body "Automated changelog update for #${{ steps.pr_info.outputs.number }}." \
+            --body "Automated changelog update for #${{ steps.pr_info.outputs.number }}.\n\n<!-- changelog-update -->" \
             --base ${{ github.event.pull_request.base.ref }} \
             --head "$BRANCH_NAME"
 
       - name: Comment on PR
-        if: success()
+        if: success() && steps.skip_guard.outputs.skip != 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
