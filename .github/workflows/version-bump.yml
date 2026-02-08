@@ -151,13 +151,6 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Create release branch
-        id: create_branch
-        run: |
-          BRANCH_NAME="release/v${{ steps.bump_version.outputs.new_version }}"
-          git checkout -b "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
       - name: Commit changes
         run: |
           git add package.json package-lock.json CHANGELOG.md
