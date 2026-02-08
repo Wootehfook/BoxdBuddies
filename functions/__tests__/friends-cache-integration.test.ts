@@ -290,15 +290,7 @@ describe("Friends Cache Integration", () => {
       // Mock server cache for one friend
       mockGetCount.mockResolvedValue(null); // No server cache available
 
-      // Mock fetch to return a valid HTML response with no friends
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        text: () =>
-          Promise.resolve(
-            '<html><body><div class="friends-list"></div></body></html>'
-          ),
-      });
+      // Mock fetch to return a valid HTML response with a single friend
       const sampleHtml = `
         <table>
           <tr>
@@ -310,10 +302,11 @@ describe("Friends Cache Integration", () => {
         </table>
       `;
 
-      globalThis.fetch = vi.fn().mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
-        text: async () => sampleHtml,
-      } as any);
+        status: 200,
+        text: () => Promise.resolve(sampleHtml),
+      });
 
       const { onRequestPost } = await import("../letterboxd/friends/index.js");
 
@@ -329,8 +322,13 @@ describe("Friends Cache Integration", () => {
       const data = await response.json();
 
       expect(data.cached).toBe(false); // Fresh data
-      // Scraping returns empty friends list (mocked)
-      expect(data.friends).toEqual([]);
+      expect(data.friends).toHaveLength(1);
+      expect(data.friends[0]).toMatchObject({
+        username: "friend1",
+        displayName: "Friend One",
+        profileImageUrl: "https://a.ltrbxd.com/avatar.jpg",
+      });
+      expect(data.friends[0]).not.toHaveProperty("watchlistCount");
     });
   });
 });
