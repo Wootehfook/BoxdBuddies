@@ -9,13 +9,21 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   update-changelog:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+      - name: Skip changelog-only PRs
+        run: |
+          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
+          if [[ "$PR_TITLE" =~ ^docs(\(.*\))?:\ update\ CHANGELOG ]]; then
+            echo "Skipping changelog-only PR to avoid recursion."
+            exit 0
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
@@ -182,16 +190,33 @@ jobs:
 
           mv /tmp/changelog_updated.md CHANGELOG.md
 
-      - name: Commit and push changes
+      - name: Commit and open changelog PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git diff --quiet CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
             exit 0
           fi
 
+          BRANCH_NAME="changelog/update-pr-${{ steps.pr_info.outputs.number }}"
+
+          git checkout -b "$BRANCH_NAME"
           git add CHANGELOG.md
           git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
-          git push origin ${{ github.event.pull_request.base.ref }}
+          git push origin "$BRANCH_NAME"
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Changelog PR already exists: #$EXISTING_PR"
+            exit 0
+          fi
+
+          gh pr create \
+            --title "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}" \
+            --body "Automated changelog update for #${{ steps.pr_info.outputs.number }}." \
+            --base ${{ github.event.pull_request.base.ref }} \
+            --head "$BRANCH_NAME"
 
       - name: Comment on PR
         if: success()
