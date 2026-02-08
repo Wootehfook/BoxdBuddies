@@ -1,3 +1,8 @@
+// AI Generated: GitHub Copilot - 2026-02-07
+// Modified by: Woo T. Fook
+// Change: Fix TypeScript mock typing issues for Vitest 4.x compatibility
+// using vi.spyOn
+
 import { describe, it, beforeEach, afterEach, expect, vi, Mock } from "vitest";
 import {
   startWatchlistFetcher,
@@ -10,7 +15,6 @@ import { WebCacheService } from "../services/cacheService";
 import { logger } from "../utils/logger";
 
 // Mock dependencies
-vi.mock("../services/cacheService");
 vi.mock("../utils/logger");
 
 // Mock global fetch
@@ -32,17 +36,29 @@ Object.defineProperty(globalThis, "window", {
   },
 });
 
-const MockedWebCacheService = vi.mocked(WebCacheService);
 const MockedLogger = vi.mocked(logger);
 
 describe("WatchlistFetcher", () => {
+  let getWatchlistCountEntrySpy: ReturnType<typeof vi.spyOn>;
+  let setWatchlistCountEntrySpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
+    // Spy on cache service static methods
+    getWatchlistCountEntrySpy = vi.spyOn(
+      WebCacheService,
+      "getWatchlistCountEntry"
+    );
+    setWatchlistCountEntrySpy = vi.spyOn(
+      WebCacheService,
+      "setWatchlistCountEntry"
+    );
+
     // Reset cache service mocks
-    MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
-    MockedWebCacheService.setWatchlistCountEntry.mockImplementation(() => {});
+    getWatchlistCountEntrySpy.mockReturnValue(null);
+    setWatchlistCountEntrySpy.mockImplementation(() => {});
 
     // Stop any running fetcher
     stopWatchlistFetcher();
@@ -51,6 +67,7 @@ describe("WatchlistFetcher", () => {
   afterEach(() => {
     vi.useRealTimers();
     stopWatchlistFetcher();
+    vi.restoreAllMocks();
   });
 
   describe("startWatchlistFetcher", () => {
@@ -82,7 +99,7 @@ describe("WatchlistFetcher", () => {
 
     it("should skip usernames with recent cache entries", () => {
       const now = Date.now();
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue({
+      getWatchlistCountEntrySpy.mockReturnValue({
         count: 5,
         lastFetchedAt: now - 500, // Recent
         version: "1.0.0",
@@ -98,7 +115,7 @@ describe("WatchlistFetcher", () => {
 
     it("should schedule usernames with stale cache entries", () => {
       const now = Date.now();
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue({
+      getWatchlistCountEntrySpy.mockReturnValue({
         count: 5,
         lastFetchedAt: now - 2000, // Stale (older than refreshWindowMs)
         version: "1.0.0",
@@ -110,7 +127,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should schedule usernames with no cache entries", () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
 
       scheduleChecks(["alice", "bob"]);
 
@@ -118,7 +135,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should batch requests after batchWindowMs", async () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
@@ -155,7 +172,7 @@ describe("WatchlistFetcher", () => {
 
     it("should send correct request body and update cache on 200 with changed count", async () => {
       const now = Date.now();
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue({
+      getWatchlistCountEntrySpy.mockReturnValue({
         count: 5,
         lastFetchedAt: now - 1000,
         version: "1.0.0",
@@ -181,7 +198,7 @@ describe("WatchlistFetcher", () => {
         })
       );
 
-      expect(MockedWebCacheService.setWatchlistCountEntry).toHaveBeenCalledWith(
+      expect(setWatchlistCountEntrySpy).toHaveBeenCalledWith(
         "alice",
         expect.objectContaining({
           count: 10,
@@ -199,9 +216,7 @@ describe("WatchlistFetcher", () => {
         lastFetchedAt: now - 1000,
         version: "1.0.0",
       };
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(
-        existingEntry
-      );
+      getWatchlistCountEntrySpy.mockReturnValue(existingEntry);
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -212,7 +227,7 @@ describe("WatchlistFetcher", () => {
 
       await runImmediateCheck(["alice"]);
 
-      expect(MockedWebCacheService.setWatchlistCountEntry).toHaveBeenCalledWith(
+      expect(setWatchlistCountEntrySpy).toHaveBeenCalledWith(
         "alice",
         expect.objectContaining({
           count: 5, // Unchanged
@@ -232,7 +247,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should apply exponential backoff on network failures", async () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
 
       // First failure
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
@@ -253,7 +268,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should schedule retries with increasing delay", async () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
 
       mockFetch.mockRejectedValue(new Error("Network error"));
 
@@ -264,8 +279,8 @@ describe("WatchlistFetcher", () => {
       await runImmediateCheck(["alice"]);
 
       // Should have two backoff calls with increasing delays
-      const backoffCalls = MockedLogger.debug.mock.calls.filter((call) =>
-        call[0].includes("Applied backoff")
+      const backoffCalls = MockedLogger.debug.mock.calls.filter(
+        (call: unknown[]) => String(call[0]).includes("Applied backoff")
       );
       expect(backoffCalls.length).toBeGreaterThan(0);
     });
@@ -277,7 +292,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should include conditional headers when etag is available", async () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue({
+      getWatchlistCountEntrySpy.mockReturnValue({
         count: 5,
         etag: '"v1"',
         lastFetchedAt: Date.now() - 2000,
@@ -318,7 +333,7 @@ describe("WatchlistFetcher", () => {
         value: false,
       });
 
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
 
       await runImmediateCheck(["alice"]);
 
@@ -351,7 +366,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should emit cacheHitSkip telemetry", () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue({
+      getWatchlistCountEntrySpy.mockReturnValue({
         count: 5,
         lastFetchedAt: Date.now() - 500, // Recent
         version: "1.0.0",
@@ -366,7 +381,7 @@ describe("WatchlistFetcher", () => {
     });
 
     it("should emit cacheMissScheduled telemetry", () => {
-      MockedWebCacheService.getWatchlistCountEntry.mockReturnValue(null);
+      getWatchlistCountEntrySpy.mockReturnValue(null);
 
       scheduleChecks(["alice"]);
 

@@ -116,7 +116,7 @@ export function parseGenresToNames(genres) {
 export function toYear(d) {
   if (!d) return null;
   const date = new Date(d);
-  return !Number.isNaN(date.getTime()) ? date.getFullYear() : null;
+  return Number.isNaN(date.getTime()) ? null : date.getFullYear();
 }
 
 // AI Generated: GitHub Copilot - 2025-09-06
