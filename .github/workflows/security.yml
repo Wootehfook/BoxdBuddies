@@ -8,6 +8,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -17,6 +20,9 @@ permissions:
 jobs:
   security-scan:
     name: Security Vulnerability Scan
+    if: |
+      github.event_name != 'pull_request_target' ||
+      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,6 +33,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -62,7 +69,10 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request_target' &&
+      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-'))
     permissions:
       contents: read
       pull-requests: read
@@ -70,6 +80,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -84,6 +96,9 @@ jobs:
 
   secret-scan:
     name: Secret Scanning
+    if: |
+      github.event_name != 'pull_request_target' ||
+      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -94,6 +109,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Run Trivy secret scanner (optimized)
         uses: aquasecurity/trivy-action@master

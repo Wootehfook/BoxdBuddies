@@ -5,6 +5,9 @@ on:
     branches: [main, develop, temp-merge-branch]
   pull_request:
     branches: [main]
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -13,12 +16,17 @@ permissions:
 
 jobs:
   security-audit:
+    if: |
+      github.event_name != 'pull_request_target' ||
+      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

@@ -8,6 +8,8 @@ name: Backend Quality Checks
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Restrict minimal permissions needed for actions run here
 permissions:
@@ -17,10 +19,15 @@ permissions:
 jobs:
   backend-quality-checks:
     name: backend-quality-checks
+    if: |
+      github.event_name != 'pull_request_target' ||
+      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v6
