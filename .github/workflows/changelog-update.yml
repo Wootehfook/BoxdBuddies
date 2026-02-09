@@ -119,10 +119,10 @@ jobs:
           # Clean PR title (remove conventional commit prefix if present)
           # Note: Uses `sed -E` (extended regex); requires GNU sed or BSD sed with -E support
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
-          
+
           # Capitalize the first letter of the clean title
           CLEAN_TITLE=$(echo "$CLEAN_TITLE" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
-          
+
           echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
 
       - name: Update CHANGELOG.md
