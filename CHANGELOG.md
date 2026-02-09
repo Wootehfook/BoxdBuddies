@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration with CI test suite
 
 ### Fixed
-
+- Ensure version bump PR checks run (#190)
 - Fix security audit failure by updating Vite to 7.1.12 (#138)
 - Escape angle brackets in changelog workflow regex pattern (#170)
 - Fix version bump workflow branch protection violations by creating PRs (#171)
@@ -24,8 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix navigator.onLine test isolation in watchlistFetcher (#180)
 
 ### Changed
-- update workflow signing and cleanup (#187) by @Wootehfook
-
+- Update workflow signing and cleanup (#187)
 - Prevent changelog PR loop and update changelog (#184)
 - Opened PR for changelog updates (#181)
 - Updated all site references from dev (boxdbud.pages.dev) to production (boxdbud.io) (#163)
