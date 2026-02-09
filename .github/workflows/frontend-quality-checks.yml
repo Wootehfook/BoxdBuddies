@@ -5,9 +5,11 @@ on:
     branches: [main, develop, temp-merge-branch]
   pull_request:
     branches: [main]
-  pull_request_target:
-    branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/**"
+      - "scripts/README.md"
   workflow_dispatch:
 
 permissions:
@@ -15,16 +17,11 @@ permissions:
 
 jobs:
   frontend-quality-checks:
-    if: |
-      github.event_name != 'pull_request_target' ||
-      startsWith(github.event.pull_request.head.ref, 'changelog/update-pr-')
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
