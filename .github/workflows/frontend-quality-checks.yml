@@ -1,3 +1,5 @@
+# Modified: AI Model GitHub Copilot - 2026-02-09
+# Note: Woo T. Fook is the author, application built by AI
 name: Frontend Quality Checks
 
 on:
@@ -5,50 +7,76 @@ on:
     branches: [main, develop, temp-merge-branch]
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "README.md"
-      - "CHANGELOG.md"
-      - "docs/**"
-      - "scripts/README.md"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs_only:
+              - 'README.md'
+              - 'CHANGELOG.md'
+              - 'docs/**'
+              - 'scripts/README.md'
+
   frontend-quality-checks:
+    needs: check-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping frontend-quality-checks - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - uses: actions/checkout@v6
+        if: needs.check-changes.outputs.docs_only != 'true'
 
       - name: Setup Node.js
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20.19.0"
           cache: "npm"
 
       - name: Install dependencies
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm ci --ignore-scripts
 
       - name: Type check
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm run type-check
         continue-on-error: true
 
       - name: Lint check
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npx eslint src --ext .ts,.tsx
         continue-on-error: true
 
       - name: Format check
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm run format:check
         continue-on-error: true
 
       - name: Build frontend
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm run build
         continue-on-error: true
 
       - name: Report unused exports (ts-prune)
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: |
           npm install -D ts-prune --ignore-scripts
           npx ts-prune || true
@@ -57,6 +85,7 @@ jobs:
         # Report-only: surfaces unused exports without failing CI
 
       - name: Upload frontend build artifacts
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/upload-artifact@v6
         with:
           name: frontend-dist

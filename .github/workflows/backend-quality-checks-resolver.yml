@@ -1,4 +1,6 @@
 # AI Generated: GitHub Copilot - 2025-09-06
+# Modified: AI Model GitHub Copilot - 2026-02-09
+# Note: Woo T. Fook is the author, application built by AI
 name: Backend Quality Checks
 
 # Minimal real CI workflow that runs lint, type-check and unit tests on PRs.
@@ -8,11 +10,6 @@ name: Backend Quality Checks
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore:
-      - "README.md"
-      - "CHANGELOG.md"
-      - "docs/**"
-      - "scripts/README.md"
 
 # Restrict minimal permissions needed for actions run here
 permissions:
@@ -20,30 +17,59 @@ permissions:
   checks: write
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs_only:
+              - 'README.md'
+              - 'CHANGELOG.md'
+              - 'docs/**'
+              - 'scripts/README.md'
+
   backend-quality-checks:
     name: backend-quality-checks
+    needs: check-changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping backend-quality-checks - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - name: Checkout
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/checkout@v6
 
       - name: Use Node.js
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 20
 
       - name: Install dependencies
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm ci --ignore-scripts
 
       - name: Lint
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm run lint
 
       - name: Type-check
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm run type-check
 
       - name: Run unit tests (Vitest)
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm test -- --run
 
       - name: Success
-        if: ${{ success() }}
+        if: needs.check-changes.outputs.docs_only != 'true' && success()
         run: echo "backend-quality-checks passing"

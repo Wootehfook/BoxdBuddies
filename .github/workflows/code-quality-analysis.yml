@@ -1,3 +1,5 @@
+# Modified: AI Model GitHub Copilot - 2026-02-09
+# Note: Woo T. Fook is the author, application built by AI
 name: Code Quality Analysis
 
 on:
@@ -5,11 +7,6 @@ on:
     branches: [main, develop, temp-merge-branch]
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "README.md"
-      - "CHANGELOG.md"
-      - "docs/**"
-      - "scripts/README.md"
   workflow_dispatch:
 
 permissions:
@@ -17,38 +14,68 @@ permissions:
   security-events: write
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs_only:
+              - 'README.md'
+              - 'CHANGELOG.md'
+              - 'docs/**'
+              - 'scripts/README.md'
+
   code-quality-analysis:
+    needs: check-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping code-quality-analysis - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - uses: actions/checkout@v6
+        if: needs.check-changes.outputs.docs_only != 'true'
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20.19.0"
           cache: "npm"
 
       - name: Install dependencies
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: npm ci --ignore-scripts
 
       - name: Download and setup Codacy CLI
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: |
           echo "Skipping Codacy CLI for now - will be enabled later"
           touch ./codacy
           chmod +x ./codacy
 
       - name: Run ESLint Analysis
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: ./codacy analyze --tool eslint --directory src || echo "ESLint analysis completed"
 
       - name: Run Trivy Analysis
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: ./codacy analyze --tool trivy --directory . || echo "Trivy analysis completed"
 
       - name: Verify Pre-commit Hooks
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: |
           npm install --ignore-scripts
           npx husky install

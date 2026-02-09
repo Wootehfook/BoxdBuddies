@@ -1,3 +1,5 @@
+# Modified: AI Model GitHub Copilot - 2026-02-09
+# Note: Woo T. Fook is the author, application built by AI
 name: Security Monitoring
 
 on:
@@ -8,11 +10,6 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "README.md"
-      - "CHANGELOG.md"
-      - "docs/**"
-      - "scripts/README.md"
 
 permissions:
   contents: read
@@ -20,31 +17,58 @@ permissions:
   actions: read
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs_only:
+              - 'README.md'
+              - 'CHANGELOG.md'
+              - 'docs/**'
+              - 'scripts/README.md'
+
   security-scan:
     name: Security Vulnerability Scan
+    needs: check-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
 
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping Security Vulnerability Scan - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - name: Checkout code
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20.19.0"
           cache: "npm"
 
       - name: Install dependencies (cached)
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: |
           # Use npm ci for faster, deterministic installs
           npm ci --prefer-offline --no-audit --ignore-scripts
 
       - name: Run npm audit
+        if: needs.check-changes.outputs.docs_only != 'true'
         run: |
           npm audit --audit-level moderate
           echo "NPM audit completed"
@@ -57,15 +81,16 @@ jobs:
       #   uses: github/codeql-action/init@v3
       #   with:
       #     languages: javascript, typescript
-
+      # 
       # - name: Autobuild
       #   uses: github/codeql-action/autobuild@v3
-
+      # 
       # - name: Perform CodeQL Analysis
       #   uses: github/codeql-action/analyze@v3
 
   dependency-review:
     name: Dependency Review
+    needs: check-changes
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     permissions:
@@ -73,10 +98,18 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping Dependency Review - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - name: Checkout Repository
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/checkout@v6
 
       - name: Dependency Review
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high # Only fail on high/critical vulnerabilities
@@ -89,18 +122,27 @@ jobs:
 
   secret-scan:
     name: Secret Scanning
+    needs: check-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
 
     steps:
+      - name: Skip for docs-only changes
+        if: needs.check-changes.outputs.docs_only == 'true'
+        run: |
+          echo "Skipping Secret Scanning - only documentation files changed"
+          echo "This is expected behavior for docs-only changes"
+
       - name: Checkout code
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Run Trivy secret scanner (optimized)
+        if: needs.check-changes.outputs.docs_only != 'true'
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
@@ -112,7 +154,7 @@ jobs:
           severity: "HIGH,CRITICAL" # Focus on critical secrets only
 
       - name: Upload Trivy scan results
+        if: needs.check-changes.outputs.docs_only != 'true' && always()
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
         with:
           sarif_file: "trivy-results.sarif"
