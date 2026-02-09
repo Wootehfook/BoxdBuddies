@@ -61,6 +61,10 @@ The project uses:
 
 **Note:** This workflow respects branch protection rules by creating a PR instead of pushing directly to main.
 
+**Required checks note:** Version bump PRs are created by automation, so you must set a
+`RELEASE_PR_TOKEN` repository secret (PAT with `repo` scope) to ensure PR-required
+checks run. The workflow will fail fast if this secret is missing.
+
 ### 3. Create GitHub Release (create-release.yml)
 
 **Trigger:** When a PR with branch name starting with `release/v` is merged to main
