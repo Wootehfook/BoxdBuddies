@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration with CI test suite
 
 ### Fixed
+- ensure version bump PR checks run (#190) by @Wootehfook
 
 - Fix security audit failure by updating Vite to 7.1.12 (#138)
 - Escape angle brackets in changelog workflow regex pattern (#170)
