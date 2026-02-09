@@ -79,7 +79,6 @@ jobs:
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "author=$PR_AUTHOR" >> $GITHUB_OUTPUT
 
           # Determine change type from PR title using conventional commits
           CHANGE_TYPE="Changed"
@@ -120,6 +119,10 @@ jobs:
           # Clean PR title (remove conventional commit prefix if present)
           # Note: Uses `sed -E` (extended regex); requires GNU sed or BSD sed with -E support
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
+          
+          # Capitalize the first letter of the clean title
+          CLEAN_TITLE=$(echo "$CLEAN_TITLE" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
+          
           echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
 
       - name: Update CHANGELOG.md
@@ -128,10 +131,9 @@ jobs:
           CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
           CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
           PR_NUMBER="${{ steps.pr_info.outputs.number }}"
-          PR_AUTHOR="${{ steps.pr_info.outputs.author }}"
 
           # Create temporary file with updated content
-          awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" -v author="$PR_AUTHOR" '
+          awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" '
           BEGIN { found_unreleased=0; added_entry=0; blank_lines=0; }
 
           # When we find the Unreleased section
@@ -154,7 +156,7 @@ jobs:
             for (i = 0; i < blank_lines; i++) print "";
             blank_lines=0;
             print $0;
-            print "- " title " (#" pr ") by @" author;
+            print "- " title " (#" pr ")";
             added_entry=1;
             next;
           }
@@ -165,7 +167,7 @@ jobs:
             # Add the section and entry with proper formatting
             print "";
             print "### " type;
-            print "- " title " (#" pr ") by @" author;
+            print "- " title " (#" pr ")";
             print "";
             blank_lines=0;
             added_entry=1;
@@ -201,7 +203,7 @@ jobs:
               echo "## [Unreleased]"
               echo ""
               echo "### $CHANGE_TYPE"
-              echo "- $CLEAN_TITLE (#$PR_NUMBER) by @$PR_AUTHOR"
+              echo "- $CLEAN_TITLE (#$PR_NUMBER)"
               echo ""
               tail -n +7 CHANGELOG.md
             } > /tmp/changelog_updated.md
