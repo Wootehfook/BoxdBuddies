@@ -15,20 +15,7 @@ permissions:
 
 jobs:
   check-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      docs_only: ${{ steps.filter.outputs.docs_only }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            docs_only:
-              - 'README.md'
-              - 'CHANGELOG.md'
-              - 'docs/**'
-              - 'scripts/README.md'
+    uses: ./.github/workflows/check-docs-only-changes.yml
 
   code-quality-analysis:
     needs: check-changes

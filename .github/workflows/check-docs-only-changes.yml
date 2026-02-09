@@ -1,0 +1,30 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
+# Note: Woo T. Fook is the author, application built by AI
+name: Check Docs-Only Changes
+
+# Reusable workflow to detect if only documentation files have changed
+# This eliminates code duplication across multiple workflow files
+
+on:
+  workflow_call:
+    outputs:
+      docs_only:
+        description: 'Whether only documentation files have changed'
+        value: ${{ jobs.check-changes.outputs.docs_only }}
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs_only:
+              - 'README.md'
+              - 'CHANGELOG.md'
+              - 'docs/**'
+              - 'scripts/README.md'
