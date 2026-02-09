@@ -23,12 +23,21 @@ permissions:
 jobs:
   version-bump:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
+      - name: Validate release PR token
+        if: ${{ secrets.RELEASE_PR_TOKEN == '' }}
+        run: |
+          echo "Error: RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
+          echo "Create a PAT with repo permissions, store it as RELEASE_PR_TOKEN, then re-run."
+          exit 1
+
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ env.RELEASE_PR_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238
@@ -172,7 +181,7 @@ jobs:
       - name: Create Pull Request
         id: create_pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ env.RELEASE_PR_TOKEN }}
         run: |
           # Prepare PR body with release notes
           PR_BODY_FILE=/tmp/pr_body.md
