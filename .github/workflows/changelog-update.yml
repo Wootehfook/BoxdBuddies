@@ -1,11 +1,10 @@
 name: Update Changelog on PR Merge
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
-      - develop
+  workflow_run:
+    workflows:
+      - Changelog Update Gate
+    types: [completed]
 
 permissions:
   contents: write
@@ -13,15 +12,58 @@ permissions:
 
 jobs:
   update-changelog:
-    if: github.event.pull_request.merged == true
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release PR token
+        env:
+          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_PR_TOKEN" ]; then
+            echo "::error::RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
+            echo "Create a PAT with repo permissions, store it as RELEASE_PR_TOKEN, then re-run."
+            exit 1
+          fi
+
+      - name: Load PR context
+        id: pr_context
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+        run: |
+          PR_NUMBER=$(jq -r '.workflow_run.pull_requests[0].number // empty' "$GITHUB_EVENT_PATH")
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::No pull request found on workflow_run payload."
+            exit 1
+          fi
+
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid PR number: $PR_NUMBER"
+            exit 1
+          fi
+
+          gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" > /tmp/pr.json
+
+          PR_BASE=$(jq -r '.base.ref' /tmp/pr.json)
+          PR_MERGED=$(jq -r '.merged' /tmp/pr.json)
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "PR_BASE=$PR_BASE" >> $GITHUB_ENV
+          echo "PR_MERGED=$PR_MERGED" >> $GITHUB_ENV
+
       - name: Evaluate changelog guard
         id: skip_guard
         run: |
-          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-          PR_BRANCH=$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")
-          PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+          if [ "$PR_MERGED" != "true" ]; then
+            echo "PR not merged; skipping changelog update."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          PR_TITLE=$(jq -r '.title' /tmp/pr.json)
+          PR_BRANCH=$(jq -r '.head.ref' /tmp/pr.json)
+          PR_BODY=$(jq -r '.body // ""' /tmp/pr.json)
           if [[ "$PR_BRANCH" =~ ^changelog/update-pr- ]]; then
             echo "Skipping changelog update PR (branch guard) to avoid recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -41,9 +83,9 @@ jobs:
 
       - name: Checkout repository
         if: steps.skip_guard.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ env.PR_BASE }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
@@ -56,85 +98,67 @@ jobs:
         if: steps.skip_guard.outputs.skip != 'true'
         id: pr_info
         run: |
-          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-          PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
-          PR_AUTHOR=$(jq -r '.pull_request.user.login' "$GITHUB_EVENT_PATH")
+          PR_TITLE=$(jq -r '.title' /tmp/pr.json)
+          PR_AUTHOR=$(jq -r '.user.login' /tmp/pr.json)
 
-          # Validate and sanitize PR title to prevent command injection
-          # Check for dangerous characters (expanded to include more shell metacharacters)
+          # Sanitize PR title — strip dangerous shell metacharacters
           if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)\<\>] ]]; then
             echo "Warning: PR title contains potentially dangerous characters"
-            # Replace dangerous characters with safe alternatives
             PR_TITLE=$(printf '%s\n' "$PR_TITLE" | tr -d ';|&`$()<>' | tr '\n' ' ')
           fi
 
-          # Ensure PR_TITLE is not empty after sanitization; if it is, use a safe fallback
+          # Fallback if title is empty after sanitization
           PR_TITLE_TRIMMED=$(echo "$PR_TITLE" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
           if [ -z "$PR_TITLE_TRIMMED" ]; then
-            echo "Warning: PR title is empty after sanitization; using fallback title based on PR number"
+            echo "Warning: PR title is empty after sanitization; using fallback"
             PR_TITLE="PR #$PR_NUMBER"
           else
             PR_TITLE="$PR_TITLE_TRIMMED"
           fi
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
-          # Determine change type from PR title using conventional commits
+          # Determine change type from conventional commit prefix
           CHANGE_TYPE="Changed"
           FOLLOWS_CONVENTION=false
 
           if [[ "$PR_TITLE" =~ ^feat(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Added"
-            FOLLOWS_CONVENTION=true
+            CHANGE_TYPE="Added"; FOLLOWS_CONVENTION=true
           elif [[ "$PR_TITLE" =~ ^fix(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Fixed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^chore(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^docs(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^refactor(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^perf(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^test(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^build(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
-          elif [[ "$PR_TITLE" =~ ^ci(\(.*\))?:.*$ ]]; then
-            CHANGE_TYPE="Changed"
-            FOLLOWS_CONVENTION=true
+            CHANGE_TYPE="Fixed"; FOLLOWS_CONVENTION=true
+          elif [[ "$PR_TITLE" =~ ^(chore|docs|refactor|perf|test|build|ci)(\(.*\))?:.*$ ]]; then
+            CHANGE_TYPE="Changed"; FOLLOWS_CONVENTION=true
           fi
 
-          echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
-          echo "follows_convention=$FOLLOWS_CONVENTION" >> $GITHUB_OUTPUT
+          echo "CHANGE_TYPE=$CHANGE_TYPE" >> $GITHUB_ENV
+          echo "FOLLOWS_CONVENTION=$FOLLOWS_CONVENTION" >> $GITHUB_ENV
 
-          # Clean PR title (remove conventional commit prefix if present)
-          # Note: Uses `sed -E` (extended regex); requires GNU sed or BSD sed with -E support
+          # Clean PR title (strip conventional commit prefix, capitalise first letter)
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
-
-          # Capitalize the first letter of the clean title
           CLEAN_TITLE=$(echo "$CLEAN_TITLE" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
-
-          echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
+          printf '%s\n' "$CLEAN_TITLE" > /tmp/clean_title
 
       - name: Update CHANGELOG.md
         if: steps.skip_guard.outputs.skip != 'true'
         run: |
-          CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
-          CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
-          PR_NUMBER="${{ steps.pr_info.outputs.number }}"
+          CHANGE_TYPE="$CHANGE_TYPE"
+          CLEAN_TITLE=$(cat /tmp/clean_title)
+          PR_NUMBER="${{ env.PR_NUMBER }}"
 
-          # Create temporary file with updated content
-          awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" '
-          BEGIN { found_unreleased=0; added_entry=0; blank_lines=0; }
+          # Write title to a file to avoid embedding it directly in the awk command
+          printf '%s\n' "$CLEAN_TITLE" > /tmp/pr_title
+
+          # Use awk to insert the new entry under the correct ### subsection
+          awk -v type="$CHANGE_TYPE" -v pr="$PR_NUMBER" '
+          BEGIN {
+            found_unreleased=0;
+            added_entry=0;
+            blank_lines=0;
+            if ((getline title < "/tmp/pr_title") > 0) {
+              # title loaded from file
+            }
+            close("/tmp/pr_title");
+          }
 
           # When we find the Unreleased section
           /## \[Unreleased\]/ {
@@ -144,15 +168,14 @@ jobs:
             next;
           }
 
-          # Track blank lines in the Unreleased section
+          # Track blank lines inside the Unreleased section
           found_unreleased && !added_entry && /^[[:space:]]*$/ {
             blank_lines++;
             next;
           }
 
-          # If we are in unreleased section and find the change type section
+          # Found the matching ### subsection — append the entry
           found_unreleased && !added_entry && $0 ~ "^### " type {
-            # Print any accumulated blank lines
             for (i = 0; i < blank_lines; i++) print "";
             blank_lines=0;
             print $0;
@@ -161,10 +184,8 @@ jobs:
             next;
           }
 
-          # If we are in unreleased section and hit another ## section (next version)
+          # Hit the next version section without finding the subsection — create it
           found_unreleased && !added_entry && /^## \[/ {
-            # Unreleased section is empty or has no matching subsection
-            # Add the section and entry with proper formatting
             print "";
             print "### " type;
             print "- " title " (#" pr ")";
@@ -176,26 +197,25 @@ jobs:
             next;
           }
 
-          # If we encounter a subsection in Unreleased but not our type
+          # Another subsection in Unreleased that is not our type — print as-is
           found_unreleased && !added_entry && /^### / {
-            # Print accumulated blank lines and this subsection
             for (i = 0; i < blank_lines; i++) print "";
             blank_lines=0;
             print $0;
             next;
           }
 
-          # Print all other lines (reset blank line counter if we printed content)
-          { 
+          # Default: print all other lines
+          {
             if (found_unreleased && !added_entry && blank_lines > 0) {
               for (i = 0; i < blank_lines; i++) print "";
               blank_lines=0;
             }
-            print $0; 
+            print $0;
           }
           ' CHANGELOG.md > /tmp/changelog_updated.md
 
-          # If we never found an unreleased section, prepend it
+          # If CHANGELOG.md had no [Unreleased] section, prepend one
           if ! grep -q "## \[Unreleased\]" /tmp/changelog_updated.md; then
             {
               head -n 6 CHANGELOG.md
@@ -221,8 +241,9 @@ jobs:
             exit 0
           fi
 
-          BRANCH_NAME="changelog/update-pr-${{ steps.pr_info.outputs.number }}"
+          BRANCH_NAME="changelog/update-pr-${{ env.PR_NUMBER }}"
 
+          # Avoid duplicates — check for an existing PR or remote branch
           EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
             echo "Changelog PR already exists: #$EXISTING_PR"
@@ -236,13 +257,13 @@ jobs:
 
           git checkout -b "$BRANCH_NAME"
           git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
+          git commit -m "docs: update CHANGELOG for PR #${{ env.PR_NUMBER }}"
           git push origin "$BRANCH_NAME"
 
           gh pr create \
-            --title "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}" \
-            --body "Automated changelog update for #${{ steps.pr_info.outputs.number }}.\n\n<!-- changelog-update -->" \
-            --base ${{ github.event.pull_request.base.ref }} \
+            --title "docs: update CHANGELOG for PR #${{ env.PR_NUMBER }}" \
+            --body $'Automated changelog update for #${{ env.PR_NUMBER }}.\n\n<!-- changelog-update -->' \
+            --base "${{ env.PR_BASE }}" \
             --head "$BRANCH_NAME"
 
       - name: Comment on PR
@@ -251,12 +272,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
-
-          if [[ "${{ steps.pr_info.outputs.follows_convention }}" != "true" ]]; then
-            COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorized as '**Changed**' by default. Consider using conventional commits for better changelog organization."
+          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${CHANGE_TYPE}** section."
+          if [[ "$FOLLOWS_CONVENTION" != "true" ]]; then
+            COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorised as '**Changed**' by default."
           fi
 
-          gh pr comment ${{ steps.pr_info.outputs.number }} --body "$COMMENT"
-
-# AI Generated: GitHub Copilot - 2025-12-26
+          gh pr comment ${{ env.PR_NUMBER }} --body "$COMMENT"
