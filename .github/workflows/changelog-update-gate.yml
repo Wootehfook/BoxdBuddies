@@ -1,0 +1,21 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
+name: Changelog Update Gate
+
+on:
+    pull_request:
+        types: [closed]
+        branches:
+            - main
+            - develop
+
+permissions:
+    contents: read
+
+jobs:
+    gate:
+        if: github.event.pull_request.merged == true
+        runs-on: ubuntu-latest
+        steps:
+            - name: Gate check
+              run: |
+                  echo "Changelog update gate passed."

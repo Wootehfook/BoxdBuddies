@@ -1,11 +1,10 @@
 name: Update Changelog on PR Merge
 
 on:
-  pull_request_target:
-    types: [closed]
-    branches:
-      - main
-      - develop
+  workflow_run:
+    workflows:
+      - Changelog Update Gate
+    types: [completed]
 
 permissions:
   contents: write
@@ -14,16 +13,52 @@ permissions:
 jobs:
   update-changelog:
     if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release PR token
+        env:
+          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_PR_TOKEN" ]; then
+            echo "::error::RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
+            echo "Create a PAT with repo permissions, store it as RELEASE_PR_TOKEN, then re-run."
+            exit 1
+          fi
+
+      - name: Load PR context
+        id: pr_context
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+        run: |
+          PR_NUMBER=$(jq -r '.workflow_run.pull_requests[0].number // empty' "$GITHUB_EVENT_PATH")
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::No pull request found on workflow_run payload."
+            exit 1
+          fi
+
+          gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" > /tmp/pr.json
+
+          PR_BASE=$(jq -r '.base.ref' /tmp/pr.json)
+          PR_MERGED=$(jq -r '.merged' /tmp/pr.json)
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "PR_BASE=$PR_BASE" >> $GITHUB_ENV
+          echo "PR_MERGED=$PR_MERGED" >> $GITHUB_ENV
+
       - name: Evaluate changelog guard
         id: skip_guard
         run: |
-          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-          PR_BRANCH=$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")
-          PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+          if [ "$PR_MERGED" != "true" ]; then
+            echo "PR not merged; skipping changelog update."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          PR_TITLE=$(jq -r '.title' /tmp/pr.json)
+          PR_BRANCH=$(jq -r '.head.ref' /tmp/pr.json)
+          PR_BODY=$(jq -r '.body // ""' /tmp/pr.json)
           if [[ "$PR_BRANCH" =~ ^changelog/update-pr- ]]; then
             echo "Skipping changelog update PR (branch guard) to avoid recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -41,24 +76,12 @@ jobs:
           fi
           echo "skip=false" >> $GITHUB_OUTPUT
 
-      - name: Validate release PR token
-        if: steps.skip_guard.outputs.skip != 'true'
-        env:
-          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
-        run: |
-          if [ -z "$RELEASE_PR_TOKEN" ]; then
-            echo "::error::RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
-            echo "Create a PAT with repo permissions, store it as RELEASE_PR_TOKEN, then re-run."
-            exit 1
-          fi
-
       - name: Checkout repository
         if: steps.skip_guard.outputs.skip != 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
-          # Use PAT so the pushed branch / PR can trigger downstream workflows
-          token: ${{ secrets.RELEASE_PR_TOKEN }}
+          ref: ${{ env.PR_BASE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         if: steps.skip_guard.outputs.skip != 'true'
@@ -70,9 +93,9 @@ jobs:
         if: steps.skip_guard.outputs.skip != 'true'
         id: pr_info
         run: |
-          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-          PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
-          PR_AUTHOR=$(jq -r '.pull_request.user.login' "$GITHUB_EVENT_PATH")
+          PR_TITLE=$(jq -r '.title' /tmp/pr.json)
+          PR_NUMBER=$(jq -r '.number' /tmp/pr.json)
+          PR_AUTHOR=$(jq -r '.user.login' /tmp/pr.json)
 
           # Sanitize PR title — strip dangerous shell metacharacters
           if [[ "$PR_TITLE" =~ [\;\|\&\`\$\(\)\<\>] ]]; then
@@ -208,7 +231,7 @@ jobs:
       - name: Commit and open changelog PR
         if: steps.skip_guard.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git diff --quiet CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
