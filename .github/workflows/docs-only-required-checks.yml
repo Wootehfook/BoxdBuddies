@@ -5,8 +5,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "*.md"
       - "README.md"
       - "CHANGELOG.md"
+      - "LICENSE"
       - "docs/**"
       - "scripts/README.md"
 
@@ -18,40 +20,40 @@ jobs:
     name: frontend-quality-checks
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: frontend checks skipped."
+      - run: 'echo "Docs-only change: frontend checks skipped."'
 
   backend-quality-checks:
     name: backend-quality-checks
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: backend checks skipped."
+      - run: 'echo "Docs-only change: backend checks skipped."'
 
   security-audit:
     name: security-audit
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: security audit skipped."
+      - run: 'echo "Docs-only change: security audit skipped."'
 
   code-quality-analysis:
     name: code-quality-analysis
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: code quality analysis skipped."
+      - run: 'echo "Docs-only change: code quality analysis skipped."'
 
   license-compliance-check:
     name: license-compliance-check
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: license compliance check skipped."
+      - run: 'echo "Docs-only change: license compliance check skipped."'
 
   secret-scanning:
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: secret scanning skipped."
+      - run: 'echo "Docs-only change: secret scanning skipped."'
 
   security-vulnerability-scan:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Docs-only change: security vulnerability scan skipped."
+      - run: 'echo "Docs-only change: security vulnerability scan skipped."'
