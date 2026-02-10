@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-02-10
+
 ### Added
 
 - Automated versioning and changelog management workflows (#162)
@@ -85,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump jsdom from 27.2.0 to 27.4.0 (#168)
 - Bump @typescript-eslint/eslint-plugin from 8.46.2 to 8.50.1 (#169)
 
+
 ## [2.1.0] - 2025-09-13
 
 ### Added
@@ -121,6 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Wootehfook/BoxdBuddies/releases/tag/v2.0.0
