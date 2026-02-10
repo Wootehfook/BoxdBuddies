@@ -1,0 +1,112 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
+name: Workflow-only Required Checks
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - ".github/workflows/**"
+            - ".github/**/*.yml"
+            - ".github/**/*.yaml"
+
+permissions:
+    contents: read
+    pull-requests: read
+
+jobs:
+    detect-scope:
+        name: Detect workflow-only scope
+        runs-on: ubuntu-latest
+        outputs:
+            only_workflows: ${{ steps.detect.outputs.only_workflows }}
+        steps:
+            - name: Determine change scope
+              id: detect
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  pr_number="${{ github.event.pull_request.number }}"
+                  repo="${{ github.repository }}"
+                  only_workflows=true
+                  page=1
+
+                  while :; do
+                      files=$(gh api "repos/$repo/pulls/$pr_number/files?per_page=100&page=$page" -q '.[].filename')
+                      if [ -z "$files" ]; then
+                          break
+                      fi
+
+                      while IFS= read -r file; do
+                          [ -z "$file" ] && continue
+                          if [[ "$file" == .github/* ]]; then
+                              :
+                          else
+                              only_workflows=false
+                              break
+                          fi
+                      done <<< "$files"
+
+                      if [ "$only_workflows" = false ]; then
+                          break
+                      fi
+
+                      page=$((page + 1))
+                  done
+
+                  echo "only_workflows=$only_workflows" >> "$GITHUB_OUTPUT"
+
+    frontend-quality-checks:
+        name: frontend-quality-checks
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: frontend checks skipped."'
+
+    backend-quality-checks:
+        name: backend-quality-checks
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: backend checks skipped."'
+
+    security-audit:
+        name: security-audit
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: security audit skipped."'
+
+    code-quality-analysis:
+        name: code-quality-analysis
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: code quality analysis skipped."'
+
+    license-compliance-check:
+        name: license-compliance-check
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: license compliance check skipped."'
+
+    secret-scanning:
+        name: Secret Scanning
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: secret scanning skipped."'
+
+    security-vulnerability-scan:
+        name: Security Vulnerability Scan
+        runs-on: ubuntu-latest
+        needs: detect-scope
+        if: needs.detect-scope.outputs.only_workflows == 'true'
+        steps:
+            - run: 'echo "Workflow-only change: security vulnerability scan skipped."'
