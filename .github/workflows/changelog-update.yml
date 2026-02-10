@@ -39,6 +39,11 @@ jobs:
             exit 1
           fi
 
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid PR number: $PR_NUMBER"
+            exit 1
+          fi
+
           gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" > /tmp/pr.json
 
           PR_BASE=$(jq -r '.base.ref' /tmp/pr.json)
@@ -94,7 +99,6 @@ jobs:
         id: pr_info
         run: |
           PR_TITLE=$(jq -r '.title' /tmp/pr.json)
-          PR_NUMBER=$(jq -r '.number' /tmp/pr.json)
           PR_AUTHOR=$(jq -r '.user.login' /tmp/pr.json)
 
           # Sanitize PR title — strip dangerous shell metacharacters
@@ -113,7 +117,6 @@ jobs:
           fi
 
           echo "title=$PR_TITLE" >> $GITHUB_OUTPUT
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
           # Determine change type from conventional commit prefix
           CHANGE_TYPE="Changed"
@@ -140,7 +143,7 @@ jobs:
         run: |
           CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
           CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
-          PR_NUMBER="${{ steps.pr_info.outputs.number }}"
+          PR_NUMBER="${{ env.PR_NUMBER }}"
 
           # Write title to a file to avoid embedding it directly in the awk command
           printf '%s\n' "$CLEAN_TITLE" > /tmp/pr_title
@@ -238,7 +241,7 @@ jobs:
             exit 0
           fi
 
-          BRANCH_NAME="changelog/update-pr-${{ steps.pr_info.outputs.number }}"
+          BRANCH_NAME="changelog/update-pr-${{ env.PR_NUMBER }}"
 
           # Avoid duplicates — check for an existing PR or remote branch
           EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number -q '.[0].number')
@@ -254,13 +257,13 @@ jobs:
 
           git checkout -b "$BRANCH_NAME"
           git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}"
+          git commit -m "docs: update CHANGELOG for PR #${{ env.PR_NUMBER }}"
           git push origin "$BRANCH_NAME"
 
           gh pr create \
-            --title "docs: update CHANGELOG for PR #${{ steps.pr_info.outputs.number }}" \
-            --body $'Automated changelog update for #${{ steps.pr_info.outputs.number }}.\n\n<!-- changelog-update -->' \
-            --base "${{ github.event.pull_request.base.ref }}" \
+            --title "docs: update CHANGELOG for PR #${{ env.PR_NUMBER }}" \
+            --body $'Automated changelog update for #${{ env.PR_NUMBER }}.\n\n<!-- changelog-update -->' \
+            --base "${{ env.PR_BASE }}" \
             --head "$BRANCH_NAME"
 
       - name: Comment on PR
@@ -274,4 +277,4 @@ jobs:
             COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorised as '**Changed**' by default."
           fi
 
-          gh pr comment ${{ steps.pr_info.outputs.number }} --body "$COMMENT"
+          gh pr comment ${{ env.PR_NUMBER }} --body "$COMMENT"
