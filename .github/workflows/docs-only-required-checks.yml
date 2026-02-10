@@ -14,46 +14,107 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  detect-scope:
+    name: Detect docs-only scope
+    runs-on: ubuntu-latest
+    outputs:
+      only_docs: ${{ steps.detect.outputs.only_docs }}
+    steps:
+      - name: Determine change scope
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ github.event.pull_request.number }}"
+          repo="${{ github.repository }}"
+          only_docs=true
+          page=1
+
+          while :; do
+            files=$(gh api "repos/$repo/pulls/$pr_number/files?per_page=100&page=$page" -q '.[].filename')
+            if [ -z "$files" ]; then
+              break
+            fi
+
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              if [[ "$file" == docs/* ||
+                    "$file" == "scripts/README.md" ||
+                    "$file" == "README.md" ||
+                    "$file" == "CHANGELOG.md" ||
+                    "$file" == "LICENSE" ||
+                    ( "$file" != */* && "$file" == *.md ) ]]; then
+                :
+              else
+                only_docs=false
+                break
+              fi
+            done <<< "$files"
+
+            if [ "$only_docs" = false ]; then
+              break
+            fi
+
+            page=$((page + 1))
+          done
+
+          echo "only_docs=$only_docs" >> "$GITHUB_OUTPUT"
+
   frontend-quality-checks:
     name: frontend-quality-checks
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: frontend checks skipped."'
 
   backend-quality-checks:
     name: backend-quality-checks
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: backend checks skipped."'
 
   security-audit:
     name: security-audit
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: security audit skipped."'
 
   code-quality-analysis:
     name: code-quality-analysis
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: code quality analysis skipped."'
 
   license-compliance-check:
     name: license-compliance-check
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: license compliance check skipped."'
 
   secret-scanning:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: secret scanning skipped."'
 
   security-vulnerability-scan:
     name: Security Vulnerability Scan
     runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: security vulnerability scan skipped."'
