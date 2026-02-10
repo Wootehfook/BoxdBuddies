@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Add workflow-only required checks (#203)
+- Harden changelog workflow_run PR context (#201)
 - Update workflow signing and cleanup (#187)
 - Prevent changelog PR loop and update changelog (#184)
 - Opened PR for changelog updates (#181)
