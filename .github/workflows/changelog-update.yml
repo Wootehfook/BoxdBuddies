@@ -35,8 +35,27 @@ jobs:
         run: |
           PR_NUMBER=$(jq -r '.workflow_run.pull_requests[0].number // empty' "$GITHUB_EVENT_PATH")
           if [ -z "$PR_NUMBER" ]; then
-            echo "::error::No pull request found on workflow_run payload."
-            exit 1
+            HEAD_SHA=$(jq -r '.workflow_run.head_sha // empty' "$GITHUB_EVENT_PATH")
+            if [ -z "$HEAD_SHA" ]; then
+              echo "No pull request found on workflow_run payload; skipping."
+              echo "PR_NUMBER=0" >> $GITHUB_ENV
+              echo "PR_BASE=main" >> $GITHUB_ENV
+              echo "PR_MERGED=false" >> $GITHUB_ENV
+              exit 0
+            fi
+
+            PR_NUMBER=$(gh api \
+              -H "Accept: application/vnd.github.groot-preview+json" \
+              "repos/${{ github.repository }}/commits/$HEAD_SHA/pulls" \
+              -q '.[0].number // empty')
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No pull request found for workflow_run; skipping."
+            echo "PR_NUMBER=0" >> $GITHUB_ENV
+            echo "PR_BASE=main" >> $GITHUB_ENV
+            echo "PR_MERGED=false" >> $GITHUB_ENV
+            exit 0
           fi
 
           if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
