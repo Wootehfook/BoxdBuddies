@@ -130,19 +130,19 @@ jobs:
             CHANGE_TYPE="Changed"; FOLLOWS_CONVENTION=true
           fi
 
-          echo "change_type=$CHANGE_TYPE" >> $GITHUB_OUTPUT
-          echo "follows_convention=$FOLLOWS_CONVENTION" >> $GITHUB_OUTPUT
+          echo "CHANGE_TYPE=$CHANGE_TYPE" >> $GITHUB_ENV
+          echo "FOLLOWS_CONVENTION=$FOLLOWS_CONVENTION" >> $GITHUB_ENV
 
           # Clean PR title (strip conventional commit prefix, capitalise first letter)
           CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^(feat|fix|chore|docs|refactor|perf|test|build|ci)(\([^)]*\))?:[[:space:]]*//')
           CLEAN_TITLE=$(echo "$CLEAN_TITLE" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
-          echo "clean_title=$CLEAN_TITLE" >> $GITHUB_OUTPUT
+          printf '%s\n' "$CLEAN_TITLE" > /tmp/clean_title
 
       - name: Update CHANGELOG.md
         if: steps.skip_guard.outputs.skip != 'true'
         run: |
-          CHANGE_TYPE="${{ steps.pr_info.outputs.change_type }}"
-          CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
+          CHANGE_TYPE="$CHANGE_TYPE"
+          CLEAN_TITLE=$(cat /tmp/clean_title)
           PR_NUMBER="${{ env.PR_NUMBER }}"
 
           # Write title to a file to avoid embedding it directly in the awk command
@@ -272,8 +272,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${{ steps.pr_info.outputs.change_type }}** section."
-          if [[ "${{ steps.pr_info.outputs.follows_convention }}" != "true" ]]; then
+          COMMENT="✅ CHANGELOG.md has been automatically updated with this PR's changes in the **${CHANGE_TYPE}** section."
+          if [[ "$FOLLOWS_CONVENTION" != "true" ]]; then
             COMMENT="${COMMENT}\n\n💡 **Tip:** Your PR title doesn't follow the conventional commit format (e.g., \`feat:\`, \`fix:\`, \`chore:\`). Changes were categorised as '**Changed**' by default."
           fi
 
