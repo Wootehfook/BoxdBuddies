@@ -41,9 +41,20 @@ jobs:
           fi
           echo "skip=false" >> $GITHUB_OUTPUT
 
+      - name: Validate release PR token
+        if: steps.skip_guard.outputs.skip != 'true'
+        env:
+          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_PR_TOKEN" ]; then
+            echo "::error::RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
+            echo "Create a PAT with repo permissions, store it as RELEASE_PR_TOKEN, then re-run."
+            exit 1
+          fi
+
       - name: Checkout repository
         if: steps.skip_guard.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           # Use PAT so the pushed branch / PR can trigger downstream workflows
@@ -108,9 +119,20 @@ jobs:
           CLEAN_TITLE="${{ steps.pr_info.outputs.clean_title }}"
           PR_NUMBER="${{ steps.pr_info.outputs.number }}"
 
+          # Write title to a file to avoid embedding it directly in the awk command
+          printf '%s\n' "$CLEAN_TITLE" > /tmp/pr_title
+
           # Use awk to insert the new entry under the correct ### subsection
-          awk -v type="$CHANGE_TYPE" -v title="$CLEAN_TITLE" -v pr="$PR_NUMBER" '
-          BEGIN { found_unreleased=0; added_entry=0; blank_lines=0; }
+          awk -v type="$CHANGE_TYPE" -v pr="$PR_NUMBER" '
+          BEGIN {
+            found_unreleased=0;
+            added_entry=0;
+            blank_lines=0;
+            if ((getline title < "/tmp/pr_title") > 0) {
+              # title loaded from file
+            }
+            close("/tmp/pr_title");
+          }
 
           # When we find the Unreleased section
           /## \[Unreleased\]/ {

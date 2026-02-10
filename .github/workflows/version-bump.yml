@@ -35,13 +35,13 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           token: ${{ env.RELEASE_PR_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: "20"
           cache: "npm"
@@ -159,6 +159,7 @@ jobs:
         id: create_pr
         env:
           GH_TOKEN: ${{ env.RELEASE_PR_TOKEN }}
+          RELEASE_NOTES_INPUT: ${{ github.event.inputs.release_notes }}
         run: |
           PR_BODY_FILE=/tmp/pr_body.md
 
@@ -171,8 +172,8 @@ jobs:
             echo ""
             cat /tmp/unreleased.md
 
-            if [ -n "${{ github.event.inputs.release_notes }}" ]; then
-              RELEASE_NOTES=$(printf '%s\n' "${{ github.event.inputs.release_notes }}")
+            if [ -n "$RELEASE_NOTES_INPUT" ]; then
+              RELEASE_NOTES=$(printf '%s\n' "$RELEASE_NOTES_INPUT")
               MAX_LEN=5000
               if [ "${#RELEASE_NOTES}" -gt "$MAX_LEN" ]; then
                 echo "::error::release_notes exceeds ${MAX_LEN} characters"
