@@ -1,3 +1,4 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
 name: Update Changelog on PR Merge
 
 on:
@@ -17,6 +18,10 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.repository.full_name == github.repository
     runs-on: ubuntu-latest
+    env:
+      PR_BASE: ""
+      PR_NUMBER: ""
+      PR_MERGED: "false"
     steps:
       - name: Validate release PR token
         env:
@@ -106,7 +111,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ env.PR_BASE }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PR_TOKEN }}
 
       - name: Configure Git
         if: steps.skip_guard.outputs.skip != 'true'
@@ -254,7 +259,7 @@ jobs:
       - name: Commit and open changelog PR
         if: steps.skip_guard.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
         run: |
           if git diff --quiet CHANGELOG.md; then
             echo "No changes to CHANGELOG.md"
