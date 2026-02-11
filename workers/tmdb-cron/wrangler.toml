@@ -1,0 +1,13 @@
+# AI Generated: GitHub Copilot - 2026-02-11
+name = "boxdbuddy-tmdb-cron"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["0 4 * * *"]  # Daily at 04:00 UTC
+
+[[d1_databases]]
+binding = "MOVIES_DB"
+database_name = "boxdbuddy-movies"
+database_id = "466c5909-8a9a-418c-927b-2d36c118e270"

@@ -1,0 +1,17 @@
+{
+  "name": "boxdbuddy-tmdb-cron",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker cron job for BoxdBuddy TMDB incremental sync",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.0.0"
+  }
+}
