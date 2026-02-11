@@ -250,7 +250,7 @@ async function getHighestSyncedId(db: D1Database): Promise<number> {
     .bind("highest_movie_id_synced")
     .first<{ value: string }>();
 
-  return result?.value ? parseInt(result.value, 10) : 0;
+  return result?.value ? Number.parseInt(result.value, 10) : 0;
 }
 
 /**
@@ -306,6 +306,44 @@ async function setLastDeltaSync(db: D1Database): Promise<void> {
 // ============================================================================
 
 /**
+ * Process a single movie ID during incremental sync.
+ * Returns: "synced", "skipped", "not_found", "rate_limited", or "error"
+ */
+async function processSingleMovie(
+  db: D1Database,
+  apiKey: string,
+  movieId: number
+): Promise<"synced" | "skipped" | "not_found" | "rate_limited" | "error"> {
+  try {
+    const result = await getMovieWithDirector(movieId, apiKey);
+
+    if (result === null) {
+      // Adult content, skip
+      return "skipped";
+    }
+
+    const { movie, director } = result;
+    const genres = genresJson(movie);
+    const year = releaseYear(movie.release_date);
+
+    await upsertMovie(db, movie, director, genres, year);
+    await setHighestSyncedId(db, movieId);
+
+    return "synced";
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "NOT_FOUND") {
+        return "not_found";
+      } else if (error.message === "RATE_LIMITED") {
+        return "rate_limited";
+      }
+    }
+    console.error(`❌ Error syncing movie ID ${movieId}:`, error);
+    return "error";
+  }
+}
+
+/**
  * Incremental ID sync: walk forward from highest synced movie ID,
  * discovering new movies. Stops at first NOT_FOUND or when time is up.
  */
@@ -325,53 +363,37 @@ async function incrementalIdSync(
       `🔄 Starting incremental sync from movie ID ${currentId}...`
     );
 
-    for (let i = 0; i < maxMovies; i++) {
-      if (timeUp(startTime)) {
-        console.log("⏱️ Time budget reached for incremental sync");
-        break;
-      }
-
+    let processedCount = 0;
+    while (processedCount < maxMovies && !timeUp(startTime)) {
       currentId++;
 
-      try {
-        const result = await getMovieWithDirector(currentId, apiKey);
+      const result = await processSingleMovie(db, apiKey, currentId);
 
-        if (result === null) {
-          // Adult content, skip
-          skipped++;
-          continue;
-        }
-
-        const { movie, director } = result;
-        const genres = genresJson(movie);
-        const year = releaseYear(movie.release_date);
-
-        await upsertMovie(db, movie, director, genres, year);
-        await setHighestSyncedId(db, currentId);
-
-        synced++;
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.message === "NOT_FOUND") {
-            // Movie ID doesn't exist, we've reached the end
-            console.log(`✅ Reached end of TMDB catalog at ID ${currentId}`);
-            break;
-          } else if (error.message === "RATE_LIMITED") {
-            // Wait and retry once
-            console.log(`⏳ Rate limited at ID ${currentId}, waiting...`);
-            await new Promise((resolve) =>
-              setTimeout(resolve, RATE_LIMIT_RETRY_MS)
-            );
-            i--; // Retry this ID
-            continue;
-          }
-        }
-        console.error(
-          `❌ Error syncing movie ID ${currentId}:`,
-          error
+      if (result === "not_found") {
+        console.log(`✅ Reached end of TMDB catalog at ID ${currentId}`);
+        break;
+      } else if (result === "rate_limited") {
+        console.log(`⏳ Rate limited at ID ${currentId}, waiting...`);
+        await new Promise((resolve) =>
+          setTimeout(resolve, RATE_LIMIT_RETRY_MS)
         );
+        // Don't increment processedCount, retry this ID
+        currentId--;
+        continue;
+      } else if (result === "synced") {
+        synced++;
+        processedCount++;
+      } else if (result === "skipped") {
+        skipped++;
+        processedCount++;
+      } else if (result === "error") {
         errors++;
+        processedCount++;
       }
+    }
+
+    if (timeUp(startTime)) {
+      console.log("⏱️ Time budget reached for incremental sync");
     }
 
     const elapsed = Date.now() - startTime;
