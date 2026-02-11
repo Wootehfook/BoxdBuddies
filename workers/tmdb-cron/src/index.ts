@@ -413,6 +413,42 @@ async function incrementalIdSync(
 // ============================================================================
 
 /**
+ * Process a single movie ID during delta sync.
+ * Returns: "synced", "skipped", "not_found", "rate_limited", or "error"
+ */
+async function processDeltaMovie(
+  db: D1Database,
+  apiKey: string,
+  movieId: number
+): Promise<"synced" | "skipped" | "not_found" | "rate_limited" | "error"> {
+  try {
+    const result = await getMovieWithDirector(movieId, apiKey);
+
+    if (result === null) {
+      // Adult content, skip
+      return "skipped";
+    }
+
+    const { movie, director } = result;
+    const genres = genresJson(movie);
+    const year = releaseYear(movie.release_date);
+
+    await upsertMovie(db, movie, director, genres, year);
+    return "synced";
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "NOT_FOUND") {
+        return "not_found";
+      } else if (error.message === "RATE_LIMITED") {
+        return "rate_limited";
+      }
+    }
+    console.error(`❌ Error syncing movie ID ${movieId}:`, error);
+    return "error";
+  }
+}
+
+/**
  * Delta sync: fetch movies that changed on TMDB since last sync
  * and re-upsert them to catch metadata updates.
  */
@@ -445,37 +481,19 @@ async function deltaSyncChanges(
         break;
       }
 
-      try {
-        const result = await getMovieWithDirector(movieId, apiKey);
+      const result = await processDeltaMovie(db, apiKey, movieId);
 
-        if (result === null) {
-          // Adult content, skip
-          skipped++;
-          continue;
-        }
-
-        const { movie, director } = result;
-        const genres = genresJson(movie);
-        const year = releaseYear(movie.release_date);
-
-        await upsertMovie(db, movie, director, genres, year);
+      if (result === "synced") {
         synced++;
-      } catch (error) {
-        if (error instanceof Error && error.message === "NOT_FOUND") {
-          // Movie was deleted on TMDB, skip
-          skipped++;
-          continue;
-        } else if (
-          error instanceof Error &&
-          error.message === "RATE_LIMITED"
-        ) {
-          console.log(`⏳ Rate limited at ID ${movieId}, waiting...`);
-          await new Promise((resolve) =>
-            setTimeout(resolve, RATE_LIMIT_RETRY_MS)
-          );
-          // Note: We don't retry in delta sync, just move to next
-        }
-        console.error(`❌ Error syncing movie ID ${movieId}:`, error);
+      } else if (result === "skipped" || result === "not_found") {
+        skipped++;
+      } else if (result === "rate_limited") {
+        console.log(`⏳ Rate limited at ID ${movieId}, waiting...`);
+        await new Promise((resolve) =>
+          setTimeout(resolve, RATE_LIMIT_RETRY_MS)
+        );
+        // Note: We don't retry in delta sync, just move to next
+      } else if (result === "error") {
         errors++;
       }
     }
