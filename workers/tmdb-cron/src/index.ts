@@ -380,7 +380,7 @@ async function incrementalIdSync(
 
     return { success: true, synced, errors, skipped, message };
   } catch (error) {
-    const message = `Incremental sync failed: ${error}`;
+    const message = `Incremental sync failed: ${error instanceof Error ? error.message : "Unknown error"}`;
     console.error(`❌ ${message}`);
     return { success: false, synced, errors, skipped, message };
   }
@@ -467,7 +467,7 @@ async function deltaSyncChanges(
 
     return { success: true, synced, errors, skipped, message };
   } catch (error) {
-    const message = `Delta sync failed: ${error}`;
+    const message = `Delta sync failed: ${error instanceof Error ? error.message : "Unknown error"}`;
     console.error(`❌ ${message}`);
     return { success: false, synced, errors, skipped, message };
   }
@@ -546,8 +546,14 @@ export default {
           }
         );
       } catch (error) {
+        console.error("Status endpoint error:", error);
         return new Response(
-          JSON.stringify({ error: String(error) }),
+          JSON.stringify({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Internal server error",
+          }),
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
