@@ -31,6 +31,8 @@ The project uses:
 - PR title: `feat: add user authentication`
 - Result: Entry added to "Added" section: `- add user authentication (#123) by @username`
 
+**Note:** Release PRs (from `release/v*` branches created by the version bump workflow) are automatically excluded from changelog updates. The version bump workflow already moves all `[Unreleased]` entries into a versioned section, so a separate changelog entry would be redundant.
+
 ### 2. Version Bump and Release (version-bump.yml)
 
 **Trigger:** Manual workflow dispatch via GitHub Actions UI

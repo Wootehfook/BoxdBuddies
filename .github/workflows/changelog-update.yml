@@ -1,4 +1,4 @@
-# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-10
 name: Update Changelog on PR Merge
 
 on:
@@ -80,6 +80,7 @@ jobs:
       - name: Evaluate changelog guard
         id: skip_guard
         run: |
+          # Guard 1: PR must be merged
           if [ "$PR_MERGED" != "true" ]; then
             echo "PR not merged; skipping changelog update."
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -89,21 +90,42 @@ jobs:
           PR_TITLE=$(jq -r '.title' /tmp/pr.json)
           PR_BRANCH=$(jq -r '.head.ref' /tmp/pr.json)
           PR_BODY=$(jq -r '.body // ""' /tmp/pr.json)
+
+          # Guard 2: Skip changelog update PRs (branch guard) to avoid recursion
           if [[ "$PR_BRANCH" =~ ^changelog/update-pr- ]]; then
             echo "Skipping changelog update PR (branch guard) to avoid recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
+
+          # Guard 3 (NEW): Skip release PRs — version-bump.yml already updates CHANGELOG
+          if [[ "$PR_BRANCH" =~ ^release/v ]]; then
+            echo "Skipping release PR (branch: $PR_BRANCH); version bump already updates CHANGELOG."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Guard 4: Skip changelog update PRs (body marker) to avoid recursion
           if [[ "$PR_BODY" == *"<!-- changelog-update -->"* ]]; then
             echo "Skipping changelog update PR (body marker) to avoid recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
+
+          # Guard 5: Skip changelog-only PRs by title to avoid recursion
           if [[ "$PR_TITLE" =~ ^docs(\(.*\))?:\ update\ CHANGELOG ]]; then
             echo "Skipping changelog-only PR to avoid recursion."
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
+
+          # Guard 6 (NEW): Skip version bump PRs by title to avoid duplicate entries
+          if [[ "$PR_TITLE" =~ ^chore(\(.*\))?:\ bump\ version\ to ]]; then
+            echo "Skipping version bump PR to avoid duplicate changelog entry."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Checkout repository

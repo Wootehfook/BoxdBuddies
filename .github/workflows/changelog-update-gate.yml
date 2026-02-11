@@ -1,4 +1,4 @@
-# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-09
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-10
 name: Changelog Update Gate
 
 on:
@@ -13,7 +13,9 @@ permissions:
 
 jobs:
     gate:
-        if: github.event.pull_request.merged == true
+        if: >-
+            github.event.pull_request.merged == true &&
+            !startsWith(github.event.pull_request.head.ref, 'release/v')
         runs-on: ubuntu-latest
         steps:
             - name: Gate check
