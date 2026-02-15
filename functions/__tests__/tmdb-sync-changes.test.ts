@@ -1,10 +1,11 @@
 // AI Generated: GitHub Copilot - 2025-09-18
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
-  mockFetch,
   createMockDb,
-  createAdminEnv,
-  createAdminSyncRequest,
+  createTmdbFetchMock,
+  mockFetch,
+  okJson,
+  runChangesSync,
 } from "./test-utils";
 
 describe("tmdb changes sync sentinel", () => {
@@ -12,28 +13,22 @@ describe("tmdb changes sync sentinel", () => {
   let insertBind: any;
 
   beforeEach(() => {
-    // Mock changes list to include movie 401 and genre list empty
-    mockFetch(async (url: string) => {
-      if (url.includes("/movie/changes")) {
-        return { ok: true, json: async () => ({ results: [{ id: 401 }] }) };
-      }
-      if (url.includes("/movie/401")) {
-        return {
-          ok: true,
-          json: async () => ({
+    mockFetch(
+      createTmdbFetchMock([
+        ["/movie/changes", okJson({ results: [{ id: 401 }] })],
+        [
+          "/movie/401",
+          okJson({
             id: 401,
             title: "NoGenresChanged",
             genres: [],
             genre_ids: [],
             credits: { crew: [] },
           }),
-        };
-      }
-      if (url.includes("/genre/movie/list")) {
-        return { ok: true, json: async () => ({ genres: [] }) };
-      }
-      return { ok: false, status: 404 };
-    });
+        ],
+        ["/genre/movie/list", okJson({ genres: [] })],
+      ])
+    );
 
     insertBind = vi.fn(() => ({ run: vi.fn().mockResolvedValue({}) }));
     mockDb = createMockDb({
@@ -42,17 +37,7 @@ describe("tmdb changes sync sentinel", () => {
   });
 
   it("writes sentinel for changes sync when TMDB has no genres", async () => {
-    const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
-
-    const req = createAdminSyncRequest({
-      syncType: "changes",
-      startDate: "2025-01-01",
-    });
-
-    const env = createAdminEnv(mockDb);
-
-    const res = await onRequestPost({ request: req, env } as any);
-    const json = await res.json();
+    const { json } = await runChangesSync(mockDb);
     expect(json.success).toBe(true);
     expect(insertBind).toHaveBeenCalled();
     const args = insertBind.mock.calls[0];

@@ -4,9 +4,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createAdminEnv, createAdminSyncRequest } from "./test-utils";
-
-vi.stubGlobal("fetch", vi.fn());
+import {
+  createTmdbFetchMock,
+  mockFetch,
+  okJson,
+  runBackfillMissingSync,
+} from "./test-utils";
 
 describe("tmdb-sync backfill sentinel", () => {
   let mockDb: any;
@@ -51,42 +54,23 @@ describe("tmdb-sync backfill sentinel", () => {
   });
 
   it("writes sentinel when TMDB returns no genres", async () => {
-    // Mock genre list response (called by backfill for fallback mapping)
-    (fetch as any).mockImplementation(async (url: string) => {
-      if (url.includes("/genre/movie/list")) {
-        return {
-          ok: true,
-          json: async () => ({ genres: [{ id: 1, name: "Action" }] }),
-        };
-      }
-      // Movie details: no genres and no genre_ids
-      if (url.includes("/movie/123")) {
-        return {
-          ok: true,
-          json: async () => ({
+    mockFetch(
+      createTmdbFetchMock([
+        ["/genre/movie/list", okJson({ genres: [{ id: 1, name: "Action" }] })],
+        [
+          "/movie/123",
+          okJson({
             id: 123,
             title: "NoGenresMovie",
             genres: [],
             genre_ids: [],
             credits: { crew: [] },
           }),
-        };
-      }
-      return { ok: false, status: 404 };
-    });
+        ],
+      ])
+    );
 
-    const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
-
-    const req = createAdminSyncRequest({
-      syncType: "backfillGenres",
-      mode: "missing",
-      limit: 10,
-    });
-
-    const env = createAdminEnv(mockDb);
-
-    const res = await onRequestPost({ request: req, env } as any);
-    const json = await res.json();
+    const { json } = await runBackfillMissingSync(mockDb);
 
     expect(json.success).toBe(true);
 

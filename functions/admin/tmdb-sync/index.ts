@@ -846,11 +846,6 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
 }
 
 function isAuthorized(authHeader: string | null, env: Env): boolean {
-  if (!env.ADMIN_SECRET) {
-    console.error("❌ ADMIN_SECRET not configured");
-    throw new Error("ADMIN_SECRET not configured");
-  }
-
   const rawHeader = (authHeader || "").trim();
   if (!rawHeader) return false;
 
@@ -1031,6 +1026,15 @@ export async function onRequestPost(context: {
     });
   }
 
+  if (!env.ADMIN_SECRET) {
+    console.error("❌ ADMIN_SECRET not configured");
+    return jsonResponse(500, {
+      success: false,
+      error: "ADMIN_SECRET not configured",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   // Authentication check — requires env.ADMIN_SECRET
   const authHeader = request.headers.get("Authorization");
   debugLog(
@@ -1050,7 +1054,7 @@ export async function onRequestPost(context: {
   try {
     const body = await parseSyncRequest(request);
     const syncType = body.syncType ?? "pages";
-    debugLog(undefined, `🚀 Starting TMDB sync - Type: ${syncType}`);
+    debugLog(env, `🚀 Starting TMDB sync - Type: ${syncType}`);
     const handler = getSyncHandler(syncType);
     return await handler(body, env);
   } catch (error) {

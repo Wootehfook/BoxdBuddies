@@ -22,6 +22,7 @@ jobs:
               with:
                   node-version: "20"
                   cache: "npm"
+                  cache-dependency-path: workers/tmdb-cron/package-lock.json
 
             - name: Install dependencies
               working-directory: workers/tmdb-cron
