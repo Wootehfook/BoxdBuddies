@@ -74,7 +74,7 @@ Manually triggers both sync passes. Requires authentication.
 The worker requires these environment variables (set via Wrangler secrets):
 
 - `TMDB_API_KEY` - Your TMDB API key
-- `ADMIN_SECRET` - Secret token for manual trigger authentication (optional)
+- `ADMIN_SECRET` - Secret token required for manual `/run` trigger authentication (scheduled cron runs do not require it)
 - `DEBUG` - Enable debug logging (optional)
 
 The worker shares the same D1 database binding (`MOVIES_DB`) as the main
