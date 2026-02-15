@@ -1,6 +1,6 @@
 # BoxdBuddy TMDB Cron Sync Worker
 
-<!-- AI Generated: GitHub Copilot - 2026-02-11 -->
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11 -->
 
 Cloudflare Worker that performs automated TMDB database synchronization on a 
 daily schedule.

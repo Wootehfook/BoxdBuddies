@@ -1,6 +1,6 @@
 # Deployment Guide for BoxdBuddy TMDB Cron Worker
 
-<!-- AI Generated: GitHub Copilot - 2026-02-11 -->
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11 -->
 
 This guide walks through deploying the TMDB sync worker to Cloudflare.
 
