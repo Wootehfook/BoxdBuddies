@@ -1,6 +1,11 @@
 // AI Generated: GitHub Copilot - 2025-09-18
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mockFetch, createMockDb } from "./test-utils";
+import {
+  mockFetch,
+  createMockDb,
+  createAdminEnv,
+  createAdminSyncRequest,
+} from "./test-utils";
 
 describe("tmdb page sync sentinel", () => {
   let mockDb: any;
@@ -47,25 +52,13 @@ describe("tmdb page sync sentinel", () => {
   it("writes sentinel for page-based sync when TMDB has no genres", async () => {
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
 
-    const body = JSON.stringify({
+    const req = createAdminSyncRequest({
       syncType: "pages",
       startPage: 1,
       maxPages: 1,
     });
-    const req = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer test-secret",
-      },
-      body,
-    });
 
-    const env = {
-      TMDB_API_KEY: "k",
-      MOVIES_DB: mockDb,
-      ADMIN_SECRET: "test-secret",
-    } as any;
+    const env = createAdminEnv(mockDb);
 
     const res = await onRequestPost({ request: req, env } as any);
     const json = await res.json();

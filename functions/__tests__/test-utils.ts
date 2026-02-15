@@ -38,3 +38,29 @@ export function bindIncludesSentinel(fnMock: any) {
   const args = fnMock.mock.calls[0];
   return args.some((a: any) => a === JSON.stringify(["Unknown"]));
 }
+
+export function createAdminSyncRequest(
+  body: Record<string, unknown>,
+  token = "test-secret"
+) {
+  return new Request("http://localhost/admin/tmdb-sync", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export function createAdminEnv(
+  db: any,
+  overrides: Record<string, unknown> = {}
+) {
+  return {
+    TMDB_API_KEY: "k",
+    MOVIES_DB: db,
+    ADMIN_SECRET: "test-secret",
+    ...overrides,
+  } as any;
+}

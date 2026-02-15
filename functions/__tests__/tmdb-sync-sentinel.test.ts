@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createAdminEnv, createAdminSyncRequest } from "./test-utils";
 
 vi.stubGlobal("fetch", vi.fn());
 
@@ -76,25 +77,13 @@ describe("tmdb-sync backfill sentinel", () => {
 
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
 
-    const body = JSON.stringify({
+    const req = createAdminSyncRequest({
       syncType: "backfillGenres",
       mode: "missing",
       limit: 10,
     });
-    const req = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer test-secret",
-      },
-      body,
-    });
 
-    const env = {
-      TMDB_API_KEY: "k",
-      MOVIES_DB: mockDb,
-      ADMIN_SECRET: "test-secret",
-    } as any;
+    const env = createAdminEnv(mockDb);
 
     const res = await onRequestPost({ request: req, env } as any);
     const json = await res.json();
