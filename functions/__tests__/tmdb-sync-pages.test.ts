@@ -56,12 +56,16 @@ describe("tmdb page sync sentinel", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer test-token",
+        Authorization: "Bearer test-secret",
       },
       body,
     });
 
-    const env = { TMDB_API_KEY: "k", MOVIES_DB: mockDb } as any;
+    const env = {
+      TMDB_API_KEY: "k",
+      MOVIES_DB: mockDb,
+      ADMIN_SECRET: "test-secret",
+    } as any;
 
     const res = await onRequestPost({ request: req, env } as any);
     const json = await res.json();

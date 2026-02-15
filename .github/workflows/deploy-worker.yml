@@ -1,0 +1,36 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+name: Deploy TMDB Cron Worker
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - "workers/tmdb-cron/**"
+
+permissions:
+    contents: read
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              working-directory: workers/tmdb-cron
+              run: npm ci --ignore-scripts
+
+            - name: Deploy Worker
+              uses: cloudflare/wrangler-action@v3
+              with:
+                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+                  workingDirectory: workers/tmdb-cron
+                  command: deploy

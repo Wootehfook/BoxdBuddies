@@ -102,6 +102,39 @@ export default [
       "@typescript-eslint/no-explicit-any": "off"
     },
   },
+  // AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+  // Cloudflare Worker configuration (standalone worker project)
+  {
+    files: ["workers/**/*.{js,ts}"],
+    languageOptions: {
+      globals: {
+        Response: "readonly",
+        Request: "readonly",
+        URL: "readonly",
+        fetch: "readonly",
+        console: "readonly",
+        globalThis: "readonly",
+        setTimeout: "readonly",
+        Promise: "readonly",
+        JSON: "readonly",
+        Date: "readonly",
+        Number: "readonly",
+        Array: "readonly",
+        Object: "readonly",
+        Math: "readonly",
+        parseInt: "readonly",
+        encodeURIComponent: "readonly",
+        caches: "readonly",
+        D1Database: "readonly",
+        ScheduledEvent: "readonly",
+      },
+    },
+    rules: {
+      "no-useless-escape": "off",
+      "no-console": ["warn", { allow: ["error", "warn", "log"] }],
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
   // AI Generated: GitHub Copilot - 2025-08-03
   // Allow console statements in logger utility
   {

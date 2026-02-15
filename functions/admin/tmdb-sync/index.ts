@@ -845,23 +845,20 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
   });
 }
 
-function isAuthorized(authHeader: string | null, env?: Env): boolean {
+function isAuthorized(authHeader: string | null, env: Env): boolean {
+  if (!env.ADMIN_SECRET) {
+    console.error("❌ ADMIN_SECRET not configured");
+    return false;
+  }
+
   const rawHeader = (authHeader || "").trim();
+  if (!rawHeader) return false;
+
   const token = rawHeader.toLowerCase().startsWith("bearer ")
     ? rawHeader.slice(7).trim()
     : rawHeader;
 
-  // Preferred path: use ADMIN_SECRET for exact-match authorization
-  if (env?.ADMIN_SECRET) {
-    return token === env.ADMIN_SECRET;
-  }
-
-  // Backward-compatible fallback when ADMIN_SECRET is not configured
-  return Boolean(
-    rawHeader &&
-    (rawHeader.includes("admin-sync-token") ||
-      rawHeader.includes("test-token"))
-  );
+  return token === env.ADMIN_SECRET;
 }
 
 async function parseSyncRequest(request: Request): Promise<SyncRequest> {
@@ -1034,14 +1031,14 @@ export async function onRequestPost(context: {
     });
   }
 
-  // Basic authentication check - allow both admin-sync-token and bypass for testing
+  // Authentication check — requires env.ADMIN_SECRET
   const authHeader = request.headers.get("Authorization");
   debugLog(
-    undefined,
+    env,
     `🔑 Auth header received: ${authHeader ? "Bearer token present" : "No auth header"}`
   );
 
-  if (!isAuthorized(authHeader)) {
+  if (!isAuthorized(authHeader, env)) {
     console.error("❌ Invalid or missing authorization token");
     return jsonResponse(401, {
       success: false,

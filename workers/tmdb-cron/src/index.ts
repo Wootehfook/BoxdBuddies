@@ -6,7 +6,7 @@
  *
  * Cloudflare Worker that performs daily TMDB database synchronization:
  * - Delta sync: Re-syncs movies that changed on TMDB since last run
- * - Incremental ID sync: Discovers new movies by walking forward from 
+ * - Incremental ID sync: Discovers new movies by walking forward from
  *   highest synced movie ID
  */
 
@@ -152,8 +152,8 @@ async function getMovieWithDirector(
     }
 
     const director =
-      movie.credits?.crew?.find((person) => person.job === "Director")
-        ?.name || "Unknown";
+      movie.credits?.crew?.find((person) => person.job === "Director")?.name ||
+      "Unknown";
 
     return { movie, director };
   } catch (error) {
@@ -172,9 +172,7 @@ async function getMovieWithDirector(
  */
 function genresJson(movie: TMDBMovieDetail): string {
   const names = Array.isArray(movie.genres)
-    ? movie.genres
-        .map((g) => g?.name)
-        .filter((n): n is string => Boolean(n))
+    ? movie.genres.map((g) => g?.name).filter((n): n is string => Boolean(n))
     : [];
   return JSON.stringify(names.length > 0 ? names : ["Unknown"]);
 }
@@ -256,10 +254,7 @@ async function getHighestSyncedId(db: D1Database): Promise<number> {
 /**
  * Persist the highest movie ID we've synced.
  */
-async function setHighestSyncedId(
-  db: D1Database,
-  id: number
-): Promise<void> {
+async function setHighestSyncedId(db: D1Database, id: number): Promise<void> {
   await db
     .prepare(
       `INSERT OR REPLACE INTO sync_metadata (key, value, updated_at)
@@ -359,9 +354,7 @@ async function incrementalIdSync(
 
   try {
     let currentId = await getHighestSyncedId(db);
-    console.log(
-      `🔄 Starting incremental sync from movie ID ${currentId}...`
-    );
+    console.log(`🔄 Starting incremental sync from movie ID ${currentId}...`);
 
     let processedCount = 0;
     while (processedCount < maxMovies && !timeUp(startTime)) {
@@ -463,9 +456,7 @@ async function deltaSyncChanges(
 
   try {
     const sinceDate = await getLastDeltaSync(db);
-    console.log(
-      `🔄 Starting delta sync for changes since ${sinceDate}...`
-    );
+    console.log(`🔄 Starting delta sync for changes since ${sinceDate}...`);
 
     const changesData = await tmdbGet<TMDBChangesResponse>(
       `/movie/changes?start_date=${sinceDate}`,
@@ -522,19 +513,13 @@ async function deltaSyncChanges(
  * Executes both delta sync and incremental sync independently.
  */
 export default {
-  async scheduled(
-    event: ScheduledEvent,
-    env: Env
-  ): Promise<void> {
+  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
     console.log(
       `🕐 Cron triggered at ${new Date(event.scheduledTime).toISOString()}`
     );
 
     // Run delta sync first (catches updates to existing movies)
-    const deltaResult = await deltaSyncChanges(
-      env.MOVIES_DB,
-      env.TMDB_API_KEY
-    );
+    const deltaResult = await deltaSyncChanges(env.MOVIES_DB, env.TMDB_API_KEY);
 
     // Run incremental ID sync (discovers new movies)
     const incrementalResult = await incrementalIdSync(
@@ -553,10 +538,7 @@ export default {
    * GET /status - returns sync statistics
    * POST /run - manually trigger sync (requires ADMIN_SECRET)
    */
-  async fetch(
-    request: Request,
-    env: Env
-  ): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // GET /status - return sync statistics
@@ -588,9 +570,7 @@ export default {
         return new Response(
           JSON.stringify({
             error:
-              error instanceof Error
-                ? error.message
-                : "Internal server error",
+              error instanceof Error ? error.message : "Internal server error",
           }),
           {
             status: 500,
@@ -603,17 +583,26 @@ export default {
     // POST /run - manually trigger sync
     if (request.method === "POST" && url.pathname === "/run") {
       // Check authentication
-      const authHeader = request.headers.get("Authorization") || "";
-      const token = authHeader.replace("Bearer ", "");
-
-      if (env.ADMIN_SECRET && token !== env.ADMIN_SECRET) {
+      if (!env.ADMIN_SECRET) {
         return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
+          JSON.stringify({ error: "ADMIN_SECRET not configured" }),
           {
-            status: 401,
+            status: 500,
             headers: { "Content-Type": "application/json" },
           }
         );
+      }
+
+      const authHeader = request.headers.get("Authorization") || "";
+      const token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : authHeader;
+
+      if (token !== env.ADMIN_SECRET) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       console.log("🚀 Manual sync triggered via HTTP");

@@ -1,6 +1,6 @@
 {
   "name": "BoxdBuddies Web DevContainer",
-  "image": "mcr.microsoft.com/devcontainers/node:lts-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
