@@ -1,10 +1,1 @@
-{
-  "name": "your-package-name",
-  "version": "1.0.0",
-  "scripts": {
-    "check:duplication": "jscpd src functions --threshold 3 --format \"typescript,javascript\" --ignore \"**/__tests__/**,**/node_modules/**,**/dist/**\" --reporters \"console\" --exitCode 1"
-  },
-  "devDependencies": {
-    "jscpd": "^4.0.5"
-  }
-}
+{\n  "name": "boxdbud-io",\n  "version": "2.1.1",\n  "scripts": {\n    "check:duplication": "jscpd src functions --threshold 3 --format \"typescript,javascript\" --ignore \"**/__tests__/**,**/node_modules/**,**/dist/**\" --reporters \"console\" --exitCode 1"\n  },\n  "devDependencies": {\n    "jscpd": "^4.0.5"\n  }\n}
