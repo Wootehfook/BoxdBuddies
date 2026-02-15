@@ -1,1 +1,49 @@
-{\n  "workbench.startupEditor": "none",\n  "extensions.autoUpdate": false,\n  "terminal.integrated.defaultProfile.linux": "zsh",\n  "terminal.integrated.profiles.linux": {\n    "zsh": {\n      "path": "/bin/zsh",\n      "args": ["-l"]\n    }\n  },\n  "eslint.format.enable": true,\n  "editor.formatOnSave": true,\n  "editor.codeActionsOnSave": {\n    "source.fixAll.eslint": "explicit"\n  },\n  "search.exclude": {\n    "**/node_modules": true,\n    "**/dist": true,\n    "**/.git": true\n  },\n  "github.copilot.chat.alternateGptPrompt.enabled": true,\n  "chat.todoListTool.enabled": true\n}
+{
+  "workbench.startupEditor": "none",
+  "extensions.autoUpdate": false,
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.profiles.linux": {
+    "zsh": {
+      "path": "/bin/zsh",
+      "args": ["-l"]
+    }
+  },
+  "eslint.format.enable": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [100],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.wordWrapColumn": 100,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.associations": {
+    "*.css": "css",
+    "wrangler.toml": "toml"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/coverage": true,
+    "**/src-tauri/target": true,
+    "**/src-tauri/gen": true
+  },
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+  "git.fetchOnPull": true,
+  "git.allowForcePush": false,
+  "git.confirmForcePush": true,
+  "git.confirmSync": true,
+  "git.pruneOnFetch": true,
+  "githubPullRequests.defaultMergeMethod": "squash",
+  "github.copilot.enable": {
+    "*": true
+  },
+  "github.copilot.chat.alternateGptPrompt.enabled": true,
+  "chat.todoListTool.enabled": true
+}{\n  "workbench.startupEditor": "none",\n  "extensions.autoUpdate": false,\n  "terminal.integrated.defaultProfile.linux": "zsh",\n  "terminal.integrated.profiles.linux": {\n    "zsh": {\n      "path": "/bin/zsh",\n      "args": ["-l"]\n    }\n  },\n  "eslint.format.enable": true,\n  "editor.formatOnSave": true,\n  "editor.codeActionsOnSave": {\n    "source.fixAll.eslint": "explicit"\n  },\n  "search.exclude": {\n    "**/node_modules": true,\n    "**/dist": true,\n    "**/.git": true\n  },\n  "github.copilot.chat.alternateGptPrompt.enabled": true,\n  "chat.todoListTool.enabled": true\n}
