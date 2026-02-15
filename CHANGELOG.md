@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
+
 ## [2.1.1] - 2026-02-10
 
 ### Added
