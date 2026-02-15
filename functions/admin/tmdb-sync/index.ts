@@ -848,7 +848,7 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
 function isAuthorized(authHeader: string | null, env: Env): boolean {
   if (!env.ADMIN_SECRET) {
     console.error("❌ ADMIN_SECRET not configured");
-    return false;
+    throw new Error("ADMIN_SECRET not configured");
   }
 
   const rawHeader = (authHeader || "").trim();
