@@ -1,6 +1,11 @@
 // AI Generated: GitHub Copilot - 2025-09-18
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mockFetch, createMockDb } from "./test-utils";
+import {
+  mockFetch,
+  createMockDb,
+  createAdminEnv,
+  createAdminSyncRequest,
+} from "./test-utils";
 
 describe("tmdb backfill all mode", () => {
   let mockDb: any;
@@ -40,21 +45,13 @@ describe("tmdb backfill all mode", () => {
   it("recomputes for all rows and writes sentinel when missing", async () => {
     const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
 
-    const body = JSON.stringify({
+    const req = createAdminSyncRequest({
       syncType: "backfillGenres",
       mode: "all",
       limit: 10,
     });
-    const req = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer test-token",
-      },
-      body,
-    });
 
-    const env = { TMDB_API_KEY: "k", MOVIES_DB: mockDb } as any;
+    const env = createAdminEnv(mockDb);
 
     const res = await onRequestPost({ request: req, env } as any);
     const json = await res.json();

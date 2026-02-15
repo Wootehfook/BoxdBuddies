@@ -845,23 +845,15 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
   });
 }
 
-function isAuthorized(authHeader: string | null, env?: Env): boolean {
+function isAuthorized(authHeader: string | null, env: Env): boolean {
   const rawHeader = (authHeader || "").trim();
+  if (!rawHeader) return false;
+
   const token = rawHeader.toLowerCase().startsWith("bearer ")
     ? rawHeader.slice(7).trim()
     : rawHeader;
 
-  // Preferred path: use ADMIN_SECRET for exact-match authorization
-  if (env?.ADMIN_SECRET) {
-    return token === env.ADMIN_SECRET;
-  }
-
-  // Backward-compatible fallback when ADMIN_SECRET is not configured
-  return Boolean(
-    rawHeader &&
-    (rawHeader.includes("admin-sync-token") ||
-      rawHeader.includes("test-token"))
-  );
+  return token === env.ADMIN_SECRET;
 }
 
 async function parseSyncRequest(request: Request): Promise<SyncRequest> {
@@ -1034,14 +1026,23 @@ export async function onRequestPost(context: {
     });
   }
 
-  // Basic authentication check - allow both admin-sync-token and bypass for testing
+  if (!env.ADMIN_SECRET) {
+    console.error("❌ ADMIN_SECRET not configured");
+    return jsonResponse(500, {
+      success: false,
+      error: "ADMIN_SECRET not configured",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Authentication check — requires env.ADMIN_SECRET
   const authHeader = request.headers.get("Authorization");
   debugLog(
-    undefined,
+    env,
     `🔑 Auth header received: ${authHeader ? "Bearer token present" : "No auth header"}`
   );
 
-  if (!isAuthorized(authHeader)) {
+  if (!isAuthorized(authHeader, env)) {
     console.error("❌ Invalid or missing authorization token");
     return jsonResponse(401, {
       success: false,
@@ -1053,7 +1054,7 @@ export async function onRequestPost(context: {
   try {
     const body = await parseSyncRequest(request);
     const syncType = body.syncType ?? "pages";
-    debugLog(undefined, `🚀 Starting TMDB sync - Type: ${syncType}`);
+    debugLog(env, `🚀 Starting TMDB sync - Type: ${syncType}`);
     const handler = getSyncHandler(syncType);
     return await handler(body, env);
   } catch (error) {

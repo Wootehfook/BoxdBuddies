@@ -14,7 +14,7 @@ describe("TMDB Sync - Current Year Mode", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer admin-sync-token",
+        Authorization: "Bearer test-secret",
       },
       body: JSON.stringify(body),
     });
@@ -48,7 +48,7 @@ describe("TMDB Sync - Current Year Mode", () => {
     mockEnv = {
       MOVIES_DB: mockDB,
       TMDB_API_KEY: "test-api-key",
-      ADMIN_SECRET: "admin-sync-token",
+      ADMIN_SECRET: "test-secret",
       TMDB_GENRE_SENTINEL: "Unknown",
     };
 
