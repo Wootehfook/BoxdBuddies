@@ -1,0 +1,32 @@
+#!/bin/sh
+# AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
+# Pre-push hook to prevent accidental direct pushes to main or develop
+
+# Get the current branch name
+current_branch=$(git symbolic-ref --short HEAD)
+
+# Check if pushing to protected branches
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "develop" ]; then
+  echo "❌ ERROR: Direct push to '$current_branch' is not allowed!"
+  echo ""
+  echo "This repository uses a Gitflow-style branching workflow."
+  echo ""
+  echo "To contribute, please:"
+  echo "  1. Create a feature branch from develop:"
+  echo "     git checkout develop"
+  echo "     git pull origin develop"
+  echo "     git checkout -b feature/your-feature-name"
+  echo ""
+  echo "  2. Make your changes and commit them"
+  echo ""
+  echo "  3. Push your feature branch:"
+  echo "     git push -u origin feature/your-feature-name"
+  echo ""
+  echo "  4. Create a pull request targeting 'develop'"
+  echo ""
+  echo "To bypass this check (emergencies only), use: git push --no-verify"
+  exit 1
+fi
+
+# Allow push for all other branches
+exit 0
