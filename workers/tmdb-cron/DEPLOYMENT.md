@@ -150,7 +150,7 @@ Authorization: Bearer YOUR_ADMIN_SECRET
 ### Worker exceeds time limit
 
 If the worker consistently times out, reduce the `maxMovies` parameter in
-the incremental sync (currently 80) by editing `src/index.ts` line 420.
+the incremental sync (currently 80) by editing `src/index.ts` line 544.
 
 ### No movies being synced
 
