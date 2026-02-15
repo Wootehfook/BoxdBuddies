@@ -1,6 +1,12 @@
 // AI Generated: GitHub Copilot - 2025-09-18
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mockFetch, createMockDb } from "./test-utils";
+import {
+  createMockDb,
+  createTmdbFetchMock,
+  mockFetch,
+  okJson,
+  runBackfillMissingSync,
+} from "./test-utils";
 
 describe("tmdb backfill integration", () => {
   let mockDb: any;
@@ -29,60 +35,30 @@ describe("tmdb backfill integration", () => {
   });
 
   it("replaces numeric/garbage genres and writes sentinel when TMDB has no genres", async () => {
-    // Mock genre list and movie endpoints
-    mockFetch(async (url: string) => {
-      if (url.includes("/genre/movie/list")) {
-        return {
-          ok: true,
-          json: async () => ({ genres: [{ id: 1, name: "Action" }] }),
-        };
-      }
-      // Movie 201: TMDB returns genres
-      if (url.includes("/movie/201")) {
-        return {
-          ok: true,
-          json: async () => ({
+    mockFetch(
+      createTmdbFetchMock([
+        ["/genre/movie/list", okJson({ genres: [{ id: 1, name: "Action" }] })],
+        [
+          "/movie/201",
+          okJson({
             id: 201,
             genres: [{ id: 1, name: "Action" }],
             credits: { crew: [] },
           }),
-        };
-      }
-      // Movie 202: TMDB returns nothing for genres
-      if (url.includes("/movie/202")) {
-        return {
-          ok: true,
-          json: async () => ({
+        ],
+        [
+          "/movie/202",
+          okJson({
             id: 202,
             genres: [],
             genre_ids: [],
             credits: { crew: [] },
           }),
-        };
-      }
-      return { ok: false, status: 404 };
-    });
+        ],
+      ])
+    );
 
-    const { onRequestPost } = await import("../admin/tmdb-sync/index.js");
-
-    const body = JSON.stringify({
-      syncType: "backfillGenres",
-      mode: "missing",
-      limit: 10,
-    });
-    const req = new Request("http://localhost/admin/tmdb-sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer test-token",
-      },
-      body,
-    });
-
-    const env = { TMDB_API_KEY: "k", MOVIES_DB: mockDb } as any;
-
-    const res = await onRequestPost({ request: req, env } as any);
-    const json = await res.json();
+    const { json } = await runBackfillMissingSync(mockDb);
 
     expect(json.success).toBe(true);
 
