@@ -51,9 +51,8 @@ describe("watchlist-count-updates", () => {
     };
 
     // Import the handler function and wrap it with a local, minimal type
-    const { onRequestPost: handler } = await import(
-      "../../functions/api/watchlist-count-updates/index.js"
-    );
+    const { onRequestPost: handler } =
+      await import("../../functions/api/watchlist-count-updates/index.js");
 
     // Use a locally-typed wrapper so we don't need to reference global Request/Env types
     const handlerFn = handler as unknown as (ctx: {
@@ -126,9 +125,8 @@ describe("watchlist-count-updates", () => {
       ADMIN_SECRET: "test-admin-secret",
     };
 
-    const { onRequestPost: handler } = await import(
-      "../../functions/api/watchlist-count-updates/index.js"
-    );
+    const { onRequestPost: handler } =
+      await import("../../functions/api/watchlist-count-updates/index.js");
 
     const handlerFn = handler as unknown as (ctx: {
       request: unknown;
@@ -180,9 +178,8 @@ describe("watchlist-count-updates", () => {
       ADMIN_SECRET: "test-admin-secret",
     };
 
-    const { onRequestPost: handler } = await import(
-      "../../functions/api/watchlist-count-updates/index.js"
-    );
+    const { onRequestPost: handler } =
+      await import("../../functions/api/watchlist-count-updates/index.js");
 
     const handlerFn = handler as unknown as (ctx: {
       request: unknown;

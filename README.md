@@ -121,11 +121,22 @@ We welcome contributions! Please follow these guidelines to help us keep the pro
 
 ### Git Workflow
 
-1. Create a feature branch: `git checkout -b feature/your-feature-name`
+This repository follows a **Gitflow-inspired branching strategy**:
+
+1. **Branch from `develop`**: `git checkout develop && git pull && git checkout -b feature/your-feature-name`
 2. Make your changes and test them locally.
 3. Format your code: `npm run lint`
 4. Commit your changes using the [Conventional Commits](https://www.conventionalcommits.org/) format.
-5. Push to your fork and create a Pull Request.
+5. Push to your fork and create a Pull Request **targeting `develop`**.
+
+**Branch Hierarchy:**
+
+- `feature/*`, `fix/*`, `chore/*`, etc. → PR to `develop`
+- `develop` → Integration branch for day-to-day work
+- `release/*`, `hotfix/*` → PR to `main` (for releases and critical fixes)
+- `main` → Production-ready code
+
+**Note:** If you accidentally target `main`, the auto-retarget workflow will redirect your PR to `develop`.
 
 ### Code Style
 

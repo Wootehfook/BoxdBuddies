@@ -1,3 +1,4 @@
+// AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
 {
   "workbench.startupEditor": "none",
   "extensions.autoUpdate": false,
@@ -13,10 +14,36 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [100],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.wordWrapColumn": 100,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.associations": {
+    "*.css": "css",
+    "wrangler.toml": "toml"
+  },
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
-    "**/.git": true
+    "**/.git": true,
+    "**/coverage": true,
+    "**/src-tauri/target": true,
+    "**/src-tauri/gen": true
+  },
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+  "git.fetchOnPull": true,
+  "git.allowForcePush": false,
+  "git.confirmForcePush": true,
+  "git.confirmSync": true,
+  "git.pruneOnFetch": true,
+  "githubPullRequests.defaultMergeMethod": "squash",
+  "github.copilot.enable": {
+    "*": true
   },
   "github.copilot.chat.alternateGptPrompt.enabled": true,
   "chat.todoListTool.enabled": true,

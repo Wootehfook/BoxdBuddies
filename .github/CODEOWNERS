@@ -1,0 +1,13 @@
+# AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
+#
+# CODEOWNERS - Automatic Code Review Assignment
+#
+# This file defines default reviewers for pull requests.
+# GitHub Copilot AI Code Review (@copilot) is assigned as the automatic
+# reviewer for all files to provide AI-powered code review feedback.
+#
+# For more information, see:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default ownership for all files
+* @copilot
