@@ -593,9 +593,11 @@ export default {
         );
       }
 
-      const authHeader = request.headers.get("Authorization") || "";
-      const token = authHeader.startsWith("Bearer ")
-        ? authHeader.slice(7)
+      const rawAuthHeader = request.headers.get("Authorization") || "";
+      const authHeader = rawAuthHeader.trim();
+      const bearerPrefix = "bearer ";
+      const token = authHeader.toLowerCase().startsWith(bearerPrefix)
+        ? authHeader.slice(bearerPrefix.length).trim()
         : authHeader;
 
       if (token !== env.ADMIN_SECRET) {
