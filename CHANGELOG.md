@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump vite from 7.3.0 to 7.3.1 (#195)
 - Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
 
+### Fixed
+- Harden admin auth and cleanup cron sync (#210)
+
 ## [2.1.1] - 2026-02-10
 
 ### Added
