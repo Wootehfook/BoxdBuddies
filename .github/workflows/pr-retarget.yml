@@ -36,18 +36,19 @@ jobs:
                 base: 'develop'
               });
 
-              const commentBody = `🔄 **PR Retargeted to \`develop\`**
-
-              This PR was automatically retargeted from \`main\` to \`develop\` 
-              to follow the repository's Gitflow-style branching strategy.
-
-              **Branching Strategy:**
-              - Day-to-day work targets \`develop\`
-              - Only \`release/*\` and \`hotfix/*\` branches target \`main\`
-
-              For more information, see the 
-              [branching workflow documentation](../blob/main/.github/copilot-instructions.md#9b-branching-workflow-must-follow).
-              `;
+              const commentBody = [
+                "🔄 **PR Retargeted to `develop`**",
+                "",
+                "This PR was automatically retargeted from `main` to `develop`",
+                "to follow the repository's Gitflow-style branching strategy.",
+                "",
+                "**Branching Strategy:**",
+                "- Day-to-day work targets `develop`",
+                "- Only `release/*` and `hotfix/*` branches target `main`",
+                "",
+                "For more information, see the",
+                "[branching workflow documentation](../blob/main/.github/copilot-instructions.md#9b-branching-workflow-must-follow).",
+              ].join("\n");
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -56,3 +57,4 @@ jobs:
                 body: commentBody
               });
             }
+

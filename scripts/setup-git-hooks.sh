@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
 #
 # Boxdbud.io - Git Hooks Setup Script
 # Copyright (C) 2024-2026 Woo T. Fook
@@ -37,9 +37,16 @@ fi
 # Create pre-push hook
 PRE_PUSH_HOOK="$HOOKS_DIR/pre-push"
 
+# Backup existing hook if it exists and is different
+if [ -f "$PRE_PUSH_HOOK" ]; then
+  echo "⚠️  Pre-push hook already exists. Creating backup..."
+  cp "$PRE_PUSH_HOOK" "$PRE_PUSH_HOOK.backup.$(date +%Y%m%d_%H%M%S)"
+  echo "✅ Backup created: $PRE_PUSH_HOOK.backup.$(date +%Y%m%d_%H%M%S)"
+fi
+
 cat > "$PRE_PUSH_HOOK" << 'EOF'
 #!/bin/sh
-# AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
 # Pre-push hook to prevent accidental direct pushes to main or develop
 
 # Get the current branch name

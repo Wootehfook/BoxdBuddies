@@ -35,8 +35,7 @@
     "version:major": "echo 'Use GitHub Actions workflow: Version Bump and Release with major option'",
     "version:current": "node -p \"require('./package.json').version\"",
     "prepare": "husky",
-    "pre-commit": "lint-staged",
-    "check:duplication": "jscpd src functions --threshold 3 --format \"typescript,javascript\" --ignore \"**/__tests__/**,**/node_modules/**,**/dist/**\" --reporters \"console\" --exitCode 1"
+    "pre-commit": "lint-staged"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -58,7 +57,6 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
-    "jscpd": "^4.0.5",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",

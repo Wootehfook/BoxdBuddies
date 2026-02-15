@@ -1,8 +1,10 @@
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15 -->
+
 # Post-Merge Instructions for Gitflow Branching Setup
 
 ## Overview
 
-This document outlines the manual steps required after PR #XXX merges to complete the Gitflow branching infrastructure setup.
+This document outlines the manual steps required after this pull request merges to complete the Gitflow branching infrastructure setup.
 
 ## Required Manual Steps
 

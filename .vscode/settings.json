@@ -1,3 +1,4 @@
+// AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
 {
   "workbench.startupEditor": "none",
   "extensions.autoUpdate": false,
@@ -46,4 +47,4 @@
   },
   "github.copilot.chat.alternateGptPrompt.enabled": true,
   "chat.todoListTool.enabled": true
-}{\n  "workbench.startupEditor": "none",\n  "extensions.autoUpdate": false,\n  "terminal.integrated.defaultProfile.linux": "zsh",\n  "terminal.integrated.profiles.linux": {\n    "zsh": {\n      "path": "/bin/zsh",\n      "args": ["-l"]\n    }\n  },\n  "eslint.format.enable": true,\n  "editor.formatOnSave": true,\n  "editor.codeActionsOnSave": {\n    "source.fixAll.eslint": "explicit"\n  },\n  "search.exclude": {\n    "**/node_modules": true,\n    "**/dist": true,\n    "**/.git": true\n  },\n  "github.copilot.chat.alternateGptPrompt.enabled": true,\n  "chat.todoListTool.enabled": true\n}
+}
