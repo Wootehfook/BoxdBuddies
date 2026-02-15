@@ -51,7 +51,7 @@ describe("tmdb page sync sentinel", () => {
     expect(insertBind).toHaveBeenCalled();
     const args = insertBind.mock.calls[0];
     // One of the bound args should be the genres JSON; ensure sentinel is present somewhere in the args
-    const found = args.some((a: any) => a === JSON.stringify(["Unknown"]));
+    const found = args.includes(JSON.stringify(["Unknown"]));
     expect(found).toBe(true);
   });
 });

@@ -14,9 +14,11 @@ export function okJson(payload: Record<string, unknown>) {
   };
 }
 
+const DEFAULT_FALLBACK = { ok: false, status: 404 };
+
 export function createTmdbFetchMock(
   responders: Array<[string, any]>,
-  fallback: any = { ok: false, status: 404 }
+  fallback: any = DEFAULT_FALLBACK
 ) {
   return async (url: string) => {
     for (const [needle, response] of responders) {
@@ -57,7 +59,7 @@ export function bindIncludesSentinel(fnMock: any) {
   )
     return false;
   const args = fnMock.mock.calls[0];
-  return args.some((a: any) => a === JSON.stringify(["Unknown"]));
+  return args.includes(JSON.stringify(["Unknown"]));
 }
 
 export function createAdminSyncRequest(
