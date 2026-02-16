@@ -24,19 +24,23 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "Frontend Quality Checks",
+            "context": "backend-quality-checks",
             "integration_id": null
           },
           {
-            "context": "Security Audit",
+            "context": "frontend-quality-checks",
             "integration_id": null
           },
           {
-            "context": "Code Quality Analysis",
+            "context": "security-audit",
             "integration_id": null
           },
           {
-            "context": "License Compliance Check",
+            "context": "code-quality-analysis",
+            "integration_id": null
+          },
+          {
+            "context": "license-compliance-check",
             "integration_id": null
           },
           {

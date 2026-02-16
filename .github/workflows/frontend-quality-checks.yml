@@ -2,9 +2,9 @@ name: Frontend Quality Checks
 
 on:
   push:
-    branches: [main, develop, temp-merge-branch]
+    branches: [main, develop, temp-merge-branch, "release/*", "hotfix/*"]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "release/*", "hotfix/*"]
     paths-ignore:
       - "README.md"
       - "CHANGELOG.md"

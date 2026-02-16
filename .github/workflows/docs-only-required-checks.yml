@@ -3,7 +3,11 @@ name: Docs-only Required Checks
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
+      - "release/*"
+      - "hotfix/*"
     paths:
       - "*.md"
       - "README.md"

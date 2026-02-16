@@ -34,11 +34,11 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "Frontend Quality Checks",
+            "context": "frontend-quality-checks",
             "integration_id": null
           },
           {
-            "context": "Security Audit",
+            "context": "security-audit",
             "integration_id": null
           }
         ],

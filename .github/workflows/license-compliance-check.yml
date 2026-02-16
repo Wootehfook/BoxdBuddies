@@ -2,9 +2,9 @@ name: License Compliance Check
 
 on:
   push:
-    branches: [main, develop, temp-merge-branch]
+    branches: [main, develop, temp-merge-branch, "release/*", "hotfix/*"]
   pull_request:
-    branches: [main]
+    branches: [main, "release/*", "hotfix/*"]
     paths-ignore:
       - "README.md"
       - "CHANGELOG.md"
