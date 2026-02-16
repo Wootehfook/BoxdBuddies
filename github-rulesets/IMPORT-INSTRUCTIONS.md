@@ -75,17 +75,18 @@ After applying these changes:
 
 ## Important Notes
 
-- **Job names vs Workflow names**: GitHub uses the `jobs.<job_id>` value from workflow files as the status check context, not the `name:` field at the top of the workflow
-- **Exact match required**: Status check names must exactly match the job ID from the workflow file
+- **Status check context**: GitHub uses the job's `name:` field if present, otherwise uses the `jobs.<job_id>` value from workflow files as the status check context
+- **Not the workflow name**: The `name:` at the top of the workflow file is NOT used for status checks
+- **Exact match required**: Status check names must exactly match either the job `name:` field or job ID from the workflow file
 - **Case sensitive**: Job names are case-sensitive (e.g., `backend-quality-checks` not `Backend Quality Checks`)
 
 ## Workflow File References
 
-For reference, here are the actual job IDs from the workflows:
+For reference, here are the actual status check contexts from the workflows:
 
-- `.github/workflows/backend-quality-checks-resolver.yml` → job: `backend-quality-checks`
-- `.github/workflows/frontend-quality-checks.yml` → job: `frontend-quality-checks`
-- `.github/workflows/security-audit.yml` → job: `security-audit`
-- `.github/workflows/code-quality-analysis.yml` → job: `code-quality-analysis`
-- `.github/workflows/license-compliance-check.yml` → job: `license-compliance-check`
-- `.github/workflows/pr-conversation-handler.yml` → job: `report` with name: `"📊 Generate Report"`
+- `.github/workflows/backend-quality-checks-resolver.yml` → `backend-quality-checks` (job ID: backend-quality-checks, name: backend-quality-checks)
+- `.github/workflows/frontend-quality-checks.yml` → `frontend-quality-checks` (job ID: frontend-quality-checks, no explicit name)
+- `.github/workflows/security-audit.yml` → `security-audit` (job ID: security-audit, no explicit name)
+- `.github/workflows/code-quality-analysis.yml` → `code-quality-analysis` (job ID: code-quality-analysis, no explicit name)
+- `.github/workflows/license-compliance-check.yml` → `license-compliance-check` (job ID: license-compliance-check, no explicit name)
+- `.github/workflows/pr-conversation-handler.yml` → `📊 Generate Report` (job ID: report, name: "📊 Generate Report")

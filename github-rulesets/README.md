@@ -42,15 +42,20 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 
 ## 🎯 Status Check Integration
 
-All rulesets are configured with your exact CI/CD workflow **job names** (not workflow names):
+All rulesets are configured with your exact CI/CD workflow **status check contexts**:
 
 1. **frontend-quality-checks** - TypeScript compilation, linting, formatting
 2. **backend-quality-checks** - Lint, type-check, and unit tests
 3. **security-audit** - NPM security vulnerability scanning
 4. **code-quality-analysis** - Codacy CLI analysis and pre-commit hook verification
-5. **📊 Generate Report** - PR conversation handler report
+5. **license-compliance-check** - AGPL license header verification (main and release branches only)
+6. **📊 Generate Report** - PR conversation handler report
 
-**Important**: GitHub status checks use the **job name** from the workflow file (e.g., `frontend-quality-checks`), not the workflow name (e.g., "Frontend Quality Checks"). The ruleset must match the exact job name for status checks to be recognized.
+**Important**: GitHub status checks use the job's `name:` field if present, otherwise the job ID. For example:
+- Job with no explicit name: `frontend-quality-checks:` → status check context is `frontend-quality-checks`
+- Job with name field: `report:` with `name: "📊 Generate Report"` → status check context is `📊 Generate Report`
+
+The workflow name (top of the file) is never used for status check contexts.
 
 ## 📋 Import Instructions
 
