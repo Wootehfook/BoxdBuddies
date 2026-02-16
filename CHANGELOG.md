@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
 
 ### Fixed
+- Fix branch protection rulesets using incorrect status check contexts (#223)
 - Harden admin auth and cleanup cron sync (#210)
 
 ### Added
