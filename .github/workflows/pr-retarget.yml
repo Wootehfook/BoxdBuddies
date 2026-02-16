@@ -1,0 +1,60 @@
+# AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15
+name: PR Retarget to Develop
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+
+jobs:
+  retarget:
+    runs-on: ubuntu-latest
+    if: |
+      !startsWith(github.head_ref, 'release/') &&
+      !startsWith(github.head_ref, 'hotfix/')
+    steps:
+      - name: Retarget PR to develop
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // Only retarget if base is main
+            if (pr.base.ref === 'main') {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                base: 'develop'
+              });
+
+              const commentBody = [
+                "🔄 **PR Retargeted to `develop`**",
+                "",
+                "This PR was automatically retargeted from `main` to `develop`",
+                "to follow the repository's Gitflow-style branching strategy.",
+                "",
+                "**Branching Strategy:**",
+                "- Day-to-day work targets `develop`",
+                "- Only `release/*` and `hotfix/*` branches target `main`",
+                "",
+                "For more information, see the",
+                "[branching workflow documentation](../blob/main/.github/copilot-instructions.md#9b-branching-workflow-must-follow).",
+              ].join("\n");
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+

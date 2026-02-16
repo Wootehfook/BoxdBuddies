@@ -4,7 +4,17 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["refs/heads/feature/*"],
+      "include": [
+        "refs/heads/feature/*",
+        "refs/heads/fix/*",
+        "refs/heads/chore/*",
+        "refs/heads/docs/*",
+        "refs/heads/refactor/*",
+        "refs/heads/perf/*",
+        "refs/heads/test/*",
+        "refs/heads/copilot/*",
+        "refs/heads/changelog/*"
+      ],
       "exclude": []
     }
   },

@@ -100,6 +100,26 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 - Use Prettier/ESLint scripts before committing (`npm run format`, `npm run lint`).
 - Follow Conventional Commits and PR-title rules (changelog automation depends on this). See `README.md`.
 
+## 9b) Branching workflow (must follow)
+
+This project uses a **Gitflow-inspired model**. The `develop` branch is the integration target for all day-to-day work.
+
+### Branch hierarchy
+
+```
+feature/*, fix/*, chore/*, etc.  ──PR──▶  develop  ──PR──▶  main
+                                              │
+                                    release/* / hotfix/*  ──PR──▶  main
+```
+
+### Rules for AI contributors
+
+1. Always branch from `develop`, not `main`.
+2. Always target PRs to `develop`, unless the branch prefix is `release/*` or `hotfix/*` (those target `main`).
+3. Use Conventional Commit branch prefixes: `feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `perf/`, `test/`.
+4. Never push directly to `main` or `develop`.
+5. When the Copilot Coding Agent creates a PR, verify the base is `develop`. If it's `main`, the auto-retarget workflow will redirect it.
+
 ## 10) Security & secrets (must follow)
 
 - Never commit secrets or API keys. Use Cloudflare secrets (`wrangler secret put TMDB_API_KEY`, `wrangler secret put ADMIN_SECRET`).

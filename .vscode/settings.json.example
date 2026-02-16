@@ -1,4 +1,20 @@
 // AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+// Example VS Code settings for BoxdBuddies development
+// 
+// PERSONAL SETTINGS (User-level, not workspace):
+// Configure these in File → Preferences → Settings → User (not Workspace)
+//
+// For SonarLint connected mode (optional):
+// 1. Install SonarLint extension
+// 2. Connect to SonarCloud with your personal credentials
+// 3. Add to your USER settings (not this file):
+//    "sonarlint.connectedMode.project": {
+//      "connectionId": "<your-sonarcloud-username>",
+//      "projectKey": "Wootehfook_BoxdBuddies"
+//    }
+//
+// The workspace settings in .vscode/settings.json should NOT contain
+// personal connection IDs or credentials.
 {
   "workbench.startupEditor": "none",
   "extensions.autoUpdate": false,
