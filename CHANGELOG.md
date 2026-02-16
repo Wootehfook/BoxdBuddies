@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Harden admin auth and cleanup cron sync (#210)
 
+### Added
+- Implement Gitflow branching infrastructure (#214)
+
 ## [2.1.1] - 2026-02-10
 
 ### Added
