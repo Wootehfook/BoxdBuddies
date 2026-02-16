@@ -42,14 +42,15 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 
 ## 🎯 Status Check Integration
 
-All rulesets are configured with your exact CI/CD workflow job names:
+All rulesets are configured with your exact CI/CD workflow **job names** (not workflow names):
 
-1. **Frontend Quality Checks** - TypeScript compilation, linting, formatting
-2. **Backend Quality Checks** - (legacy) Rust formatting and testing
-3. **Security Audit** - NPM and Cargo security vulnerability scanning
-4. **Code Quality Analysis** - Codacy CLI analysis and pre-commit hook verification
-5. **Build Application** - Cross-platform Tauri builds (Windows, macOS, Linux)
-6. **License Compliance Check** - AGPL license header verification
+1. **frontend-quality-checks** - TypeScript compilation, linting, formatting
+2. **backend-quality-checks** - Lint, type-check, and unit tests
+3. **security-audit** - NPM security vulnerability scanning
+4. **code-quality-analysis** - Codacy CLI analysis and pre-commit hook verification
+5. **📊 Generate Report** - PR conversation handler report
+
+**Important**: GitHub status checks use the **job name** from the workflow file (e.g., `frontend-quality-checks`), not the workflow name (e.g., "Frontend Quality Checks"). The ruleset must match the exact job name for status checks to be recognized.
 
 ## 📋 Import Instructions
 
