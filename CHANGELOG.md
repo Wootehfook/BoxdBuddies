@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Fix branch protection rulesets using incorrect status check contexts (#223)
 - Bump vite from 7.3.0 to 7.3.1 (#195)
 - Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
 
