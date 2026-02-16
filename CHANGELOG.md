@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Choredeps-dev: bump @types/node from 24.10.13 to 25.2.3 (#216)
 - Bump vite from 7.3.0 to 7.3.1 (#195)
 - Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
 
