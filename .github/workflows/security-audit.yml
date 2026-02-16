@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop, temp-merge-branch]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths-ignore:
       - "README.md"
       - "CHANGELOG.md"
