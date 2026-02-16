@@ -48,7 +48,7 @@ All rulesets are configured with your exact CI/CD workflow **status check contex
 2. **backend-quality-checks** - Lint, type-check, and unit tests
 3. **security-audit** - NPM security vulnerability scanning
 4. **code-quality-analysis** - Codacy CLI analysis and pre-commit hook verification
-5. **license-compliance-check** - AGPL license header verification (main and release branches only)
+5. **license-compliance-check** - AGPL license header verification (main, release, and hotfix branches)
 6. **📊 Generate Report** - PR conversation handler report
 
 **Important**: GitHub status checks use the job's `name:` field if present, otherwise the job ID. For example:

@@ -46,14 +46,16 @@ Required status checks:
 ### Option 1: Re-import Rulesets (Recommended)
 
 1. Go to https://github.com/Wootehfook/BoxdBuddies/settings/rules
-2. For each existing ruleset, **delete** it (this will not affect protected branches immediately)
-3. Click "New ruleset" → "Import a ruleset"
-4. Upload each updated JSON file:
+2. Click "New ruleset" → "Import a ruleset"
+3. Upload each updated JSON file:
    - `develop-branch-ruleset.json`
    - `main-branch-ruleset.json`
    - `feature-branch-ruleset.json`
    - `release-hotfix-ruleset.json`
-5. Review and click "Create" for each one
+4. For each imported ruleset, review the settings (especially the required status checks) and click "Create"
+5. After confirming the new rulesets are active and enforce the intended checks, delete or disable the corresponding old rulesets
+
+**Important**: Import the new rulesets first before deleting old ones to avoid creating an unprotected window where branch protections are temporarily disabled.
 
 ### Option 2: Manual Update
 
