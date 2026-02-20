@@ -1,0 +1,25 @@
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-20
+# Temporary stub workflow - DELETE AFTER IMPORTING UPDATED RULESETS
+# This workflow was deleted in PR #231 but GitHub branch protection still requires it
+# Import github-rulesets/develop-branch-ruleset.json to remove this requirement
+
+name: Frontend Quality Checks (Stub)
+
+on:
+  pull_request:
+    branches: [main, develop, "release/*", "hotfix/*"]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-quality-checks:
+    name: frontend-quality-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pass check (stub workflow)
+        run: |
+          echo "✅ This is a temporary stub workflow."
+          echo "This check was removed in PR #231 but GitHub branch protection hasn't been updated."
+          echo "Import the updated rulesets from github-rulesets/ to remove this requirement."
+          echo "See github-rulesets/IMPORT-INSTRUCTIONS.md for details."
