@@ -47,9 +47,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("Authentication", () => {
     it("should reject requests without admin secret", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest({
         username: "testuser",
@@ -65,9 +64,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject requests with wrong admin secret", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -86,9 +84,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should accept requests with correct admin secret", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -111,9 +108,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should accept requests with direct token format", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -136,9 +132,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("Feature Flag", () => {
     it("should return 503 when feature is disabled", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -161,9 +156,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("Payload Validation", () => {
     it("should reject invalid JSON", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = new Request(
         "https://example.com/api/watchlist-count-updates",
@@ -186,9 +180,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject payload larger than 1KB", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const largePayload = {
         username: "testuser",
@@ -209,9 +202,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject missing username", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -234,9 +226,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject invalid count", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -257,9 +248,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject non-integer count", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -280,9 +270,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject invalid username characters", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -303,9 +292,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should reject unreasonable lastFetchedAt timestamp", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const futureTime = Date.now() + 2 * 60 * 1000; // 2 minutes in future
       const request = createRequest(
@@ -328,9 +316,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should accept valid payload", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -360,9 +347,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("Rate Limiting", () => {
     it("should track rate limits per IP/username combination", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       mockSetCount.mockResolvedValue(undefined);
       const env = createEnv();
@@ -396,9 +382,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should allow requests from different IPs", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       mockSetCount.mockResolvedValue(undefined);
       const env = createEnv();
@@ -428,9 +413,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("Cache Integration", () => {
     it("should call mockSetCount with correct parameters", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost, setCacheFunctionForTesting } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const lastFetchedAtValue = Date.now() - 1000;
       const request = createRequest(
@@ -467,9 +451,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should use current timestamp if lastFetchedAt not provided", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost, setCacheFunctionForTesting } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -508,9 +491,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should handle cache errors gracefully", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost, setCacheFunctionForTesting } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {
@@ -537,9 +519,8 @@ describe("Watchlist Count Updates Endpoint", () => {
 
   describe("CORS", () => {
     it("should handle OPTIONS preflight requests", async () => {
-      const { onRequestOptions } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestOptions } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const response = await onRequestOptions();
 
@@ -554,9 +535,8 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should include CORS headers in responses", async () => {
-      const { onRequestPost } = await import(
-        "../api/watchlist-count-updates/index.js"
-      );
+      const { onRequestPost } =
+        await import("../api/watchlist-count-updates/index.js");
 
       const request = createRequest(
         {

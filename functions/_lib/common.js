@@ -56,7 +56,7 @@ export async function tmdbFetch(path, env, init) {
   url.searchParams.set("api_key", env.TMDB_API_KEY || "");
   return globalThis.fetch(url.toString(), {
     headers: {
-  "User-Agent": "Boxdbud.io/1.1.0",
+      "User-Agent": "Boxdbud.io/1.1.0",
     },
     ...init,
   });

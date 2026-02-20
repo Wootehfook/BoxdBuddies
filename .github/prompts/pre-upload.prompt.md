@@ -44,7 +44,7 @@ For each error or failure from Step 2:
 4. **Build failures** — diagnose the root cause and fix it before continuing.
 5. **Test failures** — fix the code (not the test) unless the test itself is incorrect; do not skip or comment out tests.
 6. **Security audit findings** — evaluate `npm audit` output; address any `moderate` or higher vulnerabilities (update the dependency or apply a documented workaround).
-   - **Check pre-approved exceptions**: Consult [`docs/security-exceptions.md`](../../docs/security-exceptions.md) to see if the finding is a known exception.
+   - **Check pre-approved exceptions**: If it exists in your current branch, consult [`docs/security-exceptions.md`](../../docs/security-exceptions.md) to see if the finding is a known exception. If the file is not present yet, check [`docs/npm-audit-decision.md`](../../docs/npm-audit-decision.md) for historical context or proceed as if there are no pre-approved exceptions and follow the guidance below for new vulnerabilities.
    - **If the vulnerability matches an exception**: Verify the exception is still valid (e.g., the affected package is still dev-only). If conditions have changed since the exception was documented, escalate for re-review instead of ignoring.
    - **If the vulnerability is a new exception**: Do not ignore without written justification and approval from a maintainer. Document in the PR body under "Security notes".
    - **Re-evaluate exceptions**: If you encounter an exception from `docs/security-exceptions.md`, briefly verify it's still accurate (check package usage, scope, etc.). Update the document's review date if it is.
@@ -57,10 +57,10 @@ After fixing, re-run the full check suite from Step 2 until all commands exit cl
 
 Inspect every file you created or modified. Any file touched by the agent **must** include the correct attribution header on the first line:
 
-- **TypeScript / JavaScript**: `// AI Generated: GitHub Copilot (Claude Sonnet 4.6) - YYYY-MM-DD`
-- **Markdown / HTML**: `<!-- AI Generated: GitHub Copilot (Claude Sonnet 4.6) - YYYY-MM-DD -->`
+- **TypeScript / JavaScript**: `// AI Generated: GitHub Copilot (<actual-model-name>) - YYYY-MM-DD`
+- **Markdown / HTML**: `<!-- AI Generated: GitHub Copilot (<actual-model-name>) - YYYY-MM-DD -->`
 
-Use today's date. Add or update headers where missing.
+Substitute `<actual-model-name>` with the real model that generated the change (for example, "Claude Haiku 4.5" or "Claude Sonnet 4.6"). Use today's date. Add or update headers where missing.
 
 ---
 
@@ -86,7 +86,7 @@ Use today's date. Add or update headers where missing.
 
 ## Step 6 — Stage and commit
 
-Stage only intentional changes (avoid committing build artefacts, `.env`, or generated lock-file noise):
+Stage only intentional changes (avoid committing build artifacts, `.env`, or generated lock-file noise):
 
 ```bash
 git add <specific files>
@@ -106,13 +106,17 @@ Examples:
 - `fix(cache): resolve stale lock on concurrent D1 writes`
 - `chore(deps): bump vite to 7.3.1`
 
-Commit with signature (required for this repository):
+Commit with signature (if GPG is configured):
 
 ```bash
 git commit -S -m "<your message>"
+# Or without signing if GPG is not set up:
+git commit -m "<your message>"
 ```
 
-⏸️ **Wait for user action**: The system will prompt you to sign the commit using GPG or your configured signing tool. Do not proceed to Step 7 until signing is complete.
+**Note**: GPG signing is recommended but not strictly enforced by branch protection rules.
+
+⏸️ **Wait for user action** (if using `-S` flag): The system will prompt you to sign the commit using GPG. **Do not proceed to Step 7 until signing is complete.** This may require entering a passphrase or confirming via a GUI dialog.
 
 ---
 
@@ -157,7 +161,7 @@ gh pr create \
 
 ## CHANGELOG
 
-- [x] CHANGELOG.md updated in [Unreleased] section with correct change type
+- [ ] CHANGELOG.md updated in [Unreleased] section with correct change type (completed in Step 8b)
 
 ## Security notes
 
@@ -176,7 +180,7 @@ All AI-generated files include the required header comment.
 
 ## Step 8b — Update CHANGELOG.md and push to PR
 
-Now that the PR exists, extract the PR number and update the changelog so the PR is self-contained.
+Now that the PR exists, extract the PR number and update the changelog so the PR is self-contained. **This eliminates the need for post-merge changelog automation.**
 
 1. **Extract PR number** from the PR creation response (e.g., `#234`).
 
@@ -210,6 +214,8 @@ Now that the PR exists, extract the PR number and update the changelog so the PR
    git push origin <your-branch-name>
    ```
    This will automatically add the commit to the existing PR.
+
+**Note on automation**: By including the CHANGELOG update in the PR before merge, this workflow makes post-merge changelog automation redundant. PRs created by this agent are self-contained and require no additional post-merge processing.
 
 ---
 
@@ -254,4 +260,4 @@ git push --force-with-lease
 
 ## Post-Merge Note
 
-✅ **Changelog automation eliminated**: This prompt includes Step 8b (changelog update), which means the PR is self-contained and ready to merge. The post-merge `changelog-update.yml` workflow is now **redundant** and can be disabled or removed. All changelog entries are created before the PR is merged, eliminating secondary automation.
+✅ **Changelog automation streamlined**: This prompt includes Step 8b (changelog update), which means PRs created with this agent are self-contained and ready to merge from a changelog perspective. If a legacy `.github/workflows/changelog-update.yml` workflow exists, it may still serve human-created PRs that don't follow this agent workflow. Over time, as more PRs use this agent, the workflow can be deprecated. Track removal in a separate maintenance issue if needed. All changelog entries for agent-created PRs are included before merge, eliminating the need for post-merge automation on those PRs.
