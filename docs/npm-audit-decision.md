@@ -45,7 +45,7 @@ minimatch <10.2.1
 
 1. **Zero Runtime Impact**: All vulnerabilities are dev-only (linting, type-checking, testing)
 2. **No User Exposure**: These tools don't run in production or expose security boundaries
-3. **Ecosystem Limitation**: This is a known issue in the ESLint/TypeScript-ESLint ecosystem during their transition to new flat config standards (see https://github.com/eslint/eslintrc/issues)
+3. **Ecosystem Limitation**: This is a known issue in the ESLint/TypeScript-ESLint ecosystem during their transition to new flat config standards.
 4. **Upstream Resolution Pending**: ESLint team is working on config system improvements
 
 ## Solution: Configuration
