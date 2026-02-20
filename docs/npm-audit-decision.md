@@ -73,6 +73,6 @@ This ensures no vulnerabilities in runtime code.
 
 ## Related Issues
 
-- ESLint Config System Modernization: https://github.com/eslint/eslintrc/issues
-- AJV TypeScript Support: https://github.com/ajv-validator/ajv/issues
-- minimatch Maintenance: https://github.com/isaacs/minimatch/issues
+- ESLint Config System Modernization: https://eslint.org/docs/latest/use/configure/configuration-files-new
+- AJV TypeScript Support: https://ajv.js.org/guide/typescript.html
+- minimatch Maintenance & Changes: https://github.com/isaacs/minimatch/blob/main/changelog.md
