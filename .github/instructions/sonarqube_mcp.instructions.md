@@ -2,7 +2,7 @@
 
 ---
 
-## applyTo: "\*_/_"
+## applyTo: "**/*"
 
 These are some guidelines when using the SonarQube MCP server.
 
