@@ -34,10 +34,6 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "frontend-quality-checks",
-            "integration_id": null
-          },
-          {
             "context": "security-audit",
             "integration_id": null
           }

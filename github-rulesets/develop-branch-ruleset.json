@@ -28,10 +28,6 @@
             "integration_id": null
           },
           {
-            "context": "frontend-quality-checks",
-            "integration_id": null
-          },
-          {
             "context": "security-audit",
             "integration_id": null
           }

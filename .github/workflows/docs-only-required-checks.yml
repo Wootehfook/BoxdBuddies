@@ -73,7 +73,7 @@ jobs:
     needs: detect-scope
     if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
-      - run: 'echo "Docs-only change: frontend checks skipped."'
+      - run: 'echo "Docs-only change: frontend checks skipped (consolidation pending)."'
 
   backend-quality-checks:
     name: backend-quality-checks
