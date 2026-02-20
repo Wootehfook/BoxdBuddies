@@ -18,7 +18,7 @@ jobs:
       !startsWith(github.head_ref, 'hotfix/')
     steps:
       - name: Retarget PR to develop
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: pr } = await github.rest.pulls.get({
