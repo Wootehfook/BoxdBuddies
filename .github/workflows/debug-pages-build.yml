@@ -3,13 +3,10 @@ name: Debug Pages Build
 # AI Generated: GitHub Copilot - 2025-09-06
 # Purpose: Run the repository build on GitHub Actions (Ubuntu) to reproduce
 # the Cloudflare Pages build step and capture logs and the produced `dist/`
-# artifact for debugging. This workflow runs on pull requests and can be
-# manually dispatched.
+# artifact for debugging. Manually triggered only to reduce noise.
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
