@@ -34,6 +34,7 @@
     "version:minor": "echo 'Use GitHub Actions workflow: Version Bump and Release with minor option'",
     "version:major": "echo 'Use GitHub Actions workflow: Version Bump and Release with major option'",
     "version:current": "node -p \"require('./package.json').version\"",
+    "audit:prod": "npm audit --omit=dev",
     "prepare": "husky",
     "pre-commit": "lint-staged"
   },
