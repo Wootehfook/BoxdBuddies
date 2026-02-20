@@ -206,7 +206,7 @@ Now that the PR exists, extract the PR number and update the changelog so the PR
 5. **Commit and push the changelog update**:
    ```bash
    git add CHANGELOG.md
-   git commit -m "docs: update CHANGELOG for PR #<PR_NUMBER>"
+   git commit -S -m "docs: update CHANGELOG for PR #<PR_NUMBER>"
    git push origin <your-branch-name>
    ```
    This will automatically add the commit to the existing PR.
