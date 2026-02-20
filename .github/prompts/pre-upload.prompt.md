@@ -155,6 +155,10 @@ gh pr create \
 - [ ] `npm test` — all tests passing
 - [ ] `npm audit` — no moderate+ vulnerabilities (or documented exceptions)
 
+## CHANGELOG
+
+- [x] CHANGELOG.md updated in [Unreleased] section with correct change type
+
 ## Security notes
 
 <!-- Note any OWASP Top 10 considerations, input validation, or access-control changes. -->
@@ -170,24 +174,67 @@ All AI-generated files include the required header comment.
 
 ---
 
+## Step 8b — Update CHANGELOG.md and push to PR
+
+Now that the PR exists, extract the PR number and update the changelog so the PR is self-contained.
+
+1. **Extract PR number** from the PR creation response (e.g., `#234`).
+
+2. **Determine the change type** from your commit message (Conventional Commits prefix):
+   - `feat:` → **Added**
+   - `fix:` → **Fixed**
+   - `chore:`, `docs:`, `refactor:`, `perf:`, `test:` → **Changed**
+
+3. **Extract a clean entry title** by:
+   - Removing the conventional commit prefix (e.g., `chore(ci): ` → ``)
+   - Capitalizing the first letter of the remaining text
+   - Example: `chore(ci): add pre-upload agent` → `Add pre-upload agent`
+
+4. **Update CHANGELOG.md**:
+
+   ```bash
+   # Edit CHANGELOG.md to insert this entry under [Unreleased] → ### <ChangeType>:
+   # - Add pre-upload agent (#234)
+   ```
+
+   - Locate the `## [Unreleased]` section
+   - Find the subsection matching your change type (`### Added`, `### Fixed`, or `### Changed`)
+   - Insert: `- <CleanTitle> (#<PR_NUMBER>)` as a bullet point
+   - If the subsection doesn't exist, create it
+   - If `[Unreleased]` doesn't exist, create it after the header
+
+5. **Commit and push the changelog update**:
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: update CHANGELOG for PR #<PR_NUMBER>"
+   git push origin <your-branch-name>
+   ```
+   This will automatically add the commit to the existing PR.
+
+---
+
 ## Step 9 — Verify the PR
 
-After creation, run:
+After creation and changelog update, verify the PR is complete and correct:
 
 ```bash
-gh pr view --web
+git log --oneline -2
+git show --stat
 ```
 
 Confirm:
 
 - Base branch is `develop` (or `main` for release/hotfix).
 - PR title follows Conventional Commits format.
+- **CHANGELOG.md entry added** in the correct [Unreleased] subsection with PR number.
 - All checklist items in the PR body are accurate.
-- No secrets, API keys, or `.env` content appear in the diff (`gh pr diff`).
+- No secrets, API keys, or `.env` content appear in the diff.
 
-If anything is wrong, amend and force-push:
+If anything is wrong, fix, amend, and force-push:
 
 ```bash
+# Make corrections
+git add <file>
 git commit --amend
 git push --force-with-lease
 ```
@@ -202,3 +249,9 @@ git push --force-with-lease
 - Never force-push to shared branches.
 - Never skip a failing test — fix the underlying code.
 - Keep TypeScript strict — no `any` unless unavoidable and documented.
+
+---
+
+## Post-Merge Note
+
+✅ **Changelog automation eliminated**: This prompt includes Step 8b (changelog update), which means the PR is self-contained and ready to merge. The post-merge `changelog-update.yml` workflow is now **redundant** and can be disabled or removed. All changelog entries are created before the PR is merged, eliminating secondary automation.
