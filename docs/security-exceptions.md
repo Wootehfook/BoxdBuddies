@@ -4,6 +4,8 @@
 
 This document lists pre-approved security exceptions for BoxdBuddies. These are vulnerabilities or audit findings that have been reviewed and determined to pose no risk to production or user security.
 
+**Related documentation**: See [`npm-audit-decision.md`](./npm-audit-decision.md) for detailed technical analysis of ESLint/TypeScript vulnerabilities including specific dependency chains, breaking change explanations, and `.npmrc` configuration guidance. This file provides quick-reference exception status for agent workflows.
+
 ## Dev-Dependency Build-Chain Exceptions
 
 ### ESLint & TypeScript-ESLint (`node_modules`)
