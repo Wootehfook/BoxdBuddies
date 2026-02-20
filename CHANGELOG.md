@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Add pre-upload quality check agent workflow (#235)
 - Cleanup and consolidate GitHub workflows (#231)
 - Resolve npm audit vulnerabilities with ecosystem workaround (#229)
 - Bump actions/github-script from 7 to 8 (#217)
