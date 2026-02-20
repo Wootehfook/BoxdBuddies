@@ -1,0 +1,15 @@
+#!/bin/sh
+# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+# Pre-push hook stub.
+#
+# The actual pre-push behavior (e.g. protected-branch checks) is managed
+# and installed by scripts/setup-git-hooks.sh. That script is the single
+# source of truth for the hook contents and may overwrite this file.
+#
+# This tracked file is intentionally minimal to avoid duplicating logic
+# from scripts/setup-git-hooks.sh and prevent configuration drift.
+#
+# To install the full hook, run: bash scripts/setup-git-hooks.sh
+#
+# If the setup script has not been run, we allow the push by default.
+exit 0
