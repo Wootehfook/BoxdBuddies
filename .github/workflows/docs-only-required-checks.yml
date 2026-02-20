@@ -122,3 +122,11 @@ jobs:
     if: needs.detect-scope.outputs.only_docs == 'true'
     steps:
       - run: 'echo "Docs-only change: security vulnerability scan skipped."'
+
+  generate-report:
+    name: 📊 Generate Report
+    runs-on: ubuntu-latest
+    needs: detect-scope
+    if: needs.detect-scope.outputs.only_docs == 'true'
+    steps:
+      - run: 'echo "Docs-only change: PR conversation report skipped."'
