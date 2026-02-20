@@ -1,0 +1,16 @@
+#!/bin/sh
+# AI Generated: GitHub Copilot - 2025-08-02
+# Conventional commits check
+commit_regex='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?:
+ .{1,72}'
+error_msg="Invalid commit message format!
+Commit message must follow conventional commits format:
+<type>[optional scope]: <description>
+
+Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build
+Example: feat(ui): add dark mode toggle"
+
+if ! grep -qE "$commit_regex" "$1"; then
+    echo "$error_msg" >&2
+    exit 1
+fi
