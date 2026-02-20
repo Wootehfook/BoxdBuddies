@@ -61,7 +61,7 @@ jobs:
         needs: detect-scope
         if: needs.detect-scope.outputs.only_workflows == 'true'
         steps:
-            - run: 'echo "Workflow-only change: frontend checks skipped."'
+            - run: 'echo "Workflow-only change: frontend checks skipped (consolidation pending)."'
 
     backend-quality-checks:
         name: backend-quality-checks

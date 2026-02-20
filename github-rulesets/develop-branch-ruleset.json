@@ -28,19 +28,7 @@
             "integration_id": null
           },
           {
-            "context": "frontend-quality-checks",
-            "integration_id": null
-          },
-          {
             "context": "security-audit",
-            "integration_id": null
-          },
-          {
-            "context": "code-quality-analysis",
-            "integration_id": null
-          },
-          {
-            "context": "📊 Generate Report",
             "integration_id": null
           }
         ],
