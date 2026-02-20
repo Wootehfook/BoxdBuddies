@@ -31,15 +31,15 @@ minimatch <10.2.1
 
 ### Issue 1: ajv Breaking Changes
 
-- Newer ajv (8.18.0+) has **API-breaking changes** that break @eslint/eslintrc
-- @eslint/eslintrc depends on `ajv.addSchema()` with parameters that no longer exist in 8.18.0+
-- Attempting `npm audit fix --force` breaks ESLint: `TypeError: Cannot set properties of undefined (setting 'defaultMeta')`
+- Upgrading ajv to 8.18.0+ via `npm audit fix --force` has been observed to break @eslint/eslintrc
+- This aligns with breaking validation API changes documented in the ajv v8 changelog and tracked in eslint/eslintrc issues
+- In this project, `npm audit fix --force` causes ESLint to fail with `TypeError: Cannot set properties of undefined (setting 'defaultMeta')`
 
 ### Issue 2: minimatch Dependency Constraints
 
-- minimatch 10.2.1+ requires Node 16+ and has stricter requirements
-- @typescript-eslint/typescript-estree >=6.16.0 has complex transitive deps on minimatch
-- Upgrading breaks peer dependencies with eslint-plugin-react-hooks
+- Versions of the ESLint toolchain that pull minimatch 10.2.1+ introduce tighter dependency alignment requirements
+- @typescript-eslint/typescript-estree >=6.16.0 and related packages have complex transitive dependencies on minimatch
+- In this project, attempting such upgrades results in peer dependency conflicts with eslint-plugin-react-hooks and other ESLint ecosystem packages
 
 ## Why This Is Acceptable
 
