@@ -46,5 +46,9 @@
     "*": true
   },
   "github.copilot.chat.alternateGptPrompt.enabled": true,
-  "chat.todoListTool.enabled": true
+  "chat.todoListTool.enabled": true,
+  "sonarlint.connectedMode.project": {
+    "connectionId": "wootehfook",
+    "projectKey": "Wootehfook_BoxdBuddies"
+  }
 }

@@ -80,6 +80,7 @@ target/
 
 # IDE and Editor files
 .vscode/
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
