@@ -1,8 +1,7 @@
 #!/bin/sh
 # AI Generated: GitHub Copilot - 2025-08-02
 # Conventional commits check
-commit_regex='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?:
- .{1,72}'
+commit_regex='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?:[[:space:]].{1,72}'
 error_msg="Invalid commit message format!
 Commit message must follow conventional commits format:
 <type>[optional scope]: <description>
