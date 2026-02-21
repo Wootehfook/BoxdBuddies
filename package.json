@@ -1,7 +1,7 @@
 {
   "name": "boxdbud-io",
   "private": true,
-  "version": "2.1.1",
+  "version": "2.1.2",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Wootehfook",
@@ -34,6 +34,7 @@
     "version:minor": "echo 'Use GitHub Actions workflow: Version Bump and Release with minor option'",
     "version:major": "echo 'Use GitHub Actions workflow: Version Bump and Release with major option'",
     "version:current": "node -p \"require('./package.json').version\"",
+    "audit:prod": "npm audit --omit=dev",
     "prepare": "husky",
     "pre-commit": "lint-staged"
   },
@@ -43,10 +44,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24",
+    "@types/node": "^25",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.51.0",
@@ -56,7 +58,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
-    "jsdom": "^27.4.0",
+    "jsdom": "^28.1.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",

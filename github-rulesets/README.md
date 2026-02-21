@@ -18,7 +18,7 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 - **Target**: `develop` branch
 - **Protection Level**: High
 - **Required Reviews**: 1 reviewer
-- **Status Checks**: 4 core quality jobs (excludes build and license for faster integration)
+- **Status Checks**: 2 core quality jobs
 - **Security**: No force pushes, conversation resolution required
 - **Use Case**: Development integration and testing
 
@@ -27,7 +27,7 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 - **Target**: `feature/*` branches
 - **Protection Level**: Moderate
 - **Required Reviews**: 1 reviewer
-- **Status Checks**: 3 essential jobs (frontend, backend, security)
+- **Status Checks**: 1 essential job (security scanning)
 - **Flexibility**: Allows force pushes for iterative development
 - **Use Case**: Active feature development
 
@@ -36,20 +36,30 @@ This directory contains JSON configuration files for comprehensive GitHub reposi
 - **Target**: `release/*` and `hotfix/*` branches
 - **Protection Level**: Maximum
 - **Required Reviews**: 2 reviewers + code owner approval
-- **Status Checks**: All 6 CI/CD jobs must pass
+- **Status Checks**: 2 CI/CD jobs must pass
 - **Security**: Same as main branch (signed commits, linear history)
 - **Use Case**: Release preparation and emergency fixes
 
 ## 🎯 Status Check Integration
 
-All rulesets are configured with your exact CI/CD workflow job names:
+All rulesets are configured with your exact CI/CD workflow **status check contexts**:
 
-1. **Frontend Quality Checks** - TypeScript compilation, linting, formatting
-2. **Backend Quality Checks** - (legacy) Rust formatting and testing
-3. **Security Audit** - NPM and Cargo security vulnerability scanning
-4. **Code Quality Analysis** - Codacy CLI analysis and pre-commit hook verification
-5. **Build Application** - Cross-platform Tauri builds (Windows, macOS, Linux)
-6. **License Compliance Check** - AGPL license header verification
+1. **backend-quality-checks** - Lint, type-check, and unit tests
+2. **security-audit** - NPM security vulnerability scanning
+
+**Branch-specific requirements:**
+
+- **Main & Release/Hotfix**: Both `backend-quality-checks` AND `security-audit` required
+- **Feature branches**: Only `security-audit` required
+
+**Note**: Some workflows referenced in earlier documentation (frontend-quality-checks, code-quality-analysis, license-compliance-check, 📊 Generate Report) have been consolidated. The rulesets now focus on essential checks required for code quality and security.
+
+**Important**: GitHub status checks use the job's `name:` field if present, otherwise the job ID. For example:
+
+- Job with no explicit name: `frontend-quality-checks:` → status check context is `frontend-quality-checks`
+- Job with name field: `report:` with `name: "📊 Generate Report"` → status check context is `📊 Generate Report`
+
+The workflow name (top of the file) is never used for status check contexts.
 
 ## 📋 Import Instructions
 

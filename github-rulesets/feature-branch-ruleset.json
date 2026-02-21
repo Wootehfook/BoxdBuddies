@@ -4,6 +4,7 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
+      "exclude": [],
       "include": [
         "refs/heads/feature/*",
         "refs/heads/fix/*",
@@ -14,42 +15,56 @@
         "refs/heads/test/*",
         "refs/heads/copilot/*",
         "refs/heads/changelog/*"
-      ],
-      "exclude": []
+      ]
     }
   },
   "rules": [
     {
       "type": "pull_request",
       "parameters": {
+        "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": false,
+        "required_reviewers": [],
         "require_code_owner_review": false,
         "require_last_push_approval": false,
-        "required_approving_review_count": 1,
-        "required_review_thread_resolution": true
+        "required_review_thread_resolution": true,
+        "allowed_merge_methods": ["merge", "squash", "rebase"]
       }
     },
     {
       "type": "required_status_checks",
       "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
         "required_status_checks": [
           {
-            "context": "Frontend Quality Checks",
-            "integration_id": null
-          },
-          {
-            "context": "Security Audit",
+            "context": "security-audit",
             "integration_id": null
           }
-        ],
-        "strict_required_status_checks_policy": true
+        ]
       }
     },
     {
-      "type": "max_file_size",
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "code_quality",
       "parameters": {
-        "max_file_size": 100
+        "severity": "warnings"
       }
+    },
+    {
+      "type": "copilot_code_review",
+      "parameters": {
+        "review_on_push": true,
+        "review_draft_pull_requests": true
+      }
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "required_linear_history"
     }
   ],
   "bypass_actors": []

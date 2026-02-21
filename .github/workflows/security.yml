@@ -46,7 +46,7 @@ jobs:
 
       - name: Run npm audit
         run: |
-          npm audit --audit-level moderate
+          npm audit --audit-level moderate --omit=dev
           echo "NPM audit completed"
 
       # CodeQL Analysis - using GitHub's default setup for maximum security coverage

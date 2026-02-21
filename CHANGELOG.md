@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-02-21
+
 ### Changed
+
+- Add pre-upload quality check agent workflow (#235)
+- Cleanup and consolidate GitHub workflows (#231)
+- Resolve npm audit vulnerabilities with ecosystem workaround (#229)
+- Bump actions/github-script from 7 to 8 (#217)
+- Bump jsdom from 27.4.0 to 28.1.0 (#220)
 - Bump vite from 7.3.0 to 7.3.1 (#195)
 - Replace manual TMDB sync script with Cloudflare Worker cron job (#208)
 
 ### Fixed
+
+- Fix SonarQube CPD duplication gate failure in watchlist-count-updates tests (#235)
+- Fix branch protection rulesets using incorrect status check contexts (#223)
 - Harden admin auth and cleanup cron sync (#210)
+
+### Added
+
+- Implement Gitflow branching infrastructure (#214)
+
 
 ## [2.1.1] - 2026-02-10
 
@@ -25,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration with CI test suite
 
 ### Fixed
+
 - Ensure version bump PR checks run (#190)
 - Fix security audit failure by updating Vite to 7.1.12 (#138)
 - Escape angle brackets in changelog workflow regex pattern (#170)
@@ -33,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix navigator.onLine test isolation in watchlistFetcher (#180)
 
 ### Changed
+
 - Add workflow-only required checks (#203)
 - Harden changelog workflow_run PR context (#201)
 - Update workflow signing and cleanup (#187)
@@ -94,7 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump jsdom from 27.2.0 to 27.4.0 (#168)
 - Bump @typescript-eslint/eslint-plugin from 8.46.2 to 8.50.1 (#169)
 
-
 ## [2.1.0] - 2025-09-13
 
 ### Added
@@ -131,7 +148,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Wootehfook/BoxdBuddies/releases/tag/v2.0.0

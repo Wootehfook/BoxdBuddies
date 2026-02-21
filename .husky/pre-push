@@ -13,4 +13,3 @@
 #
 # If the setup script has not been run, we allow the push by default.
 exit 0
-

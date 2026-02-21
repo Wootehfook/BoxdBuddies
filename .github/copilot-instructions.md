@@ -94,7 +94,7 @@ Test pattern: mock `env.MOVIES_DB` and use exposed DI hooks (e.g., `setCacheFunc
 
 ## 9) Contributing rules (must follow)
 
-- AI attribution header format (required): `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD` for code files, and `<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD -->` for Markdown.
+- AI attribution header format (required): Include on the first line of every AI-generated file. Format: `// AI Generated: GitHub Copilot (<model-name>) - YYYY-MM-DD` for code files, and `<!-- AI Generated: GitHub Copilot (<model-name>) - YYYY-MM-DD -->` for Markdown. For new files or major rewrites, use the actual model name that generated the code (e.g., `Claude Haiku 4.5`, `Claude Sonnet 4.6`). When editing existing files that already have `GitHub Copilot (GPT-5.2-Codex)`, you may keep that format for consistency, or update to the actual model name if doing a significant rewrite. Do not use generic placeholders like `<actual-model-name>` in committed code.
 - Keep diffs small, ~100-column width, TypeScript strictness (avoid `any`).
 - When adding server endpoints: include `onRequestOptions`, `debugLog`, rate limiting, and DI setters for tests.
 - Use Prettier/ESLint scripts before committing (`npm run format`, `npm run lint`).
