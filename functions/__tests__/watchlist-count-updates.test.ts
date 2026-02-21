@@ -1,7 +1,7 @@
 /*
  * BoxdBuddy - Watchlist Count Updates Endpoint Tests
  * Copyright (C) 2025 Wootehfook
- * AI Generated: Claude Sonnet 4 - 2025-01-02
+ * AI Generated: GitHub Copilot (Claude Sonnet 4.6) - 2026-02-21
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
