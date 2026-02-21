@@ -412,10 +412,18 @@ describe("Watchlist Count Updates Endpoint", () => {
   });
 
   describe("Cache Integration", () => {
-    it("should call mockSetCount with correct parameters", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } =
-        await import("../api/watchlist-count-updates/index.js");
+    // Hoist shared imports to a single beforeEach to eliminate repeated identical
+    // import blocks that SonarQube CPD flags as duplicated new code.
+    let onRequestPost: any;
+    let setCacheFunctionForTesting: any;
 
+    beforeEach(async () => {
+      ({ onRequestPost, setCacheFunctionForTesting } =
+        await import("../api/watchlist-count-updates/index.js"));
+      setCacheFunctionForTesting(mockSetCount);
+    });
+
+    it("should call mockSetCount with correct parameters", async () => {
       const lastFetchedAtValue = Date.now() - 1000;
       const request = createRequest(
         {
@@ -432,7 +440,6 @@ describe("Watchlist Count Updates Endpoint", () => {
       );
 
       const env = createEnv();
-      setCacheFunctionForTesting(mockSetCount);
       mockSetCount.mockResolvedValue(undefined);
 
       const response = await onRequestPost({ request, env });
@@ -451,9 +458,6 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should use current timestamp if lastFetchedAt not provided", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } =
-        await import("../api/watchlist-count-updates/index.js");
-
       const request = createRequest(
         {
           username: "cacheuser2",
@@ -466,7 +470,6 @@ describe("Watchlist Count Updates Endpoint", () => {
       );
 
       const env = createEnv();
-      setCacheFunctionForTesting(mockSetCount);
       mockSetCount.mockResolvedValue(undefined);
 
       const now = Date.now();
@@ -491,9 +494,6 @@ describe("Watchlist Count Updates Endpoint", () => {
     });
 
     it("should handle cache errors gracefully", async () => {
-      const { onRequestPost, setCacheFunctionForTesting } =
-        await import("../api/watchlist-count-updates/index.js");
-
       const request = createRequest(
         {
           username: "erroruser",
@@ -506,7 +506,6 @@ describe("Watchlist Count Updates Endpoint", () => {
       );
 
       const env = createEnv();
-      setCacheFunctionForTesting(mockSetCount);
       mockSetCount.mockRejectedValue(new Error("Cache error"));
 
       const response = await onRequestPost({ request, env });
