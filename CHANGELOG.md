@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-02-21
+
 ### Changed
 
 - Add pre-upload quality check agent workflow (#235)
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Implement Gitflow branching infrastructure (#214)
+
 
 ## [2.1.1] - 2026-02-10
 
@@ -145,7 +148,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Wootehfook/BoxdBuddies/releases/tag/v2.0.0
