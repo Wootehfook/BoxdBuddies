@@ -2,9 +2,9 @@
 # AI Generated: GitHub Copilot (Claude Haiku 4.5) - 2026-02-21
 # Post-create script for BoxdBuddies DevContainer
 # Automates development environment setup
-# Note: Non-critical steps won't fail the entire setup
+# Note: This script is best-effort; errors won't fail the DevContainer setup
 
-# Exit on critical errors but continue on non-critical
+# Allow the script to continue even if some commands fail (no fail-fast)
 set +e
 
 echo "=========================================="
@@ -21,12 +21,21 @@ NC='\033[0m' # No Color
 # Step 1: Install npm dependencies (if needed)
 echo "${BLUE}📦 Checking npm dependencies...${NC}"
 if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
-  echo "${BLUE}Installing npm dependencies...${NC}"
-  npm install --prefer-offline --no-audit 2>&1 || {
-    echo "${YELLOW}⚠️  npm install encountered permission issues.${NC}"
-    echo "${YELLOW}   This is common with cross-platform mounts.${NC}"
-    echo "${YELLOW}   Try running: npm ci --prefer-offline${NC}"
-  }
+  if [ -f "package-lock.json" ]; then
+    echo "${BLUE}Installing npm dependencies with npm ci (lockfile detected)...${NC}"
+    npm ci --prefer-offline --no-audit 2>&1 || {
+      echo "${YELLOW}⚠️  npm ci encountered permission or filesystem issues.${NC}"
+      echo "${YELLOW}   This is common with cross-platform mounts.${NC}"
+      echo "${YELLOW}   You can retry inside the container with: npm ci --prefer-offline${NC}"
+    }
+  else
+    echo "${BLUE}No package-lock.json found; installing dependencies with npm install...${NC}"
+    npm install --prefer-offline --no-audit 2>&1 || {
+      echo "${YELLOW}⚠️  npm install encountered permission or filesystem issues.${NC}"
+      echo "${YELLOW}   This is common with cross-platform mounts.${NC}"
+      echo "${YELLOW}   You can retry inside the container with: npm install --prefer-offline${NC}"
+    }
+  fi
   echo "${GREEN}✓ Dependency check complete${NC}"
 else
   echo "${GREEN}✓ Dependencies already installed${NC}"

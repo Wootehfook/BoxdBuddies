@@ -45,8 +45,8 @@ This directory contains the development container configuration for BoxdBuddies.
 
 ### Git Integration
 
-- SSH keys are mounted from your host (`~/.ssh`)
 - Git config is mounted from your host (`~/.gitconfig`)
+- SSH agent forwarding is available as an opt-in configuration (see troubleshooting)
 - Husky git hooks are automatically configured
 
 ## 🚀 Quick Start
@@ -164,7 +164,7 @@ npm run cloudflare:deploy # Deploy to Cloudflare Pages
 3. Search for "SonarLint"
 4. Configure SonarCloud connection with:
    - Organization: `Wootehfook`
-   - Project Key: `BoxdBuddies`
+   - Project Key: `Wootehfook_BoxdBuddies`
 
 ### ESLint & Prettier
 
@@ -221,8 +221,21 @@ Add extension IDs to `customizations.vscode.extensions` in `devcontainer.json`:
 
 ### Git credentials not working
 
-- Ensure `~/.ssh` and `~/.gitconfig` exist on host
-- Check SSH key permissions: `chmod 600 ~/.ssh/id_*`
+- Ensure `~/.gitconfig` exists on host
+- If using **SSH remotes**, verify SSH agent is available:
+  - Check: `ssh -T git@github.com` (or your Git host)
+  - To enable agent forwarding in `devcontainer.json`, add this mount:
+    ```json
+    "mounts": [
+      "source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind,consistency=cached"
+    ]
+    ```
+    And set:
+    ```json
+    "remoteEnv": { "SSH_AUTH_SOCK": "/ssh-agent" }
+    ```
+- If using **HTTPS remotes**, configure a Git credential helper or personal access token (PAT) on the host
+- To verify your remote URL: `git remote -v`
 
 ### npm install permission denied (EACCES)
 
