@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix SonarQube CPD duplication gate failure in watchlist-count-updates tests (#235)
 - Fix branch protection rulesets using incorrect status check contexts (#223)
 - Harden admin auth and cleanup cron sync (#210)
 
