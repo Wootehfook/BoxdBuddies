@@ -260,12 +260,12 @@ Now that the PR exists, extract the PR number and update the changelog so the PR
 5. **Commit and push the changelog update**:
    ```bash
    git add CHANGELOG.md
-   git commit -m "docs: update CHANGELOG for PR #<PR_NUMBER>"
+   git commit -S -m "docs: update CHANGELOG for PR #<PR_NUMBER>"
    git push origin <your-branch-name>
    ```
    This will automatically add the commit to the existing PR.
 
-**Note on automation**: By including the CHANGELOG update in the PR before merge, this workflow makes post-merge changelog automation redundant. PRs created by this agent are self-contained and require no additional post-merge processing.
+**Note on automation**: The repository currently includes `.github/workflows/changelog-update.yml`, which will still run after merge and may append a new changelog entry. To avoid duplicate bullets in `CHANGELOG.md`, prefer one source of truth: either rely on the workflow (skip the manual changelog edit above if the workflow is enabled), or disable/update the workflow so that it no-ops when a matching entry already exists.
 
 ---
 
