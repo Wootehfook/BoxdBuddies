@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (Claude Haiku 4.5) - 2026-02-20 -->
+<!-- AI Generated: GitHub Copilot (Claude Sonnet 4.5) - 2026-02-20 -->
 
 ---
 
@@ -10,6 +10,12 @@ description: Run pre-upload checks, fix issues, branch, commit, and create a PR 
 # Pre-Upload Quality Check, Branch, Commit & PR
 
 You are an agent executing a full pre-upload workflow for the BoxdBuddies project. Follow every step in order. Do not skip a step or proceed to the next until the current one is resolved.
+
+**Important**: This workflow handles various starting states:
+
+- Starting from `develop` with uncommitted changes (creates new feature branch)
+- Already on a feature branch with new uncommitted changes (continues on branch or creates new one based on relatedness)
+- Clean working tree (should not happen; verify with `git status` first)
 
 ---
 
@@ -66,6 +72,27 @@ Substitute `<actual-model-name>` with the real model that generated the change (
 
 ## Step 5 — Determine the correct branch name
 
+### 5.1 Check current branch state
+
+First, check which branch you're currently on:
+
+```bash
+git branch --show-current
+```
+
+**Decision tree:**
+
+- **If on `main`**: ❌ Abort. Never work directly on `main`. Switch to `develop` first.
+- **If on `develop` with uncommitted changes**: Proceed to create a new feature branch (Step 5.2).
+- **If on `develop` with clean working tree**: Proceed to create a new feature branch (Step 5.2).
+- **If on an existing feature branch** (e.g., `chore/add-pre-upload-agent`):
+  - **With uncommitted changes**: You have two options:
+    1. **Continue on this branch** if the new changes are directly related to the existing branch's purpose. Skip to Step 6.
+    2. **Create a new branch** if the changes are unrelated. Stash, create new branch, pop stash (Step 5.3).
+  - **With clean working tree**: This shouldn't happen (no changes detected in Step 1). Verify with `git status`.
+
+### 5.2 Create a new feature branch (standard path)
+
 1. Inspect the nature of your changes and select the appropriate Conventional Commit prefix:
    - New feature → `feature/`
    - Bug fix → `fix/`
@@ -75,12 +102,33 @@ Substitute `<actual-model-name>` with the real model that generated the change (
    - Tests → `test/`
    - Chores / tooling → `chore/`
 2. Derive a concise kebab-case slug from the changes (e.g., `feature/add-genre-filter`).
-3. **Always branch from `develop`**. Confirm you are on `develop` and it is up to date:
+3. **Branch from `develop`**. Confirm you are on `develop` and it is up to date:
    ```bash
    git checkout develop
    git pull origin develop
    git checkout -b <prefix/your-slug>
    ```
+
+### 5.3 Create a new branch from an existing feature branch (stash workflow)
+
+If you're on a feature branch with uncommitted changes that are **unrelated** to that branch:
+
+```bash
+# Save uncommitted changes
+git stash push -m "WIP: changes for new branch"
+
+# Switch to develop and update
+git checkout develop
+git pull origin develop
+
+# Create new feature branch
+git checkout -b <prefix/your-slug>
+
+# Restore the stashed changes
+git stash pop
+```
+
+**Important**: Only use this workflow if the changes are truly unrelated to the current branch. Otherwise, continue on the existing branch to keep related work together.
 
 ---
 
@@ -106,17 +154,19 @@ Examples:
 - `fix(cache): resolve stale lock on concurrent D1 writes`
 - `chore(deps): bump vite to 7.3.1`
 
-Commit with signature (if GPG is configured):
+GPG signing is **required by branch protection rules**. Before committing, verify GPG is configured:
+
+```bash
+git config user.signingkey  # must return a key ID — if empty, stop and configure GPG before proceeding
+```
+
+Commit with GPG signature:
 
 ```bash
 git commit -S -m "<your message>"
-# Or without signing if GPG is not set up:
-git commit -m "<your message>"
 ```
 
-**Note**: GPG signing is recommended but not strictly enforced by branch protection rules.
-
-⏸️ **Wait for user action** (if using `-S` flag): The system will prompt you to sign the commit using GPG. **Do not proceed to Step 7 until signing is complete.** This may require entering a passphrase or confirming via a GUI dialog.
+⏸️ **Wait for user action**: The system will prompt you to sign the commit using GPG. **Do not proceed to Step 7 until signing is complete.** This may require entering a passphrase or confirming via a GUI dialog.
 
 ---
 
@@ -255,6 +305,7 @@ git push --force-with-lease
 - Never force-push to shared branches.
 - Never skip a failing test — fix the underlying code.
 - Keep TypeScript strict — no `any` unless unavoidable and documented.
+- **Branching strategy**: Keep related work together on one branch. Only create a new branch if changes are truly unrelated to the current branch's purpose.
 
 ---
 
