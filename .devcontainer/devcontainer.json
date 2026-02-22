@@ -5,6 +5,12 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
     },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -16,9 +22,106 @@
       "extensions": [
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss"
-      ]
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "GitHub.copilot",
+        "GitHub.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "sonarsource.sonarlint-vscode",
+        "usernamehw.errorlens",
+        "ms-vscode.makefile-tools",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.remote-explorer",
+        "ms-vscode-remote.remote-wsl",
+        "vitest.explorer",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+          }
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+          }
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[css]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "eslint.enable": true,
+        "eslint.validate": [
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact"
+        ],
+        "eslint.codeAction.showDocumentation": {
+          "enable": true
+        },
+        "errorLens.enabled": true,
+        "errorLens.excludeBySource": [],
+        "files.exclude": {
+          "**/.git": true,
+          "**/node_modules": true,
+          "**/.DS_Store": true,
+          "**/dist": false
+        },
+        "files.watcherExclude": {
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/node_modules/**": true,
+          "**/.vite/**": true
+        },
+        "search.exclude": {
+          "**/.git": true,
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.vite": true
+        },
+        "gitlens.defaultDateFormat": "dd/MM/yyyy hh:mm a",
+        "gitlens.defaultDateStyle": "absolute"
+      }
     }
   },
-  "forwardPorts": [1420, 3000]
+  "forwardPorts": [5173, 3000, 8787, 1420],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/BoxdBuddies,type=bind,consistency=delegated",
+  "portsAttributes": {
+    "5173": {
+      "label": "Frontend Dev Server",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Preview Server",
+      "onAutoForward": "notify"
+    },
+    "8787": {
+      "label": "Cloudflare Pages Dev",
+      "onAutoForward": "notify"
+    },
+    "1420": {
+      "label": "Development",
+      "onAutoForward": "notify"
+    }
+  },
+  "remoteUser": "node",
+  "mounts": [
+    "source=${localEnv:USERPROFILE}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
+    "source=${localEnv:USERPROFILE}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
