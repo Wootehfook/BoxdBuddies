@@ -1,9 +1,9 @@
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-22 -->
+
 # BoxdBuddy TMDB Cron Sync Worker
 
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11 -->
-
 Cloudflare Worker that performs automated TMDB database synchronization on a
-daily schedule.
+twice-daily schedule.
 
 ## Overview
 
@@ -22,7 +22,8 @@ The worker runs two complementary sync strategies:
 
 ## Schedule
 
-The worker runs daily at **04:00 UTC** via Cloudflare cron triggers.
+The worker runs four times daily at **00:00 UTC**, **06:00 UTC**, **12:00 UTC**,
+and **18:00 UTC** via Cloudflare cron triggers.
 
 ## Endpoints
 
@@ -36,7 +37,16 @@ Returns current sync statistics without authentication.
 {
   "total_movies": 1234567,
   "highest_movie_id_synced": 987654,
-  "last_delta_sync": "2026-02-11"
+  "last_delta_sync": "2026-02-20",
+  "incremental_sync": {
+    "last_successful_id": 987654,
+    "last_attempted_id": 987655,
+    "consecutive_errors": 0,
+    "last_error_code": null,
+    "last_error_message": null,
+    "last_error_timestamp": null,
+    "last_completed_run": "2026-02-20T04:15:32.123Z"
+  }
 }
 ```
 
@@ -139,11 +149,21 @@ wrangler tail boxdbuddy-tmdb-cron
 
 - **Rate Limiting**: 35 requests per 10 seconds (TMDB allows 40, we leave
   buffer)
-- **Time Budget**: 25 seconds per sync pass (Cloudflare Worker limit is 30s)
+- **Time Budget**: 28 seconds per sync pass (Cloudflare Worker limit is 30s)
+- **Subrequest Tracking**: Monitors total requests to stay under Cloudflare's
+  ~50 limit per execution, with graceful degradation when approaching limits
 - **Error Handling**: 404 errors (missing movies) skip gracefully; 429 errors
-  (rate limits) wait 2s and retry
+  (rate limits) use exponential backoff (1s, 2s, 4s); other errors logged with
+  context
+- **Incremental Sync Tracking**: Maintains `incremental_sync_status` table with:
+  - `last_successful_id` - highest ID successfully synced
+  - `last_attempted_id` - last ID attempted (for diagnostics)
+  - `consecutive_errors` - count of consecutive failures (to identify patterns)
+  - `last_error_code` and `last_error_message` - reason for last failure
+  - `last_completed_run` - timestamp of last successful execution
 - **Adult Content**: Automatically skipped to keep catalog family-friendly
-- **Persistence**: Sync watermarks stored in `sync_metadata` table
+- **Persistence**: Sync watermarks and status stored in `sync_metadata` and
+  `incremental_sync_status` tables
 
 ## License
 
