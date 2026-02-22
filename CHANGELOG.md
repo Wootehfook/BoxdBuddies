@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-21 -->
+<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-22 -->
 
 # Changelog
 
@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Enhance devcontainer setup (#238)
+- Update TMDB cron schedule (#239)
 
 ## [2.1.2] - 2026-02-21
 
