@@ -38,7 +38,7 @@ jobs:
           echo "All tests are passing and ready for deployment"
 
       - name: Upload test coverage (if available)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results
