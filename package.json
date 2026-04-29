@@ -11,6 +11,9 @@
     "url": "https://github.com/Wootehfook/BoxdBuddies.git"
   },
   "homepage": "https://boxdbud.io",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -62,7 +65,7 @@
     "lint-staged": "^16.3.0",
     "prettier": "^3.7.4",
     "typescript": "^6.0.3",
-    "vite": "^7.3.1",
+    "vite": "^8.0.10",
     "vitest": "^4.0.16",
     "wrangler": "^4.80.0"
   }
