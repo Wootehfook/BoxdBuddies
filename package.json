@@ -11,6 +11,9 @@
     "url": "https://github.com/Wootehfook/BoxdBuddies.git"
   },
   "homepage": "https://boxdbud.io",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
