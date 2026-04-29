@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
+// Author: Woo T. Fook | Built by AI (GitHub Copilot, model: GPT-4o) — 2026-04-29
 export default defineConfig({
   plugins: [react()],
 
@@ -10,9 +11,11 @@ export default defineConfig({
 
   // Build configuration
   // NOTE: Vite 8 uses Rolldown (Rust-based) as the default bundler and minifier.
-  // Setting minify: true enables Rolldown's built-in native minifier (the new default).
-  // The string "rolldown" is NOT a valid minify value — it causes a runtime crash.
-  // Author: Woo T. Fook | Built by AI (GitHub Copilot, model: GPT-4o) — 2026-04-29
+  // BREAKING CHANGE (Vite 8 / rolldown): manualChunks no longer accepts a plain
+  // object — it must be a function. A plain object caused a fatal runtime crash:
+  //   "Invalid type: Expected Function but received Object"
+  // The function form is backward-compatible with Vite 7 as well.
+  // Updated: GitHub Copilot (GPT-4o) — 2026-04-29
   build: {
     outDir: "dist",
     assetsDir: "assets",
@@ -20,8 +23,11 @@ export default defineConfig({
     minify: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
+        // manualChunks must be a function in Vite 8 / rolldown (object form removed)
+        manualChunks: (id: string) => {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+            return "vendor";
+          }
         },
       },
     },
