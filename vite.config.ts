@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
-// Author: Woo T. Fook | Built by AI (GitHub Copilot, model: GPT-4o) — 2026-04-29
+// AI Generated: GitHub Copilot (GPT-4o) - 2026-04-29
 export default defineConfig({
   plugins: [react()],
 
