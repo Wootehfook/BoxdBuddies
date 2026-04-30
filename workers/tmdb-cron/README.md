@@ -3,7 +3,7 @@
 # BoxdBuddy TMDB Cron Sync Worker
 
 Cloudflare Worker that performs automated TMDB database synchronization on a
-twice-daily schedule.
+four-times-daily schedule.
 
 ## Overview
 
