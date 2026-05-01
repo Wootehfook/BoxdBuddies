@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         // manualChunks must be a function in Vite 8 / rolldown (object form removed)
         manualChunks: (id: string) => {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
             return "vendor";
           }
         },

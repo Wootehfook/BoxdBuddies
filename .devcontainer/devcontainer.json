@@ -98,23 +98,19 @@
       }
     }
   },
-  "forwardPorts": [5173, 3000, 8787, 1420],
+  "forwardPorts": [3000, 4173, 8787],
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/BoxdBuddies,type=bind,consistency=delegated",
   "portsAttributes": {
-    "5173": {
+    "3000": {
       "label": "Frontend Dev Server",
       "onAutoForward": "notify"
     },
-    "3000": {
+    "4173": {
       "label": "Preview Server",
       "onAutoForward": "notify"
     },
     "8787": {
       "label": "Cloudflare Pages Dev",
-      "onAutoForward": "notify"
-    },
-    "1420": {
-      "label": "Development",
       "onAutoForward": "notify"
     }
   },
