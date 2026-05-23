@@ -116,8 +116,8 @@
   },
   "remoteUser": "node",
   "mounts": [
-    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+    "source=${localEnv:HOME:${localEnv:USERPROFILE}}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
+    "source=${localEnv:HOME:${localEnv:USERPROFILE}}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
   ],
   "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
