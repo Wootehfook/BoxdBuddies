@@ -145,7 +145,7 @@ wrangler tail boxdbuddy-tmdb-cron
   tracking is currently implemented; the worker instead relies on TMDB rate
   limiting and conservative execution/time budgeting to avoid overruns
 - **Error Handling**: 404 errors (missing movies) skip gracefully; 429 errors
-  (rate limits) use exponential backoff (1s, 2s, 4s); other errors logged with
+  (rate limits) retry after a fixed 2-second delay; other errors logged with
   context
 - **Incremental Sync Tracking**: Maintains `incremental_sync_status` table with:
   - `last_successful_id` - highest ID successfully synced
