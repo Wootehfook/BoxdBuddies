@@ -37,16 +37,7 @@ Returns current sync statistics without authentication.
 {
   "total_movies": 1234567,
   "highest_movie_id_synced": 987654,
-  "last_delta_sync": "2026-02-20",
-  "incremental_sync": {
-    "last_successful_id": 987654,
-    "last_attempted_id": 987655,
-    "consecutive_errors": 0,
-    "last_error_code": null,
-    "last_error_message": null,
-    "last_error_timestamp": null,
-    "last_completed_run": "2026-02-20T04:15:32.123Z"
-  }
+  "last_delta_sync": "2026-02-20"
 }
 ```
 
