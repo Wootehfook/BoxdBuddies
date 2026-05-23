@@ -140,9 +140,10 @@ wrangler tail boxdbuddy-tmdb-cron
 
 - **Rate Limiting**: 35 requests per 10 seconds (TMDB allows 40, we leave
   buffer)
-- **Time Budget**: 28 seconds per sync pass (Cloudflare Worker limit is 30s)
-- **Subrequest Tracking**: Monitors total requests to stay under Cloudflare's
-  ~50 limit per execution, with graceful degradation when approaching limits
+- **Time Budget**: 25 seconds per sync pass (Cloudflare Worker limit is 30s)
+- **Cloudflare Request Limits**: No explicit Cloudflare subrequest-budget
+  tracking is currently implemented; the worker instead relies on TMDB rate
+  limiting and conservative execution/time budgeting to avoid overruns
 - **Error Handling**: 404 errors (missing movies) skip gracefully; 429 errors
   (rate limits) use exponential backoff (1s, 2s, 4s); other errors logged with
   context
