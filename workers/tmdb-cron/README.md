@@ -155,15 +155,10 @@ wrangler tail boxdbuddy-tmdb-cron
 - **Error Handling**: 404 errors (missing movies) skip gracefully; 429 errors
   (rate limits) use exponential backoff (1s, 2s, 4s); other errors logged with
   context
-- **Incremental Sync Tracking**: Maintains `incremental_sync_status` table with:
-  - `last_successful_id` - highest ID successfully synced
-  - `last_attempted_id` - last ID attempted (for diagnostics)
-  - `consecutive_errors` - count of consecutive failures (to identify patterns)
-  - `last_error_code` and `last_error_message` - reason for last failure
-  - `last_completed_run` - timestamp of last successful execution
+- **Incremental Sync Tracking**: Uses `sync_metadata` watermarks (for example,
+  `highest_movie_id_synced`) to continue from the latest known movie ID
 - **Adult Content**: Automatically skipped to keep catalog family-friendly
-- **Persistence**: Sync watermarks and status stored in `sync_metadata` and
-  `incremental_sync_status` tables
+- **Persistence**: Sync watermarks are stored in `sync_metadata`
 
 ## License
 
