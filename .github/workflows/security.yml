@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high # Only fail on high/critical vulnerabilities
           fail-on-scopes: runtime # Only check runtime dependencies
