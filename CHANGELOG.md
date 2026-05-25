@@ -1,5 +1,3 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-22 -->
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -15,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Enhance devcontainer setup (#238)
 - Update TMDB cron schedule (#239)
+- Upgrade major tooling/runtime dependencies, including Vite 8, TypeScript 6, ESLint 10, jsdom 29, and wrangler updates (#239)
 
 ## [2.1.2] - 2026-02-21
 

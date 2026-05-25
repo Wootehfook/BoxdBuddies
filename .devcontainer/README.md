@@ -45,7 +45,8 @@ This directory contains the development container configuration for BoxdBuddies.
 ### Git Integration
 
 - Git config is mounted from your host (`~/.gitconfig`) via `${localEnv:HOME}/.gitconfig`
-- SSH keys are mounted from your host (`~/.ssh`) by default via `${localEnv:HOME}/.ssh` (see troubleshooting if keys are missing)
+- SSH keys are **not** mounted by default (safer default)
+- SSH access is opt-in via SSH agent forwarding (see troubleshooting)
 - Husky git hooks are automatically configured
 
 ## 🚀 Quick Start
