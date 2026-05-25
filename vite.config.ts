@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
-// Author: Woo T. Fook | Built by AI (GitHub Copilot, model: GPT-4o) — 2026-04-29
+// AI Generated: GitHub Copilot (GPT-4o) - 2026-04-29
 export default defineConfig({
   plugins: [react()],
 
@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         // manualChunks must be a function in Vite 8 / rolldown (object form removed)
         manualChunks: (id: string) => {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
             return "vendor";
           }
         },
