@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-05-25
+
+
 ## [2.1.3] - 2026-05-23
 
 ### Changed
@@ -155,7 +158,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.3...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.4...HEAD
+[2.1.4]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.3...v2.1.4
 [2.1.3]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.2...v2.1.3
 [2.1.2]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.0...v2.1.1
