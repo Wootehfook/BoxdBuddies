@@ -81,18 +81,18 @@ interface DebugInfo {
 }
 
 interface TmdbRow {
-  id?: number | string;
-  title?: string;
-  original_title?: string;
-  year?: number | string | null;
-  release_date?: string | null;
-  poster_path?: string | null;
-  overview?: string | null;
-  vote_average?: number | null;
-  director?: string | null;
-  runtime?: number | null;
-  genres?: unknown;
-  popularity?: number | null;
+  id: number | string;
+  title: string;
+  original_title: string | null;
+  year: number | string | null;
+  release_date: string | null;
+  poster_path: string | null;
+  overview: string | null;
+  vote_average: number | null;
+  director: string | null;
+  runtime: number | null;
+  genres: unknown;
+  popularity: number | null;
 }
 
 interface WatchlistScrapeResult {
