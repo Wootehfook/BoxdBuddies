@@ -38,15 +38,15 @@ This directory contains the development container configuration for BoxdBuddies.
 
 ### Port Forwarding
 
-- **5173** - Vite frontend development server
-- **3000** - Preview/alternative port
-- **8787** - Cloudflare Pages dev server
-- **1420** - Additional development port
+- **3000** - Vite frontend development server
+- **4173** - Vite preview server (`npm run preview`)
+- **8787** - Cloudflare Pages local dev server
 
 ### Git Integration
 
-- Git config is mounted from your host (`~/.gitconfig`)
-- SSH agent forwarding is available as an opt-in configuration (see troubleshooting)
+- Git config is mounted from your host (`~/.gitconfig`) via `${localEnv:HOME}/.gitconfig`
+- SSH keys are **not** mounted by default (safer default)
+- SSH access is opt-in via SSH agent forwarding (see troubleshooting)
 - Husky git hooks are automatically configured
 
 ## 🚀 Quick Start
@@ -119,7 +119,7 @@ wrangler secret put ADMIN_SECRET
 ### Frontend Development
 
 ```bash
-npm run dev              # Start dev server (port 5173)
+npm run dev              # Start dev server (port 3000)
 npm run build            # Build for production
 npm run preview          # Preview production build
 ```
