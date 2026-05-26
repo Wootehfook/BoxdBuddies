@@ -6,7 +6,7 @@ import type { Env as CacheEnv } from "../cache/index.js";
 
 // Structured logging utility for production
 const logger = {
-  info: (message: string, meta?: any) => {
+  info: (message: string, meta?: unknown) => {
     debugLog(
       undefined,
       JSON.stringify({
@@ -17,17 +17,17 @@ const logger = {
       })
     );
   },
-  error: (message: string, error?: any) => {
+  error: (message: string, error?: unknown) => {
     console.error(
       JSON.stringify({
         level: "error",
         message,
-        error: error?.message || error,
+        error: error instanceof Error ? error.message : String(error ?? ""),
         timestamp: new Date().toISOString(),
       })
     );
   },
-  warn: (message: string, meta?: any) => {
+  warn: (message: string, meta?: unknown) => {
     debugLog(
       undefined,
       JSON.stringify({
@@ -61,6 +61,18 @@ interface Movie {
   letterboxdSlug?: string | null;
   friendCount: number;
   friendList: string[];
+}
+
+interface TmdbRow {
+  id: number;
+  title: string;
+  year?: number;
+  poster_path?: string | null;
+  overview?: string | null;
+  vote_average?: number | null;
+  director?: string | null;
+  runtime?: number | null;
+  genres?: unknown;
 }
 
 function decodeHTMLEntities(text: string): string {
@@ -280,10 +292,10 @@ async function enhanceWithTMDBData(
            ORDER BY popularity DESC
            LIMIT 1`;
       const stmt = env.MOVIES_DB.prepare(sql);
-      const binds = anyYear
+      const binds: unknown[] = anyYear
         ? ["'", titleStripped, "'", titleStripped]
         : ["'", titleStripped, "'", titleStripped, year, year - 1, year + 1];
-      return await stmt.bind(...(binds as any)).all();
+      return await stmt.bind(...binds).all();
     } catch (e) {
       debugLog(env, `Stripped REPLACE lookup failed: ${String(e)}`);
       return null;
@@ -310,10 +322,10 @@ async function enhanceWithTMDBData(
            ORDER BY popularity DESC
            LIMIT 1`;
       const stmt = env.MOVIES_DB.prepare(sql);
-      const binds = anyYear
+      const binds: unknown[] = anyYear
         ? [title, title]
         : [title, title, year, year - 1, year + 1];
-      return await stmt.bind(...(binds as any)).all();
+      return await stmt.bind(...binds).all();
     } catch (e) {
       debugLog(env, `Exact lookup failed: ${String(e)}`);
       return null;
@@ -369,11 +381,11 @@ async function enhanceWithTMDBData(
   }
 
   function buildMovieFromRow(
-    r: any,
+    r: TmdbRow,
     movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
   ): Movie {
     // Parse genres via shared helper
-    const gnames = parseGenresToNames((r as any).genres);
+    const gnames = parseGenresToNames(r.genres);
     const genres: string[] | null = gnames ? [...gnames] : null;
     return {
       id: r.id,

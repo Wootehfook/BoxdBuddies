@@ -1,5 +1,7 @@
 // AI Generated: GitHub Copilot - 2025-08-16
-export async function onRequest(context: any) {
+import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
+
+export async function onRequest(context: { request: Request; env: CacheEnv }) {
   const { env } = context;
 
   try {
