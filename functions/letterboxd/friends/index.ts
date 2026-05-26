@@ -16,6 +16,20 @@ interface Friend {
   profileImageUrl?: string;
 }
 
+interface D1PreparedStatementLike {
+  bind(...values: unknown[]): D1PreparedStatementLike;
+  first<T = Record<string, unknown>>(): Promise<T | null>;
+  run(): Promise<{ meta: { changes: number } }>;
+}
+
+interface D1DatabaseLike {
+  prepare(query: string): D1PreparedStatementLike;
+}
+
+interface ClientWatchlistEntry {
+  count?: number;
+}
+
 // Rate limiting - 1 second between requests
 // Internal helper: ensures we don't flood Letterboxd with requests when
 // scraping multiple users in quick succession. This function is intentionally
@@ -190,7 +204,7 @@ export async function scrapeLetterboxdFriends(
     debugLog(env, `Found ${friends.length} friends for ${username}`);
     return friends;
   } catch (error) {
-    debugLog(env as any, `Error scraping Letterboxd friends: ${String(error)}`);
+    debugLog(env, `Error scraping Letterboxd friends: ${String(error)}`);
     throw error;
   }
 }
@@ -367,7 +381,7 @@ export async function onRequestPost(context: {
 // Watchlist count attachment logic
 async function attachWatchlistCounts(
   friends: Friend[],
-  clientWatchlistCache: any,
+  clientWatchlistCache: Record<string, ClientWatchlistEntry> | undefined,
   env: CacheEnv
 ): Promise<Friend[]> {
   const friendsWithCounts = [];
@@ -409,7 +423,7 @@ async function attachWatchlistCounts(
 const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 async function getCachedFriends(
-  database: any,
+  database: D1DatabaseLike,
   username: string
 ): Promise<{
   friends: Friend[];
@@ -426,7 +440,11 @@ async function getCachedFriends(
     `
       )
       .bind(username)
-      .first();
+      .first<{
+        friends_data: string;
+        last_updated: number;
+        expires_at: number;
+      }>();
 
     if (!result) {
       return null;
@@ -444,7 +462,7 @@ async function getCachedFriends(
 }
 
 async function setCachedFriends(
-  database: any,
+  database: D1DatabaseLike,
   username: string,
   friends: Friend[],
   env?: CacheEnv

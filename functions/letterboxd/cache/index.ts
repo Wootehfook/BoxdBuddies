@@ -6,8 +6,19 @@
 
 import { debugLog } from "../../_lib/common";
 
+interface D1PreparedStatementLike {
+  bind(...values: unknown[]): D1PreparedStatementLike;
+  first<T = Record<string, unknown>>(): Promise<T | null>;
+  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
+  run(): Promise<{ meta: { changes: number } }>;
+}
+
+interface D1DatabaseLike {
+  prepare(query: string): D1PreparedStatementLike;
+}
+
 export interface Env {
-  MOVIES_DB: any; // D1Database type
+  MOVIES_DB: D1DatabaseLike;
   TMDB_API_KEY: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
@@ -216,7 +227,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 }
 
 async function getCachedFriends(
-  database: any,
+  database: D1DatabaseLike,
   username: string
 ): Promise<FriendsCache | null> {
   try {
@@ -229,7 +240,11 @@ async function getCachedFriends(
     `
       )
       .bind(username)
-      .first();
+      .first<{
+        friends_data: string;
+        last_updated: number;
+        expires_at: number;
+      }>();
 
     if (!result) {
       return null;
@@ -242,16 +257,13 @@ async function getCachedFriends(
       expiresAt: result.expires_at,
     };
   } catch (error) {
-    debugLog(
-      undefined as any,
-      `Error getting cached friends: ${String(error)}`
-    );
+    debugLog(undefined, `Error getting cached friends: ${String(error)}`);
     return null;
   }
 }
 
 async function setCachedFriends(
-  database: any,
+  database: D1DatabaseLike,
   username: string,
   friends: FriendLike[] | CachedFriend[],
   env?: Env
@@ -263,14 +275,15 @@ async function setCachedFriends(
     // Normalize to CachedFriend[] by ensuring lastUpdated is present. This
     // allows callers to pass either the raw scraped friend objects or already
     // annotated CachedFriend objects.
+    type FriendCacheInput = FriendLike & { lastUpdated?: number };
     const normalizedFriends: CachedFriend[] = (
-      friends as (FriendLike | CachedFriend)[]
+      friends as FriendCacheInput[]
     ).map((f) => ({
       username: f.username,
-      displayName: (f as any).displayName,
-      watchlistCount: (f as any).watchlistCount,
-      profileImageUrl: (f as any).profileImageUrl,
-      lastUpdated: (f as any).lastUpdated ?? now,
+      displayName: f.displayName,
+      watchlistCount: f.watchlistCount,
+      profileImageUrl: f.profileImageUrl,
+      lastUpdated: f.lastUpdated ?? now,
     }));
 
     await database
@@ -286,7 +299,7 @@ async function setCachedFriends(
 
     debugLog(env, `Cached ${normalizedFriends.length} friends for ${username}`);
   } catch (error) {
-    debugLog(env as any, `Error caching friends: ${String(error)}`);
+    debugLog(env, `Error caching friends: ${String(error)}`);
     // Don't throw - caching is not critical
   }
 }
@@ -337,7 +350,7 @@ export async function getCount(
     // Fallback to D1
     return await getCountFromD1(username, env);
   } catch (error) {
-    debugLog(env as any, `Error getting cached count: ${String(error)}`);
+    debugLog(env, `Error getting cached count: ${String(error)}`);
     return null;
   }
 }
@@ -369,7 +382,7 @@ export async function setCount(
     // Also store in D1 as backup
     await setCountInD1(username, payload, env);
   } catch (error) {
-    debugLog(env as any, `Error setting cached count: ${String(error)}`);
+    debugLog(env, `Error setting cached count: ${String(error)}`);
     throw error;
   }
 }
@@ -416,7 +429,7 @@ export async function acquireLock(
     // Handle both "OK" response and numeric response (1 for success, 0 for failure)
     return result.result === "OK" || result.result === 1;
   } catch (error) {
-    debugLog(env as any, `Error acquiring Redis lock: ${String(error)}`);
+    debugLog(env, `Error acquiring Redis lock: ${String(error)}`);
     // Fallback to D1
     return await acquireLockD1(username, timeoutMs, env);
   }
@@ -449,7 +462,7 @@ export async function releaseLock(username: string, env: Env): Promise<void> {
       throw new Error(`Redis request failed: ${response.status}`);
     }
   } catch (error) {
-    debugLog(env as any, `Error releasing Redis lock: ${String(error)}`);
+    debugLog(env, `Error releasing Redis lock: ${String(error)}`);
     // Fallback to D1
     await releaseLockD1(username, env);
   }
@@ -498,7 +511,7 @@ async function getCountFromRedis(
 
     return data;
   } catch (error) {
-    debugLog(env as any, `Error getting count from Redis: ${String(error)}`);
+    debugLog(env, `Error getting count from Redis: ${String(error)}`);
     return null;
   }
 }
@@ -527,7 +540,7 @@ async function setCountInRedis(
       throw new Error(`Redis set failed: ${response.status}`);
     }
   } catch (error) {
-    debugLog(env as any, `Error setting count in Redis: ${String(error)}`);
+    debugLog(env, `Error setting count in Redis: ${String(error)}`);
     throw error;
   }
 }
@@ -542,7 +555,7 @@ async function getCountFromD1(
       "SELECT value, expires_at FROM watchlist_counts_cache WHERE username = ?"
     )
       .bind(username)
-      .first();
+      .first<{ value: string; expires_at: number }>();
 
     if (!result) {
       return null;
@@ -555,7 +568,7 @@ async function getCountFromD1(
 
     return JSON.parse(result.value);
   } catch (error) {
-    debugLog(env as any, `Error getting count from D1: ${String(error)}`);
+    debugLog(env, `Error getting count from D1: ${String(error)}`);
     return null;
   }
 }
@@ -577,7 +590,7 @@ async function setCountInD1(
       .bind(username, JSON.stringify(payload), expiresAt)
       .run();
   } catch (error) {
-    debugLog(env as any, `Error setting count in D1: ${String(error)}`);
+    debugLog(env, `Error setting count in D1: ${String(error)}`);
     throw error;
   }
 }
@@ -599,7 +612,7 @@ async function acquireLockD1(
 
     return result.meta.changes > 0; // True if inserted (lock acquired)
   } catch (error) {
-    debugLog(env as any, `Error acquiring D1 lock: ${String(error)}`);
+    debugLog(env, `Error acquiring D1 lock: ${String(error)}`);
     return false;
   }
 }
@@ -612,6 +625,6 @@ async function releaseLockD1(username: string, env: Env): Promise<void> {
       .bind(lockKey)
       .run();
   } catch (error) {
-    debugLog(env as any, `Error releasing D1 lock: ${String(error)}`);
+    debugLog(env, `Error releasing D1 lock: ${String(error)}`);
   }
 }
