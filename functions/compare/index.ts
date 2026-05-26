@@ -86,7 +86,8 @@ async function scrapeLetterboxdWatchlist(
   } catch (error) {
     console.error(`Error scraping ${username}:`, error);
     throw new Error(
-      `Failed to scrape watchlist for ${username}. Make sure the username exists and the watchlist is public.`
+      `Failed to scrape watchlist for ${username}. Make sure the username exists and the watchlist is public.`,
+      { cause: error }
     );
   }
 }
@@ -98,6 +99,18 @@ async function scrapeLetterboxdWatchlist(
 interface CommonMovie extends LetterboxdMovie {
   friendCount: number;
   friendList: string[];
+}
+
+interface TmdbMovieRow {
+  id: number;
+  title: string;
+  year?: number;
+  poster_path?: string;
+  overview?: string;
+  vote_average?: number;
+  director?: string;
+  runtime?: number;
+  genres?: unknown;
 }
 
 // Find movies that appear in multiple watchlists using efficient set operations
@@ -227,7 +240,7 @@ async function enhanceWithTMDBData(
         const result = await stmt.all();
 
         if (result.results && result.results.length > 0) {
-          const tmdbMovie: any = result.results[0];
+          const tmdbMovie = result.results[0] as TmdbMovieRow;
 
           // Parse genres from D1 row (stored as JSON text or array)
           let genres: string[] | undefined;

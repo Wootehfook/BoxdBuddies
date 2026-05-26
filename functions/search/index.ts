@@ -16,6 +16,36 @@ interface KVNamespace {
 // Extend the canonical CacheEnv with the KV namespace used by this function
 type Env = CacheEnv & { MOVIES_KV: KVNamespace };
 
+interface SearchRow {
+  id: number;
+  title: string;
+  year?: number | null;
+  poster_path?: string | null;
+  overview?: string | null;
+  vote_average?: number | null;
+  director?: string | null;
+  runtime?: number | null;
+}
+
+interface SearchCountRow {
+  total?: number;
+}
+
+interface TmdbSearchMovie {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string | null;
+  overview?: string;
+  vote_average?: number;
+  runtime?: number;
+}
+
+interface TmdbSearchResponse {
+  results?: TmdbSearchMovie[];
+  total_pages?: number;
+}
+
 // Temporarily unused interface - commenting out to fix lint warnings
 // interface MovieSearchResult { ... }
 
@@ -35,7 +65,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       .bind(`%${q}%`, `%${q}%`)
       .all();
 
-    const totalRecords = (countResult.results?.[0] as any)?.total || 0;
+    const totalRecords =
+      (countResult.results?.[0] as SearchCountRow)?.total || 0;
 
     const localResults = await env.MOVIES_DB.prepare(
       `SELECT * FROM tmdb_movies WHERE title LIKE ? OR original_title LIKE ? ORDER BY popularity DESC LIMIT ? OFFSET ?`
@@ -44,7 +75,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       .all();
 
     if (localResults.results && localResults.results.length > 0) {
-      const movies = (localResults.results as any[]).map((movie) => ({
+      const movies = (localResults.results as SearchRow[]).map((movie) => ({
         id: movie.id,
         title: movie.title,
         year: movie.year,
@@ -74,8 +105,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   if (!response.ok)
     return Response.json({ error: "tmdb_error" }, { status: 502 });
 
-  const data = await response.json();
-  const movies = (data.results || []).map((movie: any) => ({
+  const data = (await response.json()) as TmdbSearchResponse;
+  const movies = (data.results || []).map((movie) => ({
     id: movie.id,
     title: movie.title,
     year: movie.release_date
