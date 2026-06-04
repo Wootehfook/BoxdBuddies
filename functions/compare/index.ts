@@ -85,10 +85,11 @@ async function scrapeLetterboxdWatchlist(
     return movies;
   } catch (error) {
     console.error(`Error scraping ${username}:`, error);
-    throw new Error(
-      `Failed to scrape watchlist for ${username}. Make sure the username exists and the watchlist is public.`,
-      { cause: error }
+    const err = new Error(
+      `Failed to scrape watchlist for ${username}. Make sure the username exists and the watchlist is public.`
     );
+    err.cause = error;
+    throw err;
   }
 }
 
