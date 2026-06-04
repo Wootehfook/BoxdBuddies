@@ -7,23 +7,13 @@
 // Import cache functions and shared Env type to keep types consistent
 import { getCount } from "../cache/index.js";
 import { debugLog } from "../../_lib/common";
-import type { Env as CacheEnv } from "../cache/index.js";
+import type { Env as CacheEnv, D1DatabaseLike } from "../cache/index.js";
 
 interface Friend {
   username: string;
   displayName?: string;
   watchlistCount?: number;
   profileImageUrl?: string;
-}
-
-interface D1PreparedStatementLike {
-  bind(...values: unknown[]): D1PreparedStatementLike;
-  first<T = Record<string, unknown>>(): Promise<T | null>;
-  run(): Promise<{ meta: { changes: number } }>;
-}
-
-interface D1DatabaseLike {
-  prepare(query: string): D1PreparedStatementLike;
 }
 
 interface ClientWatchlistEntry {
