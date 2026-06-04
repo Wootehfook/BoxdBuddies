@@ -99,7 +99,10 @@ function checkRateLimit(
 }
 
 // Validate payload structure and values
-function validatePayload(payload: any): { valid: boolean; errors: string[] } {
+function validatePayload(payload: unknown): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (typeof payload !== "object" || payload === null) {
@@ -107,46 +110,48 @@ function validatePayload(payload: any): { valid: boolean; errors: string[] } {
     return { valid: false, errors };
   }
 
+  const candidate = payload as Partial<UpdatePayload>;
+
   // Required fields
-  if (typeof payload.username !== "string" || !payload.username.trim()) {
+  if (typeof candidate.username !== "string" || !candidate.username.trim()) {
     errors.push("username is required and must be a non-empty string");
   }
 
-  if (typeof payload.count !== "number") {
+  if (typeof candidate.count !== "number") {
     errors.push("count is required and must be a number");
-  } else if (payload.count < 0) {
+  } else if (candidate.count < 0) {
     errors.push("count must be >= 0");
-  } else if (!Number.isInteger(payload.count)) {
+  } else if (!Number.isInteger(candidate.count)) {
     errors.push("count must be an integer");
   }
 
   // Optional fields validation
-  if (payload.etag !== undefined && typeof payload.etag !== "string") {
+  if (candidate.etag !== undefined && typeof candidate.etag !== "string") {
     errors.push("etag must be a string if provided");
   }
 
-  if (payload.lastFetchedAt !== undefined) {
-    if (typeof payload.lastFetchedAt !== "number") {
-      errors.push("lastFetchedAt must be a number if provided");
-    } else {
+  if (candidate.lastFetchedAt !== undefined) {
+    if (typeof candidate.lastFetchedAt === "number") {
       const now = Date.now();
       const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
       if (
-        payload.lastFetchedAt > now + 60000 ||
-        payload.lastFetchedAt < now - maxAge
+        candidate.lastFetchedAt > now + 60000 ||
+        candidate.lastFetchedAt < now - maxAge
       ) {
         errors.push("lastFetchedAt timestamp is unreasonable");
       }
+    } else {
+      errors.push("lastFetchedAt must be a number if provided");
     }
   }
 
-  if (payload.source !== undefined && payload.source !== "client") {
+  if (candidate.source !== undefined && candidate.source !== "client") {
     errors.push('source must be "client" if provided');
   }
 
   // Username sanitization
-  if (typeof payload.username === "string") {
-    const username = payload.username.trim();
+  if (typeof candidate.username === "string") {
+    const username = candidate.username.trim();
     if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
       errors.push("username contains invalid characters");
     }
