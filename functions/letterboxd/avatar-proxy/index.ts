@@ -37,7 +37,7 @@ function isValidLetterboxdUrl(url: string): boolean {
 export async function onRequest(context: {
   request: Request;
   env: {
-    MOVIES_DB: any; // D1Database type
+    MOVIES_DB: unknown;
   };
 }) {
   // Set CORS headers
