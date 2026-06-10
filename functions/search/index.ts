@@ -75,7 +75,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       .all();
 
     if (localResults.results && localResults.results.length > 0) {
-      const movies = (localResults.results as SearchRow[]).map((movie) => ({
+      const movies = (localResults.results as unknown as SearchRow[]).map((movie) => ({
         id: movie.id,
         title: movie.title,
         year: movie.year,

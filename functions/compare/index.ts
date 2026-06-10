@@ -241,7 +241,7 @@ async function enhanceWithTMDBData(
         const result = await stmt.all();
 
         if (result.results && result.results.length > 0) {
-          const tmdbMovie = result.results[0] as TmdbMovieRow;
+          const tmdbMovie = result.results[0] as unknown as TmdbMovieRow;
 
           // Parse genres from D1 row (stored as JSON text or array)
           let genres: string[] | undefined;
