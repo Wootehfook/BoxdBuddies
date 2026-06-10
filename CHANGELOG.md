@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.5] - 2026-06-10
 
+### Changed
+- Bumped frontend tooling (`vite`, `vitest`, `wrangler`, `lint-staged`)
+- Raised TypeScript compile targets to `ES2022`
+- Introduced stronger Cloudflare D1 types array query responses in letterboxd functions
 
 ## [2.1.4] - 2026-05-25
 
