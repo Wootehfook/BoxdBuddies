@@ -591,9 +591,8 @@ const reportTmdbCatalogCount = async (env: Env, debugInfo: DebugInfo) => {
   try {
     const countRes = await env.MOVIES_DB.prepare(
       `SELECT COUNT(*) as c FROM tmdb_movies`
-    ).first();
-    debugInfo.db.tmdb_catalog_count =
-      (countRes && (countRes.c || countRes["c"])) || 0;
+    ).first<{ c?: number }>();
+    debugInfo.db.tmdb_catalog_count = Number(countRes?.c ?? 0);
   } catch (err) {
     debugInfo.db.tmdb_catalog_count = null;
     debugLog(

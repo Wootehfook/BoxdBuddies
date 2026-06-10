@@ -21,7 +21,7 @@ interface TMDBMovie {
   vote_count: number;
   popularity: number;
   adult: boolean;
-  genre_ids: number[];
+  genre_ids?: number[];
   runtime?: number;
   status?: string;
   tagline?: string;
@@ -38,6 +38,28 @@ interface TMDBResponse {
 interface TMDBGenre {
   id: number;
   name: string;
+}
+
+interface TMDBCrewMember {
+  job?: string;
+  name?: string;
+}
+
+interface TMDBMovieDetails extends TMDBMovie {
+  credits?: {
+    crew?: TMDBCrewMember[];
+  };
+  genre_ids?: number[];
+}
+
+interface D1PreparedStatementLike {
+  bind(...values: unknown[]): D1PreparedStatementLike;
+  run(): Promise<unknown>;
+  all<T = Record<string, unknown>>(): Promise<{ results?: T[] }>;
+}
+
+interface D1DatabaseLike {
+  prepare(query: string): D1PreparedStatementLike;
 }
 
 // Note: credits shape is accessed directly from appended details response; no dedicated interface needed
@@ -70,12 +92,13 @@ async function rateLimit() {
   requestCount++;
 }
 
-async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
+async function fetchTMDBData<T = unknown>(
+  url: string,
+  apiKey: string
+): Promise<T> {
   await rateLimit();
 
-  const ControllerCtor = (globalThis as any).AbortController as
-    | (new () => { abort: (reason?: any) => void; signal: any })
-    | undefined;
+  const ControllerCtor = globalThis.AbortController ?? undefined;
   const controller = ControllerCtor ? new ControllerCtor() : undefined;
   const timeout = setTimeout(
     () => controller?.abort("timeout"),
@@ -85,14 +108,16 @@ async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
   try {
     response = await fetch(
       `https://api.themoviedb.org/3${url}${url.includes("?") ? "&" : "?"}api_key=${apiKey}`,
-      controller ? { signal: (controller as any).signal } : undefined
+      controller ? { signal: controller.signal } : undefined
     );
   } catch (e) {
-    throw new Error(
+    const message =
       e instanceof Error && e.name === "AbortError"
         ? `TMDB API timeout after ${TMDB_REQUEST_TIMEOUT_MS}ms for ${url}`
-        : `TMDB API fetch error for ${url}: ${String(e)}`
-    );
+        : `TMDB API fetch error for ${url}: ${String(e)}`;
+    const wrapped = new Error(message) as Error & { cause?: unknown };
+    wrapped.cause = e;
+    throw wrapped;
   } finally {
     clearTimeout(timeout);
   }
@@ -103,27 +128,31 @@ async function fetchTMDBData(url: string, apiKey: string): Promise<any> {
     );
   }
 
-  return response.json();
+  return (await response.json()) as T;
 }
 
 async function getMovieDetails(
   movieId: number,
   apiKey: string
-): Promise<{ movie: any; director: string }> {
+): Promise<{ movie: TMDBMovieDetails; director: string }> {
   // Get movie details and credits in a single request to reduce API calls
-  const movie = await fetchTMDBData(
+  const movie = await fetchTMDBData<TMDBMovieDetails>(
     `/movie/${movieId}?append_to_response=credits`,
     apiKey
   );
   const director =
-    movie.credits?.crew?.find((person: any) => person.job === "Director")
-      ?.name || "Unknown";
+    movie.credits?.crew?.find(
+      (person: TMDBCrewMember) => person.job === "Director"
+    )?.name || "Unknown";
 
   return { movie, director };
 }
 
 async function loadGenresMap(apiKey: string): Promise<Map<number, string>> {
-  const genresData = await fetchTMDBData("/genre/movie/list", apiKey);
+  const genresData = await fetchTMDBData<{ genres: TMDBGenre[] }>(
+    "/genre/movie/list",
+    apiKey
+  );
   const genres: Map<number, string> = new Map();
   genresData.genres.forEach((genre: TMDBGenre) => {
     genres.set(genre.id, genre.name);
@@ -158,7 +187,7 @@ function getReleaseYear(releaseDate?: string | null): number | null {
 }
 
 async function upsertMovie(
-  database: any,
+  database: D1DatabaseLike,
   movieDetails: TMDBMovie,
   director: string,
   finalGenres: string[],
@@ -198,7 +227,7 @@ async function upsertMovie(
 }
 
 async function updateSyncMetadata(
-  database: any,
+  database: D1DatabaseLike,
   key: string,
   value: string
 ): Promise<void> {
@@ -240,7 +269,7 @@ async function fetchDiscoverPage(
 }
 
 async function processPopularResults(options: {
-  database: any;
+  database: D1DatabaseLike;
   apiKey: string;
   results: TMDBMovie[];
   genres: Map<number, string>;
@@ -302,7 +331,7 @@ async function processPopularResults(options: {
 }
 
 async function syncTMDBMoviesByID(
-  database: any,
+  database: D1DatabaseLike,
   apiKey: string,
   startMovieId: number,
   maxMovies: number = 100,
@@ -415,7 +444,7 @@ async function syncTMDBMoviesByID(
 }
 
 async function syncTMDBChanges(
-  database: any,
+  database: D1DatabaseLike,
   apiKey: string,
   startDate?: string,
   sentinel: string = "Unknown"
@@ -434,8 +463,12 @@ async function syncTMDBChanges(
       ? `/movie/changes?start_date=${startDate}`
       : "/movie/changes";
 
-    const changesResponse = await fetchTMDBData(changesUrl, apiKey);
-    const changedMovieIds = changesResponse.results.map((item: any) => item.id);
+    const changesResponse = await fetchTMDBData<{
+      results?: Array<{ id: number }>;
+    }>(changesUrl, apiKey);
+    const changedMovieIds = (changesResponse.results || []).map(
+      (item) => item.id
+    );
 
     debugLog(
       undefined,
@@ -505,7 +538,7 @@ async function syncTMDBChanges(
 }
 
 async function syncTMDBMovies(
-  database: any,
+  database: D1DatabaseLike,
   apiKey: string,
   startPage: number = 1,
   maxPages: number = 10,
@@ -629,7 +662,7 @@ async function syncTMDBMovies(
 }
 
 async function syncTMDBCurrentYear(
-  database: any,
+  database: D1DatabaseLike,
   apiKey: string,
   releaseYearStart: string,
   releaseYearEnd: string,
@@ -702,7 +735,7 @@ async function syncTMDBCurrentYear(
 
 // Backfill genres for existing movies
 async function backfillGenres(
-  database: any,
+  database: D1DatabaseLike,
   apiKey: string,
   options?: { limit?: number; mode?: "missing" | "all" },
   sentinel: string = "Unknown"
@@ -715,7 +748,10 @@ async function backfillGenres(
 
   // Load genre dictionary once for fallback mapping
   const genres: Map<number, string> = await (async () => {
-    const gData = await fetchTMDBData("/genre/movie/list", apiKey);
+    const gData = await fetchTMDBData<{ genres: TMDBGenre[] }>(
+      "/genre/movie/list",
+      apiKey
+    );
     const map = new Map<number, string>();
     gData.genres.forEach((g: TMDBGenre) => map.set(g.id, g.name));
     return map;
@@ -742,7 +778,7 @@ async function backfillGenres(
       )
       .bind(afterId, size)
       .all();
-    return ((res?.results as any[]) || []) as Array<{ id: number }>;
+    return (res?.results || []) as Array<{ id: number }>;
   };
 
   const fetchNames = async (movieId: number): Promise<string[]> => {
