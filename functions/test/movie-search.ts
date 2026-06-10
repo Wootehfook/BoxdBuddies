@@ -1,4 +1,4 @@
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: GitHub Copilot (claude-sonnet-3.5) - 2026-06-03
 import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
 
 export async function onRequest(context: { request: Request; env: CacheEnv }) {
