@@ -5,6 +5,14 @@ import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
 import { debugLog } from "../_lib/common";
 type Env = CacheEnv;
 
+interface TmdbLookupRow {
+  title?: string;
+  original_title?: string;
+  year?: number;
+  release_date?: string | null;
+  popularity?: number;
+}
+
 function normalizeTitle(t: string) {
   return t
     .toLowerCase()
@@ -68,11 +76,11 @@ async function findTmdbRowForMovie(title: string, year: number, env: Env) {
   )
     .bind(`%${t}%`, `%${t}%`)
     .all();
-  const candidates = (res.results || []) as any[];
+  const candidates = (res.results || []) as TmdbLookupRow[];
   if (candidates.length > 0) {
     const want = normalizeTitle(t);
     const wantYear = y || 0;
-    let best: any = null;
+    let best: TmdbLookupRow | null = null;
     let bestScore = -Infinity;
     for (const c of candidates) {
       const ct = normalizeTitle(String(c.title || c.original_title || ""));
@@ -125,7 +133,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     });
   } catch (err) {
     // Avoid exposing stack traces; log internally when debug is enabled
-    debugLog(context.env as any, "movie-lookup error", err);
+    debugLog(context.env, "movie-lookup error", err);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...cors },

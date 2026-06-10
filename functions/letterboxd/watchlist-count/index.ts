@@ -13,6 +13,16 @@ interface WatchlistCount {
   lastUpdated: number;
 }
 
+interface D1PreparedStatementLike {
+  bind(...values: unknown[]): D1PreparedStatementLike;
+  first<T = Record<string, unknown>>(): Promise<T | null>;
+  run(): Promise<{ meta: { changes: number } }>;
+}
+
+interface D1DatabaseLike {
+  prepare(query: string): D1PreparedStatementLike;
+}
+
 // Rate limiting - 1 second between requests to be respectful to Letterboxd
 let lastRequestTime = 0;
 const RATE_LIMIT_MS = 1000;
@@ -367,7 +377,7 @@ export async function onRequestPost(context: {
 
 // Cache management functions
 async function getCachedWatchlistCount(
-  database: any,
+  database: D1DatabaseLike,
   username: string
 ): Promise<WatchlistCount | null> {
   try {
@@ -380,7 +390,11 @@ async function getCachedWatchlistCount(
     `
       )
       .bind(username)
-      .first();
+      .first<{
+        username: string;
+        watchlist_count: number;
+        last_updated: number;
+      }>();
 
     if (!result) {
       return null;
@@ -398,7 +412,7 @@ async function getCachedWatchlistCount(
 }
 
 async function setCachedWatchlistCount(
-  database: any,
+  database: D1DatabaseLike,
   username: string,
   count: number,
   env?: CacheEnv
