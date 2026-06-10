@@ -412,7 +412,7 @@ async function enhanceWithTMDBData(
       if (stripped) {
         const strippedResult = await dbFindStripped(stripped, movie.year);
         if (strippedResult?.results?.length)
-          return buildMovieFromRow(strippedResult.results[0], movie);
+          return buildMovieFromRow(strippedResult.results[0] as unknown as TmdbRow, movie);
       }
 
       let searchTitle = normalized;
@@ -449,7 +449,7 @@ async function enhanceWithTMDBData(
       }
 
       if (result?.results?.length)
-        return buildMovieFromRow(result.results[0], movie);
+        return buildMovieFromRow(result.results[0] as unknown as TmdbRow, movie);
 
       return {
         id: generateFallbackId(normalized, movie.year),
