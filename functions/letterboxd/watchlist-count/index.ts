@@ -5,6 +5,7 @@
  */
 
 import { debugLog } from "../../_lib/common";
+import type { D1DatabaseLike } from "../cache/index.js";
 import type { Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
@@ -12,6 +13,7 @@ interface WatchlistCount {
   count: number;
   lastUpdated: number;
 }
+
 
 // Rate limiting - 1 second between requests to be respectful to Letterboxd
 let lastRequestTime = 0;
@@ -367,7 +369,7 @@ export async function onRequestPost(context: {
 
 // Cache management functions
 async function getCachedWatchlistCount(
-  database: any,
+  database: D1DatabaseLike,
   username: string
 ): Promise<WatchlistCount | null> {
   try {
@@ -380,7 +382,11 @@ async function getCachedWatchlistCount(
     `
       )
       .bind(username)
-      .first();
+      .first<{
+        username: string;
+        watchlist_count: number;
+        last_updated: number;
+      }>();
 
     if (!result) {
       return null;
@@ -398,7 +404,7 @@ async function getCachedWatchlistCount(
 }
 
 async function setCachedWatchlistCount(
-  database: any,
+  database: D1DatabaseLike,
   username: string,
   count: number,
   env?: CacheEnv

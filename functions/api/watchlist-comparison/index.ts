@@ -45,6 +45,75 @@ interface ComparisonRequestBody {
   usernames?: string[]; // Legacy support
 }
 
+interface ScrapingResult {
+  count: number;
+  timeMs: number;
+  success: boolean;
+  error?: string;
+  errorType?: string;
+  stack?: string;
+}
+
+interface MatchingInfo {
+  totalUnique: number;
+  commonCount: number;
+  commonMovies: Array<{ title: string; year: number; users: string[] }>;
+  candidates?: Record<string, Record<string, TmdbCandidateDebug[]>>;
+}
+
+interface DebugInfo {
+  requestReceived: {
+    usernames: string[];
+    timestamp: string;
+  };
+  scrapingResults: Record<string, ScrapingResult>;
+  movieCounts: Record<string, number>;
+  sampleMovies: Record<string, Array<{ title: string; year: number }>>;
+  matchingInfo: MatchingInfo;
+  db: {
+    tmdb_catalog_count: number | null;
+    enrichment_hits: number;
+    enrichment_misses: number;
+  };
+  enrichment?: {
+    sourceCounts: Record<string, number>;
+  };
+}
+
+interface TmdbRow {
+  id: number | string;
+  title: string;
+  original_title: string | null;
+  year: number | string | null;
+  release_date: string | null;
+  poster_path: string | null;
+  overview: string | null;
+  vote_average: number | null;
+  director: string | null;
+  runtime: number | null;
+  genres: unknown;
+  popularity: number | null;
+}
+
+interface WatchlistScrapeResult {
+  username: string;
+  movies: LetterboxdMovie[];
+  duration: number;
+}
+
+type EnvWithDebugMatching = Env & {
+  DEBUG_MATCHING?: unknown;
+};
+
+interface D1QueryResult<T> {
+  results?: T[];
+}
+
+type TmdbCandidateDebug = Pick<
+  TmdbRow,
+  "id" | "title" | "original_title" | "year" | "popularity"
+>;
+
 const replaceAllSafe = (
   input: string,
   pattern: RegExp | string,
@@ -421,7 +490,7 @@ const initDebugInfo = (usernames: string[]) => ({
 const scrapeAllWatchlists = async (
   usernames: string[],
   env: Env,
-  debugInfo: any
+  debugInfo: DebugInfo
 ) => {
   const watchlistPromises = usernames.map(async (username, index) => {
     const baseDelay = 500; // Start with 500ms
@@ -482,7 +551,7 @@ const scrapeAllWatchlists = async (
   ]);
 };
 
-const logWatchlistSamples = (watchlists: any[], env: Env) => {
+const logWatchlistSamples = (watchlists: WatchlistScrapeResult[], env: Env) => {
   watchlists.forEach((watchlist) => {
     debugLog(
       env,
@@ -505,7 +574,7 @@ const logWatchlistSamples = (watchlists: any[], env: Env) => {
 const updateMatchingDebug = (
   watchlists: { username: string; movies: LetterboxdMovie[] }[],
   commonMovies: CommonMovie[],
-  debugInfo: any
+  debugInfo: DebugInfo
 ) => {
   debugInfo.matchingInfo.totalUnique = new Set(
     watchlists.flatMap((w) => w.movies.map((m) => `${m.title}-${m.year}`))
@@ -518,13 +587,12 @@ const updateMatchingDebug = (
   }));
 };
 
-const reportTmdbCatalogCount = async (env: Env, debugInfo: any) => {
+const reportTmdbCatalogCount = async (env: Env, debugInfo: DebugInfo) => {
   try {
     const countRes = await env.MOVIES_DB.prepare(
       `SELECT COUNT(*) as c FROM tmdb_movies`
-    ).first();
-    debugInfo.db.tmdb_catalog_count =
-      (countRes && (countRes.c || countRes["c"])) || 0;
+    ).first<{ c?: number }>();
+    debugInfo.db.tmdb_catalog_count = Number(countRes?.c ?? 0);
   } catch (err) {
     debugInfo.db.tmdb_catalog_count = null;
     debugLog(
@@ -538,12 +606,11 @@ const reportTmdbCatalogCount = async (env: Env, debugInfo: any) => {
 const enhanceCommonMovies = async (
   commonMovies: CommonMovie[],
   env: Env,
-  debugInfo: any
+  debugInfo: DebugInfo
 ) => {
   const { isDebug } = await import("../../_lib/common");
-  const enableMatchingDebug = Boolean(
-    isDebug(env) || (env && (env as any).DEBUG_MATCHING)
-  );
+  const debugMatchingFlag = (env as EnvWithDebugMatching).DEBUG_MATCHING;
+  const enableMatchingDebug = Boolean(isDebug(env) || debugMatchingFlag === true || debugMatchingFlag === "true");
   const enhancedMovies = await enhanceWithTMDBData(
     commonMovies,
     env,
@@ -557,7 +624,7 @@ const enhanceCommonMovies = async (
 
 const updateEnrichmentStats = (
   enhancedMovies: Movie[],
-  debugInfo: any,
+  debugInfo: DebugInfo,
   env: Env
 ) => {
   try {
@@ -639,13 +706,13 @@ export function findCommonMovies(
 export async function enhanceWithTMDBData(
   movies: CommonMovie[],
   env: Env,
-  debugInfo?: any
+  debugInfo?: DebugInfo
 ): Promise<Movie[]> {
   if (movies.length === 0) return [];
   const BATCH = 10;
   const out: Movie[] = [];
 
-  const mapTmdb = (row: any, base: CommonMovie, source: string): Movie => {
+  const mapTmdb = (row: TmdbRow, base: CommonMovie, source: string): Movie => {
     // Parse genres via shared helper
     const gnames = parseGenresToNames(row.genres);
     const genres: string[] | undefined = gnames ? [...gnames] : undefined;
@@ -668,7 +735,7 @@ export async function enhanceWithTMDBData(
     };
   };
 
-  const mapRowsForDebug = (rows: any[] | undefined) =>
+  const mapRowsForDebug = (rows: TmdbRow[] | undefined): TmdbCandidateDebug[] =>
     (rows || []).map((r) => ({
       id: r.id,
       title: r.title,
@@ -694,59 +761,57 @@ export async function enhanceWithTMDBData(
         debugInfo.matchingInfo.candidates[key] || {};
     }
 
+    const setCandidateDebug = (
+      strategy: string,
+      rows: TmdbRow[] | undefined
+    ) => {
+      const bucket = debugInfo?.matchingInfo?.candidates?.[key];
+      if (!bucket) return;
+      bucket[strategy] = mapRowsForDebug(rows);
+    };
+
     const exactWithYear = async () => {
-      const res = await env.MOVIES_DB.prepare(
+      const res = (await env.MOVIES_DB.prepare(
         `SELECT * FROM tmdb_movies WHERE (LOWER(title)=LOWER(?) OR LOWER(original_title)=LOWER(?)) AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1) ORDER BY popularity DESC LIMIT 1`
       )
         .bind(title, title, year, year)
-        .all();
-      if (debugInfo?.matchingInfo)
-        debugInfo.matchingInfo.candidates[key].exactWithYear = mapRowsForDebug(
-          res.results
-        );
+        .all()) as D1QueryResult<TmdbRow>;
+      setCandidateDebug("exactWithYear", res.results);
       return res.results?.[0] ?? null;
     };
 
     const likeWithYear = async () => {
-      const res = await env.MOVIES_DB.prepare(
+      const res = (await env.MOVIES_DB.prepare(
         `SELECT * FROM tmdb_movies WHERE (title LIKE ? OR original_title LIKE ?) AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1) ORDER BY popularity DESC LIMIT 1`
       )
         .bind(`%${title}%`, `%${title}%`, year, year)
-        .all();
-      if (debugInfo?.matchingInfo)
-        debugInfo.matchingInfo.candidates[key].likeWithYear = mapRowsForDebug(
-          res.results
-        );
+        .all()) as D1QueryResult<TmdbRow>;
+      setCandidateDebug("likeWithYear", res.results);
       return res.results?.[0] ?? null;
     };
 
     const exactNoYear = async () => {
-      const res = await env.MOVIES_DB.prepare(
+      const res = (await env.MOVIES_DB.prepare(
         `SELECT * FROM tmdb_movies WHERE LOWER(title)=LOWER(?) OR LOWER(original_title)=LOWER(?) ORDER BY popularity DESC LIMIT 1`
       )
         .bind(title, title)
-        .all();
-      if (debugInfo?.matchingInfo)
-        debugInfo.matchingInfo.candidates[key].exactNoYear = mapRowsForDebug(
-          res.results
-        );
+        .all()) as D1QueryResult<TmdbRow>;
+      setCandidateDebug("exactNoYear", res.results);
       return res.results?.[0] ?? null;
     };
 
     const likeNoYear = async () => {
-      const res = await env.MOVIES_DB.prepare(
+      const res = (await env.MOVIES_DB.prepare(
         `SELECT * FROM tmdb_movies WHERE title LIKE ? OR original_title LIKE ? ORDER BY popularity DESC LIMIT 5`
       )
         .bind(`%${title}%`, `%${title}%`)
-        .all();
+        .all()) as D1QueryResult<TmdbRow>;
       const candidates = res.results || [];
-      if (debugInfo?.matchingInfo)
-        debugInfo.matchingInfo.candidates[key].likeNoYear =
-          mapRowsForDebug(candidates);
+      setCandidateDebug("likeNoYear", candidates);
       if (candidates.length === 0) return null;
       const want = normalizeTitle(title);
       const wantYear = year || 0;
-      let best: any = null;
+      let best: TmdbRow | null = null;
       let bestScore = -Infinity;
       for (const c of candidates) {
         const ct = normalizeTitle(String(c.title || c.original_title || ""));
@@ -790,7 +855,7 @@ export async function enhanceWithTMDBData(
             friendCount: m.friendCount,
             friendList: m.friendList,
             source: "fallback",
-          } as Movie;
+          };
         } catch (err) {
           console.error("Enhancement error for", m.title, err);
           return {
@@ -801,7 +866,7 @@ export async function enhanceWithTMDBData(
             friendCount: m.friendCount,
             friendList: m.friendList,
             source: "fallback",
-          } as Movie;
+          };
         }
       })
     );
@@ -841,7 +906,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
-    const debugInfo: any = initDebugInfo(usernames);
+    const debugInfo: DebugInfo = initDebugInfo(usernames);
 
     // AI Generated: GitHub Copilot - 2025-08-29T12:15:00Z
     // Performance Optimization: Smart Rate Limiting - Optimized parallel scraping with intelligent delays
