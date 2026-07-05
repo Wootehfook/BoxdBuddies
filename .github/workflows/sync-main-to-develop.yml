@@ -1,0 +1,204 @@
+name: Sync Main to Develop
+
+# After a release/hotfix lands on main, immediately propose the same
+# content back into develop as a linear commit. Running this the moment
+# main advances (rather than relying on someone to remember, days or
+# weeks later) is what keeps this operation conflict-free: see PR #287,
+# which sat open for three weeks and accumulated conflicts that #296 had
+# to resolve by hand.
+#
+# A merge commit is not used here: every branch ruleset in this repo
+# enforces required_linear_history, so a two-parent commit would be
+# rejected (or only pushed via an admin bypass). Instead this cherry-picks
+# main's merge commit onto a fresh branch off develop, producing a single
+# linear commit with identical resulting content.
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    if: |
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.head.ref, 'release/') ||
+       startsWith(github.event.pull_request.head.ref, 'hotfix/'))
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+    steps:
+      - name: Validate release PR token
+        run: |
+          if [ -z "$RELEASE_PR_TOKEN" ]; then
+            echo "::error::RELEASE_PR_TOKEN secret is required to create PRs that trigger required checks."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ env.RELEASE_PR_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set sync branch name
+        id: branch
+        run: |
+          SUFFIX="${HEAD_REF#release/}"
+          SUFFIX="${SUFFIX#hotfix/}"
+          SUFFIX=$(echo "$SUFFIX" | tr -c 'a-zA-Z0-9._-' '-')
+          BRANCH="chore/sync-${SUFFIX}-to-develop"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create sync branch from develop
+        run: |
+          git fetch origin develop
+          git checkout -b "${{ steps.branch.outputs.branch }}" origin/develop
+
+      - name: Attempt cherry-pick of merge commit
+        id: cherry_pick
+        run: |
+          set +e
+          git cherry-pick --no-commit "$MERGE_SHA"
+          STATUS=$?
+          set -e
+          if [ $STATUS -ne 0 ]; then
+            CONFLICTS=$(git diff --name-only --diff-filter=U || true)
+            {
+              echo "conflicts<<SYNC_EOF"
+              echo "$CONFLICTS"
+              echo "SYNC_EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            git cherry-pick --abort
+          else
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit sync
+        if: steps.cherry_pick.outputs.clean == 'true'
+        run: |
+          if git diff --cached --quiet; then
+            echo "No changes to sync — develop already contains this content."
+            echo "SYNC_SKIP=true" >> "$GITHUB_ENV"
+          else
+            git commit -m "chore: sync main ($HEAD_REF) back into develop
+
+          Brings develop up to date with main after merging #$PR_NUMBER ($HEAD_REF). Applied as a linear commit (cherry-pick, not a merge commit) since repo branch rulesets require linear history."
+          fi
+
+      - name: Install dependencies and verify
+        if: steps.cherry_pick.outputs.clean == 'true' && env.SYNC_SKIP != 'true'
+        run: |
+          npm ci --ignore-scripts
+          npm run type-check
+          npm run lint
+          npm run test:run
+          npm run build
+
+      - name: Push sync branch
+        if: steps.cherry_pick.outputs.clean == 'true' && env.SYNC_SKIP != 'true'
+        run: git push origin "${{ steps.branch.outputs.branch }}"
+
+      - name: Open sync PR
+        if: steps.cherry_pick.outputs.clean == 'true' && env.SYNC_SKIP != 'true'
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ env.RELEASE_PR_TOKEN }}
+        run: |
+          PR_BODY_FILE=/tmp/sync_pr_body.md
+          {
+            echo "Automatically syncs \`main\` back into \`develop\` after merging #$PR_NUMBER (\`$HEAD_REF\`)."
+            echo ""
+            echo "This keeps \`develop\`'s history from drifting away from \`main\`, which otherwise causes conflicts the next time a sync is needed (see #287 / #296)."
+            echo ""
+            echo "- **Source:** \`main\` @ $MERGE_SHA"
+            echo "- **Method:** linear cherry-pick (merge commits are disallowed by branch rules)"
+            echo ""
+            echo "If CI passes and this gets approved, it will merge automatically."
+          } > "$PR_BODY_FILE"
+
+          PR_URL=$(gh pr create \
+            --title "chore: sync main ($HEAD_REF) back into develop" \
+            --body-file "$PR_BODY_FILE" \
+            --base develop \
+            --head "${{ steps.branch.outputs.branch }}")
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+          gh pr edit "$PR_URL" --add-label "automated" 2>/dev/null || true
+
+      - name: Enable auto-merge
+        if: steps.cherry_pick.outputs.clean == 'true' && env.SYNC_SKIP != 'true'
+        env:
+          GH_TOKEN: ${{ env.RELEASE_PR_TOKEN }}
+        run: gh pr merge --auto --squash "${{ steps.create_pr.outputs.pr_url }}"
+
+      - name: Report conflict — manual resolution needed
+        if: steps.cherry_pick.outputs.clean == 'false'
+        env:
+          GH_TOKEN: ${{ env.RELEASE_PR_TOKEN }}
+          CONFLICTS: ${{ steps.cherry_pick.outputs.conflicts }}
+        run: |
+          COMMENT_FILE=/tmp/conflict_comment.md
+          {
+            echo "## ⚠️ Automatic sync to develop failed"
+            echo ""
+            echo "Merging \`main\` (from this PR, \`$HEAD_REF\`) back into \`develop\` hit conflicts that need manual resolution."
+            echo ""
+            echo "**Conflicting files:**"
+            echo '```'
+            echo "$CONFLICTS"
+            echo '```'
+            echo ""
+            echo "**To resolve:**"
+            echo '```bash'
+            echo "git fetch origin"
+            echo "git checkout -b chore/sync-manual-to-develop origin/develop"
+            echo "git cherry-pick --no-commit $MERGE_SHA"
+            echo "# resolve conflicts, then:"
+            echo "git add -A && git commit"
+            echo "git push -u origin chore/sync-manual-to-develop"
+            echo "gh pr create --base develop --head chore/sync-manual-to-develop"
+            echo '```'
+          } > "$COMMENT_FILE"
+          gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE"
+          echo "::error::Automatic sync to develop failed due to conflicts — see comment on PR #$PR_NUMBER for manual resolution steps."
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Sync to develop"
+            echo ""
+            if [ "${{ steps.cherry_pick.outputs.clean }}" == "true" ]; then
+              if [ "$SYNC_SKIP" == "true" ]; then
+                echo "✅ develop already contained this content — nothing to sync."
+              else
+                echo "✅ Opened ${{ steps.create_pr.outputs.pr_url }} with auto-merge enabled."
+              fi
+            else
+              echo "❌ Conflicts detected — manual resolution required (see comment on #$PR_NUMBER)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+# AI Generated: Claude Sonnet 5 - 2026-07-05

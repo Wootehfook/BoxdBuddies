@@ -1,0 +1,35 @@
+name: Dependabot Auto-Merge
+
+# Enables auto-merge on Dependabot PRs for patch/minor updates once CI is
+# green and the required human review is given. This does NOT skip review
+# (branch rulesets still require an approval) — it just removes the manual
+# "click merge" step so patch/minor bumps stop piling up waiting on nothing
+# but a click.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Enable auto-merge for patch/minor updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "$PR_URL"
+
+# AI Generated: Claude Sonnet 5 - 2026-07-05
