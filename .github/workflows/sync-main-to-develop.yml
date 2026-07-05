@@ -1,3 +1,4 @@
+# AI Generated: GitHub Copilot (Claude Sonnet 5) - 2026-07-05
 name: Sync Main to Develop
 
 # After a release/hotfix lands on main, immediately propose the same
@@ -27,6 +28,7 @@ jobs:
   sync:
     if: |
       github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       (startsWith(github.event.pull_request.head.ref, 'release/') ||
        startsWith(github.event.pull_request.head.ref, 'hotfix/'))
     runs-on: ubuntu-latest
@@ -102,9 +104,9 @@ jobs:
             echo "No changes to sync — develop already contains this content."
             echo "SYNC_SKIP=true" >> "$GITHUB_ENV"
           else
-            git commit -m "chore: sync main ($HEAD_REF) back into develop
-
-          Brings develop up to date with main after merging #$PR_NUMBER ($HEAD_REF). Applied as a linear commit (cherry-pick, not a merge commit) since repo branch rulesets require linear history."
+            git commit \
+              -m "chore: sync main ($HEAD_REF) back into develop" \
+              -m "Brings develop up to date with main after merging #$PR_NUMBER ($HEAD_REF). Applied as a linear commit (cherry-pick, not a merge commit) since repo branch rulesets require linear history."
           fi
 
       - name: Install dependencies and verify
@@ -200,5 +202,3 @@ jobs:
               echo "❌ Conflicts detected — manual resolution required (see comment on #$PR_NUMBER)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-
-# AI Generated: Claude Sonnet 5 - 2026-07-05
