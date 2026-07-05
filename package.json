@@ -1,7 +1,7 @@
 {
   "name": "boxdbud-io",
   "private": true,
-  "version": "2.1.4",
+  "version": "2.1.5",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Wootehfook",
@@ -12,7 +12,7 @@
   },
   "homepage": "https://boxdbud.io",
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24"
+    "node": ">=22.22.1"
   },
   "scripts": {
     "dev": "vite",
