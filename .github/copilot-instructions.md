@@ -108,9 +108,17 @@ This project uses a **Gitflow-inspired model**. The `develop` branch is the inte
 
 ```
 feature/*, fix/*, chore/*, etc.  ──PR──▶  develop  ──PR──▶  main
-                                              │
+                                              │                │
                                     release/* / hotfix/*  ──PR──▶  main
+                                              ▲                │
+                                              └── auto-sync ───┘
 ```
+
+After a `release/*`/`hotfix/*` PR merges into `main`, the `sync-main-to-develop.yml`
+workflow automatically opens a `chore/sync-*` PR to bring that same content back
+into `develop`. This runs immediately (not "whenever someone remembers"), which is
+what keeps it conflict-free — see #287, which sat unmerged for three weeks and had
+to be resolved by hand as #296.
 
 ### Rules for AI contributors
 
@@ -119,6 +127,8 @@ feature/*, fix/*, chore/*, etc.  ──PR──▶  develop  ──PR──▶  
 3. Use Conventional Commit branch prefixes: `feature/`, `fix/`, `chore/`, `docs/`, `refactor/`, `perf/`, `test/`.
 4. Never push directly to `main` or `develop`.
 5. When the Copilot Coding Agent creates a PR, verify the base is `develop`. If it's `main`, the auto-retarget workflow will redirect it.
+6. Every branch ruleset in this repo (`main`, `develop`, `release/*`/`hotfix/*`, and feature branches) enforces linear history — merge commits are rejected. Never merge one branch into another with `git merge`; use a rebase or cherry-pick to produce a single linear commit instead.
+7. Never make a PR's head branch literally `main` or `develop` (e.g. for a "sync" PR). Resolving conflicts on such a PR would require pushing new commits directly onto that branch. Always use a dedicated branch (e.g. `chore/sync-*`) as the head, targeting the branch you want to update as the base.
 
 ## 10) Security & secrets (must follow)
 

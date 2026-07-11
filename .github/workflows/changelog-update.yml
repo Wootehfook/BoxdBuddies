@@ -105,6 +105,15 @@ jobs:
             exit 0
           fi
 
+          # Guard 3b (NEW): Skip main->develop sync PRs — they carry main's
+          # CHANGELOG.md content over verbatim via sync-main-to-develop.yml;
+          # adding a synthetic entry here would duplicate/pollute it.
+          if [[ "$PR_BRANCH" =~ ^chore/sync-.*-to-develop$ ]]; then
+            echo "Skipping main->develop sync PR (branch: $PR_BRANCH); CHANGELOG already carried over from main."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # Guard 4: Skip changelog update PRs (body marker) to avoid recursion
           if [[ "$PR_BODY" == *"<!-- changelog-update -->"* ]]; then
             echo "Skipping changelog update PR (body marker) to avoid recursion."
