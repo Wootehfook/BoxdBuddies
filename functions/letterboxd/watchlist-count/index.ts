@@ -5,22 +5,13 @@
  */
 
 import { debugLog } from "../../_lib/common";
+import type { D1DatabaseLike } from "../cache/index.js";
 import type { Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
   username: string;
   count: number;
   lastUpdated: number;
-}
-
-interface D1PreparedStatementLike {
-  bind(...values: unknown[]): D1PreparedStatementLike;
-  first<T = Record<string, unknown>>(): Promise<T | null>;
-  run(): Promise<{ meta: { changes: number } }>;
-}
-
-interface D1DatabaseLike {
-  prepare(query: string): D1PreparedStatementLike;
 }
 
 // Rate limiting - 1 second between requests to be respectful to Letterboxd
