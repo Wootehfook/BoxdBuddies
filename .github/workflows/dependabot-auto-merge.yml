@@ -1,11 +1,15 @@
-# AI Generated: GitHub Copilot (Claude Sonnet 5) - 2026-07-05
+# AI Generated: Claude (Cowork) - 2026-07-12
 name: Dependabot Auto-Merge
 
-# Enables auto-merge on Dependabot PRs for patch/minor updates once CI is
-# green and the required human review is given. This does NOT skip review
-# (branch rulesets still require an approval) — it just removes the manual
-# "click merge" step so patch/minor bumps stop piling up waiting on nothing
-# but a click.
+# Policy (agreed 2026-07-12):
+#   - Patch/minor bumps (deps, dev-deps, actions): auto-approve + auto-merge
+#     once required CI checks pass.
+#   - MAJOR bumps (any type): left for human review; a comment flags them.
+#
+# The auto-approve step is what was missing before: branch rulesets on
+# develop require 1 approval, so PRs with auto-merge enabled sat forever.
+# REQUIRES repo setting: Settings > Actions > General >
+#   "Allow GitHub Actions to create and approve pull requests" = enabled.
 
 on:
   pull_request:
@@ -26,9 +30,29 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Auto-approve patch/minor updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh pr review --approve "$PR_URL"
+          --body "Auto-approved (${{ steps.metadata.outputs.update-type }})
+          bump of ${{ steps.metadata.outputs.dependency-names }}
+          [${{ steps.metadata.outputs.dependency-type }}]"
+
       - name: Enable auto-merge for patch/minor updates
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr merge --auto --squash "$PR_URL"
+
+      - name: Flag major updates for human review
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "$PR_URL" --body ":warning: **Major version bump** of \`${{ steps.metadata.outputs.dependency-names }}\` - needs human review and testing before merge."
+          gh pr edit "$PR_URL" --add-label "needs-human-review" || true
