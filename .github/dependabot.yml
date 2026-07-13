@@ -6,6 +6,13 @@ updates:
     schedule:
       interval: "weekly"
     target-branch: develop
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
