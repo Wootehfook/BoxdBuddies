@@ -79,7 +79,8 @@ Cargo.lock
 target/
 
 # IDE and Editor files
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo

@@ -5,9 +5,6 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
     },
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12"
-    },
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
@@ -20,21 +17,16 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss",
         "dbaeumer.vscode-eslint",
-        "GitHub.copilot",
         "GitHub.vscode-pull-request-github",
         "eamodio.gitlens",
         "sonarsource.sonarlint-vscode",
         "usernamehw.errorlens",
-        "ms-vscode.makefile-tools",
         "ms-vscode-remote.remote-containers",
         "ms-vscode.remote-explorer",
         "ms-vscode-remote.remote-wsl",
-        "vitest.explorer",
-        "humao.rest-client"
+        "vitest.explorer"
       ],
       "settings": {
         "[typescript]": {
