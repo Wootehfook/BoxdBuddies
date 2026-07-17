@@ -610,7 +610,9 @@ const enhanceCommonMovies = async (
 ) => {
   const { isDebug } = await import("../../_lib/common");
   const debugMatchingFlag = (env as EnvWithDebugMatching).DEBUG_MATCHING;
-  const enableMatchingDebug = Boolean(isDebug(env) || debugMatchingFlag === true || debugMatchingFlag === "true");
+  const enableMatchingDebug = Boolean(
+    isDebug(env) || debugMatchingFlag === true || debugMatchingFlag === "true"
+  );
   const enhancedMovies = await enhanceWithTMDBData(
     commonMovies,
     env,

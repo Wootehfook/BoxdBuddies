@@ -4,7 +4,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue)](https://www.typescriptlang.org/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-orange)](https://pages.cloudflare.com/)
 
 **Find movies all your friends want to watch.**
@@ -20,7 +20,7 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 ## ✨ Features
 
 - ✔️ **Letterboxd Integration**: Scrapes complete watchlists with full pagination support.
-- 👥 **Multi-User Comparison**: Compare watchlists between yourself and up to 4 friends.
+- 👥 **Multi-User Comparison**: Compare your watchlist against any number of your Letterboxd friends.
 - 🚀 **TMDB Enhancement**: Enriches movies with posters, ratings, genres, and director info.
 - 🎭 **Genre Display**: Shows movie genres as interactive badges on result cards for easy browsing.
 - ⚡ **Intelligent Caching**: Utilizes a Cloudflare D1 database for rapid subsequent comparisons.
@@ -35,13 +35,17 @@ Boxdbud.io connects to Letterboxd, compares multiple watchlists, and shows you t
 
 Navigate to **[boxdbud.io](https://boxdbud.io)**.
 
-### Step 2: Enter Usernames
+### Step 2: Enter Your Username
 
-1. **Your Username**: Enter your exact Letterboxd username.
+Enter your exact Letterboxd username and click **"Continue"**. The app will load your Letterboxd friends list.
 
-### Step 3: Compare and View Results
+### Step 3: Select Friends
 
-1. Click **"Compare Watchlists"**. The app will scan all watchlists and find common movies.
+Pick one or more friends from your loaded friends list to compare against.
+
+### Step 4: Compare and View Results
+
+1. Click **"Compare Watchlists"**. The app will scan all selected watchlists and find common movies.
 2. Results are sorted to show movies that the most friends have on their watchlists.
 3. Each movie card displays genres as badges for easy identification and browsing.
 4. Click any movie poster to view detailed information on [Letterboxd](https://letterboxd.com).
@@ -54,7 +58,7 @@ Interested in contributing? Here’s how to get the development environment runn
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later)
+- [Node.js](https://nodejs.org/) (v22.22.1 or later)
 - [Git](https://git-scm.com/)
 - A code editor (VS Code is recommended)
 
