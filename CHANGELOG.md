@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-07-17
+
+### Changed
+
+- Trim editor/devcontainer extension recommendations to project-relevant tools (#313)
+- Sync README with current version and app flow (#314)
+- Harden backend TypeScript typings across letterboxd, TMDB sync, cache, comparison, and test endpoints; reduce `any` usage (#273–#279)
+- Automate main-to-develop sync after releases and refine Dependabot auto-merge/grouping configuration (#297, #305, #306)
+- Numerous dependency updates, including `vite`, `vitest`, `wrangler`, `prettier`, `eslint`, `typescript-eslint`, the React group, `jsdom`, `lint-staged`, and `@types/node`
+
 ## [2.1.5] - 2026-06-10
 
 ### Changed
@@ -169,7 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.5...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.6...HEAD
+[2.1.6]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.5...v2.1.6
 [2.1.5]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.4...v2.1.5
 [2.1.4]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.3...v2.1.4
 [2.1.3]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.2...v2.1.3
