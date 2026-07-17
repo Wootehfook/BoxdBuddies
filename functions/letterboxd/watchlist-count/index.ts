@@ -14,6 +14,7 @@ interface WatchlistCount {
   lastUpdated: number;
 }
 
+
 // Rate limiting - 1 second between requests to be respectful to Letterboxd
 let lastRequestTime = 0;
 const RATE_LIMIT_MS = 1000;
