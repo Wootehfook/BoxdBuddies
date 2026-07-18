@@ -23,7 +23,7 @@ import { useState } from "react";
 import { getUserColors, isValidLetterboxdUrl, API_ENDPOINTS } from "../utils";
 import type { FriendAvatarProps } from "../types";
 
-export function FriendAvatar({ friend }: FriendAvatarProps) {
+export function FriendAvatar({ friend }: Readonly<FriendAvatarProps>) {
   const [imageError, setImageError] = useState(false);
 
   const initials = friend.displayName

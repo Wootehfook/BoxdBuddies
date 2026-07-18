@@ -25,6 +25,120 @@ import type { ResultsPageProps } from "../types";
 import { useMemo, useState, useEffect } from "react";
 import getGenreClassSlug from "../utils/genreClassMap";
 
+// Decode HTML entities and numeric references in server-supplied titles.
+// This is defensive: if a scraped title slips through with fragments like
+// "#039;s" or double-escaped "&amp;#039;s", we'll normalize it for display.
+function decodeHtmlEntities(input: string): string {
+  if (!input) return input;
+  // Basic named entities map
+  const map: Record<string, string> = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&apos;": "'",
+    "&#039;": "'",
+  };
+  let s = input;
+  // 1) Resolve double-escaped numeric entities like &amp;#039; first
+  s = s.replace(/&amp;#x?0*27;?/gi, "'");
+  s = s.replace(/&amp;#0*39;?/gi, "'");
+  // 2) Replace named entities next (e.g., &amp; -> &), which enables numeric decoding
+  s = s.replace(/&[a-zA-Z]+;/g, (ent) => map[ent] || ent);
+  // 3) Decode proper numeric references (these include the & and ;)
+
+  s = s.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
+  );
+  s = s.replace(/&#(\d+);/g, (_, dec) =>
+    String.fromCodePoint(Number.parseInt(dec, 10))
+  );
+  // 4) Handle stray fragments that lack the leading & (do NOT touch ones that have it)
+  // Use a leading char capture to avoid swallowing the character before '#'
+  s = s.replace(/(^|[^&])#x?0*27;?/gi, (_, pre: string) => pre + "'");
+  s = s.replace(/(^|[^&])#0*39;?/g, (_, pre: string) => pre + "'");
+
+  // Normalize common curly apostrophes to straight
+  s = s.replace(/[‘’]/g, "'");
+  // Remove ampersands that are part of broken numeric entity fragments
+  // (e.g. "& #039;" or "&amp; #039;") while preserving meaningful
+  // ampersands like "Tom & Jerry". Only strip the '&' when followed
+  // optionally by 'amp;' and then a '#'.
+  s = s.replace(/&(?:amp;)?\s*(?=#)/gi, "");
+  // Remove spaces that appear before apostrophes ("World 's" -> "World's").
+  // Anchored on (^|\S) so the whitespace run can only match from its start,
+  // which keeps the regex linear (sonar typescript:S8786).
+  s = s.replace(/(^|\S)\s+'+/g, "$1'");
+  // Fix cases like "World&'s" where a stray ampersand precedes an apostrophe
+  // Remove '&' only when immediately before optional spaces and one or more quotes
+  s = s.replace(/&(?=\s*'+)/g, "");
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+// Truncate long genre labels to keep badges tidy (CSS may further constrain)
+function truncateLabel(s: string, max = 18): string {
+  if (!s) return s;
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + "…" : s;
+}
+
+// Deduplicate genres by slug; prefer the first encountered label
+function dedupeGenres(raw: string[]): Array<{ slug: string; label: string }> {
+  const seen = new Set<string>();
+  const unique: Array<{ slug: string; label: string }> = [];
+  for (const g of raw) {
+    const slug = getGenreClassSlug(g);
+    if (!slug) continue;
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    unique.push({ slug, label: g });
+    if (unique.length >= 6) break; // soft cap to limit DOM
+  }
+  return unique;
+}
+
+// Genre badge row, extracted to keep JSX nesting shallow (sonar typescript:S2004)
+function GenreBadges({
+  movieId,
+  genres,
+  selectedGenres,
+  onToggle,
+}: Readonly<{
+  movieId: number;
+  genres: string[];
+  selectedGenres: string[];
+  onToggle: (slug: string, label: string) => void;
+}>) {
+  const unique = dedupeGenres(genres);
+  return (
+    <div className="movie-genre-badges">
+      {unique.slice(0, 3).map(({ slug, label }) => {
+        const isSelected =
+          selectedGenres.includes(slug) || selectedGenres.includes(label);
+        const className = `genre-badge genre-${slug} ${
+          isSelected ? "selected" : ""
+        }`;
+        return (
+          <button
+            key={`${movieId}-${slug}`}
+            type="button"
+            className={className}
+            title={label}
+            aria-label={`${label} genre${isSelected ? " (selected)" : ""}`}
+            aria-pressed={isSelected ? "true" : "false"}
+            onClick={(e) => {
+              e.preventDefault();
+              onToggle(slug, label);
+            }}
+          >
+            {truncateLabel(label)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
   // Store selected genres as slugs for stable matching across aliases (e.g.,
   // "Sci-Fi" and "Science Fiction" -> "scifi"). Maintain backward
@@ -38,7 +152,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
       // Parse the query string manually to avoid referencing global URLSearchParams
       const search = window.location.search || "";
       const qs = search.startsWith("?") ? search.slice(1) : search;
-      const match = qs.match(/(?:^|&)genres=([^&]+)/i);
+      const match = /(?:^|&)genres=([^&]+)/i.exec(qs);
       const raw = match ? match[1] : null;
       if (raw && raw.trim().length > 0) {
         const arr = raw
@@ -91,63 +205,23 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
       return false;
     });
   }, [movies, selectedGenres]);
-  // Decode HTML entities and numeric references in server-supplied titles.
-  // This is defensive: if a scraped title slips through with fragments like
-  // "#039;s" or double-escaped "&amp;#039;s", we'll normalize it for display.
-  function decodeHtmlEntities(input: string): string {
-    if (!input) return input;
-    // Basic named entities map
-    const map: Record<string, string> = {
-      "&amp;": "&",
-      "&lt;": "<",
-      "&gt;": ">",
-      "&quot;": '"',
-      "&apos;": "'",
-      "&#039;": "'",
-    };
-    let s = input;
-    // 1) Resolve double-escaped numeric entities like &amp;#039; first
-    s = s.replace(/&amp;#x?0*27;?/gi, "'");
-    s = s.replace(/&amp;#0*39;?/gi, "'");
-    // 2) Replace named entities next (e.g., &amp; -> &), which enables numeric decoding
-    s = s.replace(/&[a-zA-Z]+;/g, (ent) => map[ent] || ent);
-    // 3) Decode proper numeric references (these include the & and ;)
 
-    s = s.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16))
-    );
-    s = s.replace(/&#(\d+);/g, (_, dec) =>
-      String.fromCharCode(parseInt(dec, 10))
-    );
-    // 4) Handle stray fragments that lack the leading & (do NOT touch ones that have it)
-    // Use a leading char capture to avoid swallowing the character before '#'
-    s = s.replace(/(^|[^&])#x?0*27;?/gi, (_, pre: string) => pre + "'");
-    s = s.replace(/(^|[^&])#0*39;?/g, (_, pre: string) => pre + "'");
+  const toggleGenre = (slug: string, label: string) => {
+    setSelectedGenres((s) => {
+      const hasSlug = s.includes(slug);
+      const hasLabel = s.includes(label);
+      if (hasSlug || hasLabel) {
+        return s.filter((x) => x !== slug && x !== label);
+      }
+      return [...s, slug];
+    });
+  };
 
-    // Normalize common curly apostrophes to straight
-    s = s.replace(/[\u2018\u2019]/g, "'");
-    // Remove ampersands that are part of broken numeric entity fragments
-    // (e.g. "& #039;" or "&amp; #039;") while preserving meaningful
-    // ampersands like "Tom & Jerry". Only strip the '&' when followed
-    // optionally by 'amp;' and then a '#'.
-    s = s.replace(/&(?:amp;)?\s*(?=#)/gi, "");
-    // Remove spaces that appear before apostrophes ("World 's" -> "World's")
-    s = s.replace(/\s+'+/g, "'");
-    // Fix cases like "World&'s" where a stray ampersand precedes an apostrophe
-    // Remove '&' only when immediately before optional spaces and one or more quotes
-    s = s.replace(/&(?=\s*'+)/g, "");
-    s = s.replace(/\s+/g, " ").trim();
-    return s;
-  }
-  // Truncate long genre labels to keep badges tidy (CSS may further constrain)
-  function truncateLabel(s: string, max = 18): string {
-    if (!s) return s;
-    return s.length > max ? s.slice(0, max - 1).trimEnd() + "…" : s;
-  }
   return (
     <section className="page results-page dynamic-cards">
       <div className="page-header">
         <button
+          type="button"
           onClick={onBack}
           className="btn btn-secondary btn-icon header-back-btn"
           aria-label="Back to setup"
@@ -173,6 +247,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
         <div className="header-controls">
           {selectedGenres.length > 0 && (
             <button
+              type="button"
               className="btn btn-icon btn-secondary"
               onClick={(e) => {
                 e.preventDefault();
@@ -213,6 +288,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                   see all common movies.
                 </p>
                 <button
+                  type="button"
                   className="btn btn-secondary"
                   onClick={(e) => {
                     e.preventDefault();
@@ -252,9 +328,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                       }
                       {(() => {
                         const p = movie.poster_path as
-                          | string
-                          | null
-                          | undefined;
+                          string | null | undefined;
                         let posterUrl: string | null = null;
                         if (p && typeof p === "string") {
                           const trimmed = p.trim();
@@ -300,62 +374,12 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                           </h3>
 
                           {movie.genres && movie.genres.length > 0 && (
-                            <div className="movie-genre-badges">
-                              {(() => {
-                                const raw = (movie.genres || []) as string[];
-                                // Deduplicate by slug; prefer the first encountered label
-                                const seen = new Set<string>();
-                                const unique: Array<{
-                                  slug: string;
-                                  label: string;
-                                }> = [];
-                                for (const g of raw) {
-                                  const slug = getGenreClassSlug(g);
-                                  if (!slug) continue;
-                                  if (seen.has(slug)) continue;
-                                  seen.add(slug);
-                                  unique.push({ slug, label: g });
-                                  if (unique.length >= 6) break; // soft cap to limit DOM
-                                }
-                                return unique
-                                  .slice(0, 3)
-                                  .map(({ slug, label }) => {
-                                    const isSelected =
-                                      selectedGenres.includes(slug) ||
-                                      selectedGenres.includes(label);
-                                    const className = `genre-badge genre-${slug} ${
-                                      isSelected ? "selected" : ""
-                                    }`;
-                                    return (
-                                      <button
-                                        key={`${movie.id}-${slug}`}
-                                        type="button"
-                                        className={className}
-                                        title={label}
-                                        aria-label={`${label} genre${isSelected ? " (selected)" : ""}`}
-                                        aria-pressed={
-                                          isSelected ? "true" : "false"
-                                        }
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          setSelectedGenres((s) => {
-                                            const hasSlug = s.includes(slug);
-                                            const hasLabel = s.includes(label);
-                                            if (hasSlug || hasLabel) {
-                                              return s.filter(
-                                                (x) => x !== slug && x !== label
-                                              );
-                                            }
-                                            return [...s, slug];
-                                          });
-                                        }}
-                                      >
-                                        {truncateLabel(label)}
-                                      </button>
-                                    );
-                                  });
-                              })()}
-                            </div>
+                            <GenreBadges
+                              movieId={movie.id}
+                              genres={(movie.genres || []) as string[]}
+                              selectedGenres={selectedGenres}
+                              onToggle={toggleGenre}
+                            />
                           )}
                         </div>
 
@@ -394,7 +418,8 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                               {movie.friendList.map((friendName: string) => {
                                 // Use stable color class by hashing username to index (same algorithm as getUserColors)
                                 const hash = Array.from(friendName).reduce(
-                                  (h, ch) => ch.charCodeAt(0) + ((h << 5) - h),
+                                  (h, ch) =>
+                                    (ch.codePointAt(0) ?? 0) + ((h << 5) - h),
                                   0
                                 );
                                 const idx = Math.abs(hash) % 20;
