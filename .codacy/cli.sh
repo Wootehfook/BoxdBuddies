@@ -20,12 +20,15 @@ case "$arch" in
 "aarch64"|"arm64")
   arch="arm64"
   ;;
+*)
+  # Keep the architecture reported by uname for unlisted platforms
+  ;;
 esac
 
-if [ -z "$CODACY_CLI_V2_TMP_FOLDER" ]; then
-    if [ "$(uname)" = "Linux" ]; then
+if [[ -z "$CODACY_CLI_V2_TMP_FOLDER" ]]; then
+    if [[ "$(uname)" == "Linux" ]]; then
         CODACY_CLI_V2_TMP_FOLDER="$HOME/.cache/codacy/codacy-cli-v2"
-    elif [ "$(uname)" = "Darwin" ]; then
+    elif [[ "$(uname)" == "Darwin" ]]; then
         CODACY_CLI_V2_TMP_FOLDER="$HOME/Library/Caches/Codacy/codacy-cli-v2"
     else
         CODACY_CLI_V2_TMP_FOLDER=".codacy-cli-v2"
@@ -36,9 +39,9 @@ version_file="$CODACY_CLI_V2_TMP_FOLDER/version.yaml"
 
 
 get_version_from_yaml() {
-    if [ -f "$version_file" ]; then
+    if [[ -f "$version_file" ]]; then
         local version=$(grep -o 'version: *"[^"]*"' "$version_file" | cut -d'"' -f2)
-        if [ -n "$version" ]; then
+        if [[ -n "$version" ]]; then
             echo "$version"
             return 0
         fi
@@ -48,7 +51,7 @@ get_version_from_yaml() {
 
 get_latest_version() {
     local response
-    if [ -n "$GH_TOKEN" ]; then
+    if [[ -n "$GH_TOKEN" ]]; then
         response=$(curl -Lq --header "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/codacy/codacy-cli-v2/releases/latest" 2>/dev/null)
     else
         response=$(curl -Lq "https://api.github.com/repos/codacy/codacy-cli-v2/releases/latest" 2>/dev/null)
@@ -94,7 +97,7 @@ download_cli() {
     local bin_path="$2"
     local version="$3"
 
-    if [ ! -f "$bin_path" ]; then
+    if [[ ! -f "$bin_path" ]]; then
         echo "📥 Downloading CLI version $version..."
 
         remote_file="codacy-cli-v2_${version}_${suffix}_${arch}.tar.gz"
@@ -106,13 +109,13 @@ download_cli() {
 }
 
 # Warn if CODACY_CLI_V2_VERSION is set and update is requested
-if [ -n "$CODACY_CLI_V2_VERSION" ] && [ "$1" = "update" ]; then
+if [[ -n "$CODACY_CLI_V2_VERSION" && "$1" == "update" ]]; then
     echo "⚠️  Warning: Performing update with forced version $CODACY_CLI_V2_VERSION"
     echo "    Unset CODACY_CLI_V2_VERSION to use the latest version"
 fi
 
 # Ensure version.yaml exists and is up to date
-if [ ! -f "$version_file" ] || [ "$1" = "update" ]; then
+if [[ ! -f "$version_file" || "$1" == "update" ]]; then
     echo "ℹ️  Fetching latest version..."
     version=$(get_latest_version)
     mkdir -p "$CODACY_CLI_V2_TMP_FOLDER"
@@ -120,7 +123,7 @@ if [ ! -f "$version_file" ] || [ "$1" = "update" ]; then
 fi
 
 # Set the version to use
-if [ -n "$CODACY_CLI_V2_VERSION" ]; then
+if [[ -n "$CODACY_CLI_V2_VERSION" ]]; then
     version="$CODACY_CLI_V2_VERSION"
 else
     version=$(get_version_from_yaml)
@@ -138,11 +141,11 @@ download_cli "$bin_folder" "$bin_path" "$version"
 chmod +x "$bin_path"
 
 run_command="$bin_path"
-if [ -z "$run_command" ]; then
+if [[ -z "$run_command" ]]; then
     fatal "Codacy cli v2 binary could not be found."
 fi
 
-if [ "$#" -eq 1 ] && [ "$1" = "download" ]; then
+if [[ "$#" -eq 1 && "$1" == "download" ]]; then
     echo "Codacy cli v2 download succeeded"
 else
     eval "$run_command $*"

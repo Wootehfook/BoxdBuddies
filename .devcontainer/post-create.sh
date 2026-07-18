@@ -20,8 +20,8 @@ NC='\033[0m' # No Color
 
 # Step 1: Install npm dependencies (if needed)
 echo "${BLUE}📦 Checking npm dependencies...${NC}"
-if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
-  if [ -f "package-lock.json" ]; then
+if [[ ! -d "node_modules" || -z "$(ls -A node_modules 2>/dev/null)" ]]; then
+  if [[ -f "package-lock.json" ]]; then
     echo "${BLUE}Installing npm dependencies with npm ci (lockfile detected)...${NC}"
     npm ci --prefer-offline --no-audit 2>&1 || {
       echo "${YELLOW}⚠️  npm ci encountered permission or filesystem issues.${NC}"
@@ -52,7 +52,7 @@ fi
 echo ""
 
 # Step 3: Create .env.local if it doesn't exist
-if [ ! -f .env.local ]; then
+if [[ ! -f .env.local ]]; then
   echo "${BLUE}🔐 Creating .env.local template...${NC}"
   cat > .env.local << 'EOF'
 # Local development environment variables
