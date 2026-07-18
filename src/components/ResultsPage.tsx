@@ -25,6 +25,16 @@ import type { ResultsPageProps } from "../types";
 import { useMemo, useState, useEffect } from "react";
 import getGenreClassSlug from "../utils/genreClassMap";
 
+// Convert a numeric code point to its character, tolerating out-of-range or
+// non-numeric input. String.fromCodePoint throws a RangeError for values
+// outside 0..0x10FFFF (or NaN), so fall back to the original matched text.
+function codePointToChar(codePoint: number, original: string): string {
+  if (Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff) {
+    return String.fromCodePoint(codePoint);
+  }
+  return original;
+}
+
 // Decode HTML entities and numeric references in server-supplied titles.
 // This is defensive: if a scraped title slips through with fragments like
 // "#039;s" or double-escaped "&amp;#039;s", we'll normalize it for display.
@@ -47,11 +57,11 @@ function decodeHtmlEntities(input: string): string {
   s = s.replace(/&[a-zA-Z]+;/g, (ent) => map[ent] || ent);
   // 3) Decode proper numeric references (these include the & and ;)
 
-  s = s.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
-    String.fromCodePoint(Number.parseInt(hex, 16))
+  s = s.replace(/&#x([0-9A-Fa-f]+);/g, (m, hex) =>
+    codePointToChar(Number.parseInt(hex, 16), m)
   );
-  s = s.replace(/&#(\d+);/g, (_, dec) =>
-    String.fromCodePoint(Number.parseInt(dec, 10))
+  s = s.replace(/&#(\d+);/g, (m, dec) =>
+    codePointToChar(Number.parseInt(dec, 10), m)
   );
   // 4) Handle stray fragments that lack the leading & (do NOT touch ones that have it)
   // Use a leading char capture to avoid swallowing the character before '#'

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
-// AI Generated: GitHub Copilot - 2025-08-08
+// AI Generated: GitHub Copilot (Claude Opus 4.8) - 2026-07-18
 // Ensures SECURITY.md Supported Versions matches the current major version in package.json
 const fs = require('node:fs');
 const path = require('node:path');
