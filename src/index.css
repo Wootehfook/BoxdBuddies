@@ -166,7 +166,7 @@ body {
 
 .web-demo-badge span {
   display: inline-block;
-  background: rgba(255, 128, 0, 0.15);
+  background: #372818; /* rgba(255,128,0,0.15) over #14181c */
   border: 1px solid rgba(255, 128, 0, 0.3);
   color: #ff8000;
   padding: 0.25rem 0.75rem;
@@ -200,7 +200,7 @@ body {
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: rgba(255, 255, 255, 0.05);
+  background: #202427; /* rgba(255,255,255,0.05) over #14181c */
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #9ab;
@@ -212,14 +212,14 @@ body {
 }
 
 .btn-pin:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #2c2f33; /* rgba(255,255,255,0.1) over #14181c */
   border-color: rgba(255, 128, 0, 0.3);
   color: #ff8000;
   transform: translateY(-1px);
 }
 
 .btn-pin.pinned {
-  background: rgba(255, 128, 0, 0.15);
+  background: #372818; /* rgba(255,128,0,0.15) over #14181c */
   border-color: rgba(255, 128, 0, 0.4);
   color: #ff8000;
 }
@@ -534,7 +534,7 @@ body {
 
 .btn-primary {
   background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
-  color: #fff;
+  color: #14181c;
   width: 100%;
   box-shadow: 0 4px 12px rgba(255, 128, 0, 0.3);
 }
@@ -595,13 +595,13 @@ body {
 }
 
 .toast-error {
-  background: rgba(220, 53, 69, 0.1);
+  background: #281b20; /* rgba(220,53,69,0.1) over #14181c */
   color: #ffcccc;
   border-color: rgba(220, 53, 69, 0.25);
 }
 
 .toast-success {
-  background: rgba(40, 167, 69, 0.1);
+  background: #162620; /* rgba(40,167,69,0.1) over #14181c */
   color: #ccffcc;
   border-color: rgba(40, 167, 69, 0.25);
 }
@@ -936,7 +936,7 @@ body {
 
 .resync-btn:disabled {
   background: #1a1f24;
-  color: #666;
+  color: #8a95a1;
   cursor: not-allowed;
 }
 
@@ -955,7 +955,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: #202427; /* rgba(255,255,255,0.05) over #14181c */
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #fff;
@@ -1118,7 +1118,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 1.8rem;
-  color: white;
+  color: #14181c;
   font-weight: bold;
   overflow: hidden;
   border: 2px solid rgba(255, 128, 0, 0.3);
@@ -1168,31 +1168,6 @@ body {
 }
 
 /* Empty State Styling */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: #1a1f24;
-  border: 1px solid #2c3440;
-  border-radius: 12px;
-  margin: 2rem 0;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.empty-state h3 {
-  color: #fff;
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-}
-
-.empty-state p {
-  color: #9ab;
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
 
 .empty-state .btn {
   min-width: 150px;
@@ -1207,17 +1182,6 @@ body {
   border: 1px solid #2c3440;
   border-radius: 8px;
   margin-bottom: 2rem;
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 3px solid #2c3440;
-  border-radius: 50%;
-  border-top-color: #00d9ff;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 1rem;
 }
 
 @keyframes spin {
@@ -1320,22 +1284,6 @@ body {
 }
 
 /* Progress Button Container */
-.progress-button-container {
-  max-width: 450px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 2rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 128, 0, 0.05) 0%,
-    rgba(255, 102, 0, 0.05) 100%
-  );
-  border: 1px solid rgba(255, 128, 0, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
 
 .progress-button-container::before {
   content: "";
@@ -1346,21 +1294,6 @@ body {
   height: 2px;
   background: linear-gradient(90deg, transparent, #ff8000, transparent);
   animation: progressTopShimmer 3s ease-in-out infinite;
-}
-
-.progress-button-container .progress-info h3 {
-  color: #fff;
-  margin-bottom: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.progress-button-container .progress-info p {
-  color: #b0b8c0;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.4;
 }
 
 .progress-button-container .progress-text {
@@ -1469,8 +1402,13 @@ body {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  max-width: 400px;
+  background: #1a1f24;
+  border: 1px solid #2c3440;
+  border-radius: 12px;
   margin: 0 auto;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .empty-state-icon {
@@ -1481,14 +1419,16 @@ body {
 
 .empty-state h3 {
   color: #e5e7eb;
-  margin-bottom: 12px;
   font-size: 1.5rem;
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 
 .empty-state p {
   color: #9ca3af;
-  margin-bottom: 30px;
+  font-size: 1rem;
   line-height: 1.5;
+  margin-bottom: 30px;
 }
 
 /* Movie Skeleton Loading */
@@ -1532,8 +1472,15 @@ body {
 
 /* Loading Spinner */
 .loading-spinner {
-  margin-right: 8px;
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #2c3440;
+  border-radius: 50%;
+  border-top-color: #00d9ff;
   animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+  margin-right: 8px;
 }
 
 @keyframes spin {
@@ -1673,14 +1620,14 @@ body {
 .btn.active {
   background: #ff8000;
   border-color: #ff8000;
-  color: #fff;
+  color: #14181c;
 }
 
 .filter-badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #ff4444;
+  background: #d32f2f;
   color: white;
   border-radius: 10px;
   padding: 2px 6px;
@@ -1787,19 +1734,6 @@ body {
 }
 
 /* Enhanced Progress Button Container */
-.progress-button-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-  border-radius: 12px;
-  border: 1px solid #4b5563;
-  min-height: 120px;
-  min-width: 200px;
-  margin: 0 auto;
-}
 
 .progress-button-container .progress-info {
   text-align: center;
@@ -1810,12 +1744,16 @@ body {
   color: #e5e7eb;
   margin-bottom: 8px;
   font-size: 1.2rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .progress-button-container .progress-info p {
   color: #9ca3af;
-  margin: 0;
+  margin-bottom: 1.5rem;
   font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .progress-button-container .progress-bar {
@@ -1951,8 +1889,22 @@ body {
 
 /* Consistent container width */
 .progress-button-container {
-  min-width: 400px;
   max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  border: 1px solid #4b5563;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  min-width: 400px;
   width: 100%;
 }
 
@@ -2081,7 +2033,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: #c9d0d8;
   font-size: 2rem;
 }
 
@@ -2238,7 +2190,7 @@ body {
   -moz-appearance: none;
   appearance: none;
   /* Default neutral background; specific genre classes override this with gradients */
-  background: rgba(255, 255, 255, 0.06);
+  background: #22262a; /* rgba(255,255,255,0.06) over #14181c */
   color: #fff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 0.18rem 0.6rem;
@@ -2265,13 +2217,13 @@ body {
   border-color: rgba(0, 0, 0, 0.12);
 }
 .genre-comedy {
-  background: linear-gradient(135deg, var(--genre-comedy), #b45309);
+  background: linear-gradient(135deg, var(--genre-comedy), #d97706);
   color: #0b0f12;
   border-color: rgba(0, 0, 0, 0.06);
 }
 .genre-drama {
   background: linear-gradient(135deg, var(--genre-drama), #0284c7);
-  color: white;
+  color: #0b0f12;
   border-color: rgba(0, 0, 0, 0.12);
 }
 .genre-romance {
@@ -2301,7 +2253,7 @@ body {
 }
 .genre-documentary {
   background: linear-gradient(135deg, var(--genre-documentary), #059669);
-  color: white;
+  color: #0b0f12;
   border-color: rgba(0, 0, 0, 0.12);
 }
 .genre-animation {
@@ -2316,13 +2268,13 @@ body {
 }
 .genre-mystery {
   background: linear-gradient(135deg, var(--genre-mystery), #0891b2);
-  color: white;
+  color: #0b0f12;
   border-color: rgba(0, 0, 0, 0.12);
 }
 
 /* Generic fallback if no specific class matches */
 .genre-default {
-  background: rgba(255, 255, 255, 0.06);
+  background: #22262a; /* rgba(255,255,255,0.06) over #14181c */
   color: #e5e7eb;
   border-color: rgba(255, 255, 255, 0.06);
 }
@@ -2349,7 +2301,7 @@ body {
 }
 
 .selected-clear {
-  background: rgba(255, 255, 255, 0.06);
+  background: #22262a; /* rgba(255,255,255,0.06) over #14181c */
   color: #ff8000;
   border: 1px solid rgba(255, 128, 0, 0.2);
 }
@@ -2485,7 +2437,7 @@ body {
   margin: 0.21rem;
   border-radius: 13px;
   border: 1px solid;
-  background: rgba(255, 255, 255, 0.08);
+  background: #272a2e; /* rgba(255,255,255,0.08) over #14181c */
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: inline-block;
@@ -2582,7 +2534,7 @@ body {
   gap: 0.25rem;
   margin-top: 0.5rem;
   padding: 0.3rem 0.5rem;
-  background: rgba(0, 212, 255, 0.15);
+  background: #11343e; /* rgba(0,212,255,0.15) over #14181c */
   border-radius: 6px;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -2731,11 +2683,6 @@ body {
 
 /* Extra responsive rules for very narrow screens */
 @media (max-width: 480px) {
-  .page-header h2 {
-    font-size: 1.25rem;
-    gap: 0.2rem;
-  }
-
   .movie-count {
     font-size: 1.8rem;
   }
@@ -2986,6 +2933,7 @@ body {
 
   .page-header h2 {
     font-size: 1.3rem;
+    gap: 0.2rem;
   }
 
   .empty-state {
