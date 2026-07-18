@@ -1407,8 +1407,6 @@ body {
   border-radius: 12px;
   margin: 0 auto;
   max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .empty-state-icon {
@@ -1903,7 +1901,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 120px;
-  min-width: 400px;
+  min-width: min(400px, 100%);
   width: 100%;
 }
 
