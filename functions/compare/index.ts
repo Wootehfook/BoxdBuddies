@@ -211,9 +211,11 @@ function findCommonMovies(
 // AI Generated: GitHub Copilot - 2025-08-29T12:00:00Z
 // Performance Optimization: Parallel Processing - Enhanced TMDB data processing with batch queries and concurrency control
 
-// Deterministic fallback id derived from title+year so that a movie without a
-// TMDB match keeps a stable id across requests (stable React keys, no random
-// collisions). Kept in the 900000+ range to avoid clashing with real TMDB ids.
+// Deterministic fallback id derived from title+year so a movie without a TMDB
+// match keeps the same id across requests (stable React keys, unlike the old
+// Math.random ids). This is best-effort, not collision-proof: the 100k hash
+// space can collide and the 900000+ offset only reduces — does not eliminate —
+// overlap with real TMDB ids.
 function generateFallbackId(title: string, year: number): number {
   let h = 0;
   const s = `${title.toLowerCase()}-${year}`;
