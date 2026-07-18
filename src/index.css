@@ -552,6 +552,9 @@ body {
 
 .btn-primary:disabled {
   background: linear-gradient(135deg, #666 0%, #555 100%);
+  /* Override the dark ink used on the enabled orange CTA; on the gray
+     disabled gradient light text keeps contrast readable (>=4.5:1). */
+  color: #fff;
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
