@@ -742,7 +742,6 @@ body {
   transform: translateX(-50%);
   white-space: nowrap;
   z-index: 10;
-  flex: 1;
 }
 
 .page-header h2 .movie-count {
