@@ -3,7 +3,7 @@
 # Usage: source this file to set up GPG environment
 
 # Check if GPG_PASSPHRASE is set
-if [ -z "$GPG_PASSPHRASE" ]; then
+if [[ -z "$GPG_PASSPHRASE" ]]; then
     echo "⚠️  GPG_PASSPHRASE environment variable not set"
     echo "To set it securely:"
     echo "export GPG_PASSPHRASE='your-passphrase-here'"
@@ -18,9 +18,7 @@ export GNUPGHOME=${GNUPGHOME:-~/.gnupg}
 
 # Test GPG signing
 echo "Testing GPG signing..."
-echo "test" | gpg --batch --passphrase "$GPG_PASSPHRASE" --pinentry-mode loopback --clearsign --local-user wootehfook@gmail.com > /dev/null 2>&1
-
-if [ $? -eq 0 ]; then
+if echo "test" | gpg --batch --passphrase "$GPG_PASSPHRASE" --pinentry-mode loopback --clearsign --local-user wootehfook@gmail.com > /dev/null 2>&1; then
     echo "✅ GPG signing configured successfully"
     echo "🔐 Passphrase cached for this session"
 else
