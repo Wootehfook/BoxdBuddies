@@ -4,6 +4,13 @@
 import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
 
+// Avoid "[object Object]" when logging non-Error values
+function stringifyError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object") return JSON.stringify(error ?? "");
+  return String(error ?? "");
+}
+
 // Structured logging utility for production
 const logger = {
   info: (message: string, meta?: unknown) => {
@@ -22,7 +29,7 @@ const logger = {
       JSON.stringify({
         level: "error",
         message,
-        error: error instanceof Error ? error.message : String(error ?? ""),
+        error: stringifyError(error),
         timestamp: new Date().toISOString(),
       })
     );
@@ -94,10 +101,10 @@ function decodeHTMLEntities(text: string): string {
     (entity) => entityMap[entity] || entity
   );
   decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
-    String.fromCharCode(parseInt(hex, 16))
+    String.fromCodePoint(Number.parseInt(hex, 16))
   );
   decoded = decoded.replace(/&#(\d+);/g, (_, dec) =>
-    String.fromCharCode(parseInt(dec, 10))
+    String.fromCodePoint(Number.parseInt(dec, 10))
   );
   return decoded;
 }
@@ -123,7 +130,9 @@ export function normalizeTitleForSearch(text: string): {
   // followed (possibly after 'amp;' and whitespace) by a '#'.
   s = s.replace(/&(?:amp;)?\s*(?=#)/gi, "");
   // Remove spaces before apostrophes produced by patterns like " &#039;s" -> "'s"
-  s = s.replace(/\s+'+/g, "'");
+  // Anchored on (^|\S) so the whitespace run can only match from its start,
+  // which keeps the regex linear (sonar typescript:S8786).
+  s = s.replace(/(^|\S)\s+'+/g, "$1'");
   s = s.replace(/\s+/g, " ").trim();
   const stripped = s.replace(/'+/g, "");
   return { normalized: s, stripped };
@@ -139,9 +148,16 @@ function parseLiContent(liContent: string): LetterboxdMovie | null {
   const slug = slugMatch ? slugMatch[1] : "";
   const titleWithYear = imgAltMatch ? imgAltMatch[1] : "";
   if (!titleWithYear) return null;
-  const yearRe = /^(.+?)\s+(\d{4})$/;
-  const ym = yearRe.exec(titleWithYear);
-  if (ym) return { title: ym[1].trim(), year: parseInt(ym[2], 10), slug };
+  // Check for a trailing " YYYY" without a backtracking-heavy regex
+  const yearText = titleWithYear.slice(-4);
+  const separator = titleWithYear.slice(-5, -4);
+  if (/^\d{4}$/.test(yearText) && /\s/.test(separator)) {
+    return {
+      title: titleWithYear.slice(0, -5).trim(),
+      year: Number.parseInt(yearText, 10),
+      slug,
+    };
+  }
   // If no year is present, still return the title (year 0)
   return { title: titleWithYear.trim(), year: 0, slug };
 }
@@ -161,27 +177,39 @@ function extractMoviesFromHtml(html: string): LetterboxdMovie[] {
   const safeHtml =
     html.length > MAX_HTML_LENGTH ? html.slice(0, MAX_HTML_LENGTH) : html;
 
-  let pos = 0;
   const lc = safeHtml.toLowerCase();
-  while (true) {
-    const liStart = lc.indexOf("<li", pos);
-    if (liStart === -1) break;
-    const liOpenEnd = lc.indexOf(">", liStart + 3);
-    if (liOpenEnd === -1) break;
-    const liTag = safeHtml.slice(liStart, liOpenEnd + 1);
-    if (/class=["'][^"']*poster-container[^"']*["']/.test(liTag)) {
-      // find the end of this li by searching for </li> from liOpenEnd
-      const liClose = lc.indexOf("</li>", liOpenEnd + 1);
-      const contentEnd = liClose !== -1 ? liClose : liOpenEnd + 1;
-      const liContent = safeHtml.slice(liOpenEnd + 1, contentEnd);
-      const movie = parseLiContent(liContent);
-      if (movie) pageMovies.push(movie);
-      pos = contentEnd + 5; // move past </li>
-    } else {
-      pos = liOpenEnd + 1;
-    }
+  let pos = 0;
+  while (pos !== -1) {
+    pos = collectNextPosterMovie(safeHtml, lc, pos, pageMovies);
   }
   return pageMovies;
+}
+
+/**
+ * Scan for the next <li> from `pos`; when it is a poster-container block,
+ * parse it into `out`. Returns the next scan position, or -1 when done.
+ */
+function collectNextPosterMovie(
+  safeHtml: string,
+  lc: string,
+  pos: number,
+  out: LetterboxdMovie[]
+): number {
+  const liStart = lc.indexOf("<li", pos);
+  if (liStart === -1) return -1;
+  const liOpenEnd = lc.indexOf(">", liStart + 3);
+  if (liOpenEnd === -1) return -1;
+  const liTag = safeHtml.slice(liStart, liOpenEnd + 1);
+  if (!/class=["'][^"']*poster-container[^"']*["']/.test(liTag)) {
+    return liOpenEnd + 1;
+  }
+  // find the end of this li by searching for </li> from liOpenEnd
+  const liClose = lc.indexOf("</li>", liOpenEnd + 1);
+  const contentEnd = liClose !== -1 ? liClose : liOpenEnd + 1;
+  const liContent = safeHtml.slice(liOpenEnd + 1, contentEnd);
+  const movie = parseLiContent(liContent);
+  if (movie) out.push(movie);
+  return contentEnd + 5; // move past </li>
 }
 
 async function scrapeLetterboxdWatchlist(
@@ -267,7 +295,8 @@ async function enhanceWithTMDBData(
   const generateFallbackId = (t: string, y: number) => {
     let h = 0;
     const s = `${t.toLowerCase()}-${y}`;
-    for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+    for (let i = 0; i < s.length; i++)
+      h = (h << 5) - h + (s.codePointAt(i) ?? 0);
     return Math.abs(h % 100000) + 900000;
   };
 
@@ -358,7 +387,7 @@ async function enhanceWithTMDBData(
   async function dbFindTokenizedLike(title: string) {
     try {
       const tokens = title
-        .replace(/["'()\[\].,:;!?#\-]/g, " ")
+        .replace(/["'()[\].,:;!?#-]/g, " ")
         .split(/\s+/)
         .filter(Boolean)
         .map((t) => t.trim());
@@ -403,6 +432,67 @@ async function enhanceWithTMDBData(
     };
   }
 
+  // Derive a title-cased search title from the Letterboxd slug when it
+  // differs from the normalized display title
+  function deriveSearchTitle(slug: string, normalized: string): string {
+    if (!slug) return normalized;
+    const slugTitle = slug
+      .replace(/-\d{4}$/, "")
+      .split("-")
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+    if (slugTitle && slugTitle.toLowerCase() !== normalized.toLowerCase())
+      return slugTitle;
+    return normalized;
+  }
+
+  // Cascade of year-constrained lookups, cheapest/most-precise first
+  async function findYearConstrainedMatch(
+    normalized: string,
+    stripped: string,
+    searchTitle: string,
+    year: number
+  ) {
+    let result = await dbFindExact(searchTitle, year);
+    if (!result?.results?.length && stripped)
+      result = await dbFindStripped(stripped, year);
+    if (!result?.results?.length && searchTitle !== normalized)
+      result = await dbFindExact(normalized, year);
+    if (!result?.results?.length && searchTitle)
+      result = await dbFindLike(searchTitle);
+    // Try tokenized LIKE which requires all tokens to match
+    if (!result?.results?.length && searchTitle)
+      result = await dbFindTokenizedLike(searchTitle);
+    return result;
+  }
+
+  // As a last resort, try lookups without constraining by year
+  async function findNoYearMatch(stripped: string, searchTitle: string) {
+    if (stripped) {
+      const noYearStripped = await dbFindStripped(stripped, 0);
+      if (noYearStripped?.results?.length) return noYearStripped;
+    }
+    if (searchTitle) {
+      const noYearExact = await dbFindExact(searchTitle, 0);
+      if (noYearExact?.results?.length) return noYearExact;
+    }
+    return null;
+  }
+
+  function buildFallbackMovie(
+    title: string,
+    movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
+  ): Movie {
+    return {
+      id: generateFallbackId(title, movie.year),
+      title,
+      year: movie.year,
+      letterboxdSlug: movie.slug,
+      friendCount: movie.friendCount,
+      friendList: movie.friendList,
+    };
+  }
+
   async function resolveMovie(
     movie: LetterboxdMovie & { friendCount: number; friendList: string[] }
   ): Promise<Movie> {
@@ -412,66 +502,37 @@ async function enhanceWithTMDBData(
       if (stripped) {
         const strippedResult = await dbFindStripped(stripped, movie.year);
         if (strippedResult?.results?.length)
-          return buildMovieFromRow(strippedResult.results[0] as unknown as TmdbRow, movie);
+          return buildMovieFromRow(
+            strippedResult.results[0] as unknown as TmdbRow,
+            movie
+          );
       }
 
-      let searchTitle = normalized;
-      if (movie.slug) {
-        const slugTitle = movie.slug
-          .replace(/-\d{4}$/, "")
-          .split("-")
-          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-          .join(" ");
-        if (slugTitle && slugTitle.toLowerCase() !== normalized.toLowerCase())
-          searchTitle = slugTitle;
-      }
+      const searchTitle = deriveSearchTitle(movie.slug, normalized);
 
-      let result = await dbFindExact(searchTitle, movie.year);
-      if (!result?.results?.length && stripped)
-        result = await dbFindStripped(stripped, movie.year);
-      if (!result?.results?.length && searchTitle !== normalized)
-        result = await dbFindExact(normalized, movie.year);
-      if (!result?.results?.length && searchTitle)
-        result = await dbFindLike(searchTitle);
-
-      // Try tokenized LIKE which requires all tokens to match
-      if (!result?.results?.length && searchTitle)
-        result = await dbFindTokenizedLike(searchTitle);
-
-      // As a last resort, try lookups without constraining by year
-      if (!result?.results?.length && stripped) {
-        const noYearStripped = await dbFindStripped(stripped, 0);
-        if (noYearStripped?.results?.length) result = noYearStripped;
-      }
-      if (!result?.results?.length && searchTitle) {
-        const noYearExact = await dbFindExact(searchTitle, 0);
-        if (noYearExact?.results?.length) result = noYearExact;
+      let result = await findYearConstrainedMatch(
+        normalized,
+        stripped,
+        searchTitle,
+        movie.year
+      );
+      if (!result?.results?.length) {
+        result = (await findNoYearMatch(stripped, searchTitle)) ?? result;
       }
 
       if (result?.results?.length)
-        return buildMovieFromRow(result.results[0] as unknown as TmdbRow, movie);
+        return buildMovieFromRow(
+          result.results[0] as unknown as TmdbRow,
+          movie
+        );
 
-      return {
-        id: generateFallbackId(normalized, movie.year),
-        title: normalized,
-        year: movie.year,
-        letterboxdSlug: movie.slug,
-        friendCount: movie.friendCount,
-        friendList: movie.friendList,
-      };
+      return buildFallbackMovie(normalized, movie);
     } catch (e) {
       debugLog(env, `Enhance error for ${movie.title}: ${String(e)}`);
       const { normalized: fallbackTitle } = normalizeTitleForSearch(
         movie.title
       );
-      return {
-        id: generateFallbackId(fallbackTitle, movie.year),
-        title: fallbackTitle,
-        year: movie.year,
-        letterboxdSlug: movie.slug,
-        friendCount: movie.friendCount,
-        friendList: movie.friendList,
-      };
+      return buildFallbackMovie(fallbackTitle, movie);
     }
   }
 
@@ -521,11 +582,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     logger.info("commonMovies count", { count: commonMovies.length });
     const enhanced = await enhanceWithTMDBData(commonMovies, env);
 
-    const moviesWithFilteredFriends = enhanced.map((m) => ({
-      ...m,
-      friendList: Array.from(new Set(m.friendList)),
-      friendCount: Array.from(new Set(m.friendList)).length,
-    }));
+    const moviesWithFilteredFriends = enhanced.map((m) => {
+      const uniqueFriends = new Set(m.friendList);
+      return {
+        ...m,
+        friendList: [...uniqueFriends],
+        friendCount: uniqueFriends.size,
+      };
+    });
     const moviesWithMultipleFriends = moviesWithFilteredFriends.filter(
       (m) => m.friendCount >= 2
     );

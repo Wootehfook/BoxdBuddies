@@ -50,7 +50,7 @@ async function getWatchlist(
     .bind(cacheKey)
     .first();
 
-  if (cached && cached.data) {
+  if (cached?.data) {
     if (countOnly) {
       return Response.json({ count: cached.item_count });
     }
@@ -108,11 +108,11 @@ async function getWatchlistCount(username: string): Promise<number> {
     const html = await response.text();
 
     // Look for pagination info or count
-    const countMatch = html.match(
-      /Showing [\d,]+ to [\d,]+ of ([\d,]+) entries/
+    const countMatch = /Showing [\d,]+ to [\d,]+ of ([\d,]+) entries/.exec(
+      html
     );
     if (countMatch) {
-      return parseInt(countMatch[1].replace(/,/g, ""));
+      return Number.parseInt(countMatch[1].replaceAll(",", ""), 10);
     }
 
     // Fallback: count movie elements on first page
@@ -150,9 +150,11 @@ async function scrapeWatchlist(username: string): Promise<MovieData[]> {
       const [, slug, title] = match;
 
       // Extract year from title if present
-      const yearMatch = title.match(/\((\d{4})\)$/);
-      const cleanTitle = title.replace(/\s*\(\d{4}\)$/, "");
-      const year = yearMatch ? parseInt(yearMatch[1]) : null;
+      const yearMatch = /\((\d{4})\)$/.exec(title);
+      const cleanTitle = yearMatch
+        ? title.slice(0, yearMatch.index).trimEnd()
+        : title;
+      const year = yearMatch ? Number.parseInt(yearMatch[1], 10) : null;
 
       movies.push({
         letterboxd_slug: slug,
@@ -183,7 +185,7 @@ async function getFriends(env: CacheEnv, username: string) {
     .bind(cacheKey)
     .first();
 
-  if (cached && cached.data) {
+  if (cached?.data) {
     return Response.json({
       friends: JSON.parse(cached.data as string),
       count: cached.item_count,

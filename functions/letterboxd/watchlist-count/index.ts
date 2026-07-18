@@ -5,8 +5,7 @@
  */
 
 import { debugLog } from "../../_lib/common";
-import type { D1DatabaseLike } from "../cache/index.js";
-import type { Env as CacheEnv } from "../cache/index.js";
+import type { D1DatabaseLike, Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
   username: string;
@@ -14,10 +13,22 @@ interface WatchlistCount {
   lastUpdated: number;
 }
 
-
 // Rate limiting - 1 second between requests to be respectful to Letterboxd
 let lastRequestTime = 0;
 const RATE_LIMIT_MS = 1000;
+
+const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.5",
+  "Accept-Encoding": "gzip, deflate, br",
+  DNT: "1",
+  Connection: "keep-alive",
+};
 
 async function rateLimit() {
   const now = Date.now();
@@ -30,219 +41,269 @@ async function rateLimit() {
   lastRequestTime = Date.now();
 }
 
+function parseCountText(text: string): number {
+  return Number.parseInt(text.replaceAll(",", ""), 10);
+}
+
+// Profile stats patterns, e.g. "WATCHLIST [314]"
+const PROFILE_PATTERNS = [
+  // Profile stats: "WATCHLIST [314]"
+  /<h2[^>]*>.*?WATCHLIST.*?<\/h2>\s*<a[^>]+href="\/[^/]+\/watchlist\/"[^>]*>.*?(\d+(?:,\d+)*)/is,
+  // Link with number after watchlist heading
+  /WATCHLIST<\/.*?>\s*<a[^>]+href="\/[^/]+\/watchlist\/"[^>]*>\s*(\d+(?:,\d+)*)/is,
+  // Direct link pattern: <a href="/username/watchlist/">314</a>
+  /<a[^>]+href="\/[^/]+\/watchlist\/"[^>]*>\s*(\d+(?:,\d+)*)/i,
+  // Alternative stats section layout
+  /<div[^>]*class="[^"]*statistic[^"]*"[^>]*>.*?watchlist.*?(\d+(?:,\d+)*)/is,
+];
+
+function findProfileCount(html: string): number | null {
+  for (const pattern of PROFILE_PATTERNS) {
+    const match = pattern.exec(html);
+    if (match) {
+      return parseCountText(match[1]);
+    }
+  }
+  return null;
+}
+
+// Page title / meta description / page heading - number extracted separately
+const METADATA_PATTERNS = [
+  // Page title: "Watchlist • wootehfook • Letterboxd" or "123 films • Watchlist • wootehfook"
+  /<title[^>]*>([^<]*watchlist[^<]*)<\/title>/i,
+  // Meta description with count
+  /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*watchlist[^"']*)/i,
+  // Header section - number extracted from the heading text afterwards
+  /<h1[^>]*class="[^"]*title[^"]*"[^>]*>([^<]*)<\/h1>/i,
+];
+
+function findMetadataCount(html: string): number | null {
+  for (const pattern of METADATA_PATTERNS) {
+    const match = pattern.exec(html);
+    if (match) {
+      const numberMatch = /(\d[\d,]*)/.exec(match[1]);
+      if (numberMatch) {
+        return parseCountText(numberMatch[1]);
+      }
+    }
+  }
+  return null;
+}
+
+// Find "<n> films" shortly after an anchor element (breadcrumb, page heading)
+// in two linear steps instead of one backtracking-heavy regex.
+function findNearbyFilmsCount(html: string, anchor: RegExp): number | null {
+  const anchorMatch = anchor.exec(html);
+  if (!anchorMatch) {
+    return null;
+  }
+  const start = anchorMatch.index + anchorMatch[0].length;
+  const windowText = html.slice(start, start + 2000);
+  const numberMatch = /(\d[\d,]*)\s+films?/i.exec(windowText);
+  return numberMatch ? parseCountText(numberMatch[1]) : null;
+}
+
+function findContentCount(html: string): number | null {
+  // Direct pattern in body: "123 films in watchlist"
+  const direct = /(\d[\d,]*)\s+films?\s+in\s+watchlist/i.exec(html);
+  if (direct) {
+    return parseCountText(direct[1]);
+  }
+  // Navigation breadcrumb / page heading with count
+  const anchors = [
+    /<nav[^>]*class="[^"]*breadcrumb[^"]*"[^>]*>/i,
+    /<div[^>]*class="[^"]*page-heading[^"]*"[^>]*>/i,
+  ];
+  for (const anchor of anchors) {
+    const nearby = findNearbyFilmsCount(html, anchor);
+    if (nearby !== null) {
+      return nearby;
+    }
+  }
+  // Alternative single film pattern
+  if (/1\s+film\s+in\s+watchlist/i.test(html)) {
+    return 1;
+  }
+  return null;
+}
+
+// Letterboxd often includes JSON-LD structured data
+function findJsonLdCount(html: string): number | null {
+  const jsonLdMatch =
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/is.exec(
+      html
+    );
+  if (!jsonLdMatch) {
+    return null;
+  }
+  try {
+    const jsonData = JSON.parse(jsonLdMatch[1]);
+    if (jsonData.numberOfItems || jsonData.totalCount) {
+      return jsonData.numberOfItems || jsonData.totalCount;
+    }
+  } catch {
+    // JSON parsing failed, continue with other methods
+  }
+  return null;
+}
+
+// Pagination info often reveals the total count
+function findPaginationCount(
+  html: string
+): { count: number; estimated: boolean } | null {
+  // "Page 1 of 3" / "Showing 1-72 of 123 results" - direct totals
+  const directPatterns = [
+    /page\s+\d+\s+of\s+(\d+)/i,
+    /showing\s+[\d,-]+\s+of\s+(\d[\d,]*)/i,
+  ];
+  for (const pattern of directPatterns) {
+    const match = pattern.exec(html);
+    if (match) {
+      return { count: parseCountText(match[1]), estimated: false };
+    }
+  }
+  // Estimate from last page link (assume 72 items per page, Letterboxd standard)
+  const lastPageMatch =
+    /<a[^>]+href="[^"]*page\/(\d+)"[^>]*>.*?(?:last|»|next)/i.exec(html);
+  if (lastPageMatch) {
+    return {
+      count: Number.parseInt(lastPageMatch[1], 10) * 72,
+      estimated: true,
+    };
+  }
+  return null;
+}
+
+const EMPTY_PATTERNS = [
+  /no\s+films?\s+in\s+watchlist/i,
+  /watchlist\s+is\s+empty/i,
+  /hasn't\s+added\s+any\s+films?\s+to\s+their\s+watchlist/i,
+];
+
+function isEmptyWatchlist(html: string): boolean {
+  return EMPTY_PATTERNS.some((pattern) => pattern.test(html));
+}
+
+// Count film posters in the grid as a fallback
+function countFilmPosters(html: string): number | null {
+  if (!/<ul[^>]*class="[^"]*poster-list[^"]*"[^>]*>/i.test(html)) {
+    return null;
+  }
+  const posterMatches = html.match(
+    /<li[^>]*class="[^"]*poster-container[^"]*"/gi
+  );
+  return posterMatches ? posterMatches.length : null;
+}
+
+async function fetchProfileCount(
+  username: string,
+  env?: CacheEnv
+): Promise<number | null> {
+  const profileUrl = `https://letterboxd.com/${username}/`;
+  debugLog(env, `Checking profile page for watchlist count: ${profileUrl}`);
+
+  const profileResponse = await fetch(profileUrl, {
+    headers: BROWSER_HEADERS,
+  });
+  if (!profileResponse.ok) {
+    return null;
+  }
+  return findProfileCount(await profileResponse.text());
+}
+
+// Returns the page HTML, or null when the watchlist is private / missing (404)
+async function fetchWatchlistPage(
+  username: string,
+  env?: CacheEnv
+): Promise<string | null> {
+  const watchlistUrl = `https://letterboxd.com/${username}/watchlist/`;
+  debugLog(env, `Scraping watchlist count from: ${watchlistUrl}`);
+
+  const response = await fetch(watchlistUrl, {
+    headers: BROWSER_HEADERS,
+  });
+  if (!response.ok) {
+    if (response.status === 404) {
+      debugLog(
+        env,
+        `User "${username}" watchlist not found (private or doesn't exist)`
+      );
+      return null;
+    }
+    throw new Error(`Failed to fetch watchlist page: HTTP ${response.status}`);
+  }
+  return response.text();
+}
+
 async function scrapeWatchlistCount(
   username: string,
   env?: CacheEnv
 ): Promise<number> {
   try {
     await rateLimit();
-
-    // First try the profile page which often has more reliable stats
-    const profileUrl = `https://letterboxd.com/${username}/`;
-    debugLog(env, `Checking profile page for watchlist count: ${profileUrl}`);
-
-    const profileResponse = await fetch(profileUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        DNT: "1",
-        Connection: "keep-alive",
-      },
-    });
-
-    if (profileResponse.ok) {
-      const profileHtml = await profileResponse.text();
-
-      // Look for watchlist link with count on profile page
-      const profilePatterns = [
-        // Profile stats: "WATCHLIST [314]"
-        /<h2[^>]*>.*?WATCHLIST.*?<\/h2>\s*<a[^>]+href="\/[^\/]+\/watchlist\/"[^>]*>.*?(\d+(?:,\d+)*)/is,
-        // Link with number after watchlist heading
-        /WATCHLIST<\/.*?>\s*<a[^>]+href="\/[^\/]+\/watchlist\/"[^>]*>\s*(\d+(?:,\d+)*)/is,
-        // Direct link pattern: <a href="/username/watchlist/">314</a>
-        /<a[^>]+href="\/[^\/]+\/watchlist\/"[^>]*>\s*(\d+(?:,\d+)*)/i,
-        // Alternative stats section layout
-        /<div[^>]*class="[^"]*statistic[^"]*"[^>]*>.*?watchlist.*?(\d+(?:,\d+)*)/is,
-      ];
-
-      for (const pattern of profilePatterns) {
-        const match = profileHtml.match(pattern);
-        if (match) {
-          const count = parseInt(match[1].replace(/,/g, ""));
-          debugLog(
-            env,
-            `Found watchlist count for ${username} from profile: ${count}`
-          );
-          return count;
-        }
-      }
+    const profileCount = await fetchProfileCount(username, env);
+    if (profileCount !== null) {
+      debugLog(
+        env,
+        `Found watchlist count for ${username} from profile: ${profileCount}`
+      );
+      return profileCount;
     }
 
     // Fallback to watchlist page if profile doesn't have the info
     await rateLimit();
-    const watchlistUrl = `https://letterboxd.com/${username}/watchlist/`;
-    debugLog(env, `Scraping watchlist count from: ${watchlistUrl}`);
+    const html = await fetchWatchlistPage(username, env);
+    if (html === null) {
+      return 0;
+    }
 
-    const response = await fetch(watchlistUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        DNT: "1",
-        Connection: "keep-alive",
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        debugLog(
-          env,
-          `User "${username}" watchlist not found (private or doesn't exist)`
-        );
-        return 0;
-      }
-      throw new Error(
-        `Failed to fetch watchlist page: HTTP ${response.status}`
+    const metadataCount = findMetadataCount(html);
+    if (metadataCount !== null) {
+      debugLog(
+        env,
+        `Found watchlist count for ${username} in metadata: ${metadataCount}`
       );
+      return metadataCount;
     }
 
-    const html = await response.text();
-
-    // Look for watchlist count in page metadata and headers (most efficient)
-    const countPatterns = [
-      // Page title: "Watchlist • wootehfook • Letterboxd" or "123 films • Watchlist • wootehfook"
-      /<title[^>]*>([^<]*watchlist[^<]*)<\/title>/i,
-      // Meta description with count
-      /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*watchlist[^"']*)/i,
-      // Header section with count
-      /<h1[^>]*class="[^"]*title[^"]*"[^>]*>([^<]*\d+[^<]*)<\/h1>/i,
-      // Direct pattern in body: "123 films in watchlist"
-      /(\d+(?:,\d+)*)\s+films?\s+in\s+watchlist/i,
-      // Navigation breadcrumb with count
-      /<nav[^>]*class="[^"]*breadcrumb[^"]*"[^>]*>.*?(\d+(?:,\d+)*)\s+films?/is,
-      // Page heading with count
-      /<div[^>]*class="[^"]*page-heading[^"]*"[^>]*>.*?(\d+(?:,\d+)*)\s+films?/is,
-      // Alternative single film pattern
-      /(1)\s+film\s+in\s+watchlist/i,
-    ];
-
-    // First, try to extract from page title and meta tags (most reliable)
-    for (let i = 0; i < countPatterns.length; i++) {
-      const pattern = countPatterns[i];
-      const match = html.match(pattern);
-      if (match) {
-        // For title and meta patterns, extract number from the matched text
-        if (i <= 2) {
-          const numberMatch = match[1].match(/(\d+(?:,\d+)*)/);
-          if (numberMatch) {
-            const count = parseInt(numberMatch[1].replace(/,/g, ""));
-            debugLog(
-              env,
-              `Found watchlist count for ${username} in metadata: ${count}`
-            );
-            return count;
-          }
-        } else {
-          // For direct number patterns
-          const count = parseInt(match[1].replace(/,/g, ""));
-          debugLog(
-            env,
-            `Found watchlist count for ${username} in content: ${count}`
-          );
-          return count;
-        }
-      }
-    }
-
-    // Check for JSON-LD structured data (Letterboxd often includes this)
-    const jsonLdMatch = html.match(
-      /<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/is
-    );
-    if (jsonLdMatch) {
-      try {
-        const jsonData = JSON.parse(jsonLdMatch[1]);
-        if (jsonData.numberOfItems || jsonData.totalCount) {
-          const count = jsonData.numberOfItems || jsonData.totalCount;
-          debugLog(
-            env,
-            `Found watchlist count for ${username} in JSON-LD: ${count}`
-          );
-          return count;
-        }
-      } catch {
-        // JSON parsing failed, continue with other methods
-      }
-    }
-
-    // Look for pagination info which often reveals total count
-    const paginationPatterns = [
-      // "Page 1 of 3" - multiply page size by total pages
-      /page\s+\d+\s+of\s+(\d+)/i,
-      // "Showing 1-72 of 123 results"
-      /showing\s+[\d,-]+\s+of\s+(\d+(?:,\d+)*)/i,
-      // Look for last page number to estimate total
-      /<a[^>]+href="[^"]*page\/(\d+)"[^>]*>.*?(?:last|»|next)/i,
-    ];
-
-    for (const pattern of paginationPatterns) {
-      const match = html.match(pattern);
-      if (match) {
-        if (pattern.source.includes("of")) {
-          // Direct total count
-          const count = parseInt(match[1].replace(/,/g, ""));
-          debugLog(
-            env,
-            `Found watchlist count for ${username} from pagination: ${count}`
-          );
-          return count;
-        } else {
-          // Estimate from last page (assume 72 items per page, Letterboxd standard)
-          const lastPage = parseInt(match[1]);
-          const estimatedCount = lastPage * 72;
-          debugLog(
-            env,
-            `Estimated watchlist count for ${username} from pagination: ~${estimatedCount}`
-          );
-          return estimatedCount;
-        }
-      }
-    }
-
-    // Check if the watchlist page shows "no films" or empty state
-    const emptyPatterns = [
-      /no\s+films?\s+in\s+watchlist/i,
-      /watchlist\s+is\s+empty/i,
-      /hasn't\s+added\s+any\s+films?\s+to\s+their\s+watchlist/i,
-    ];
-
-    for (const pattern of emptyPatterns) {
-      if (html.match(pattern)) {
-        debugLog(env, `Found empty watchlist for ${username}`);
-        return 0;
-      }
-    }
-
-    // If we can access the page but no clear count found, check for film grid
-    const filmGridMatch = html.match(
-      /<ul[^>]*class="[^"]*poster-list[^"]*"[^>]*>/i
-    );
-    if (filmGridMatch) {
-      // Count film posters as a fallback
-      const posterMatches = html.match(
-        /<li[^>]*class="[^"]*poster-container[^"]*"/gi
+    const contentCount = findContentCount(html);
+    if (contentCount !== null) {
+      debugLog(
+        env,
+        `Found watchlist count for ${username} in content: ${contentCount}`
       );
-      if (posterMatches) {
-        const count = posterMatches.length;
-        debugLog(env, `Counted ${count} film posters for ${username}`);
-        return count;
-      }
+      return contentCount;
+    }
+
+    const jsonLdCount = findJsonLdCount(html);
+    if (jsonLdCount !== null) {
+      debugLog(
+        env,
+        `Found watchlist count for ${username} in JSON-LD: ${jsonLdCount}`
+      );
+      return jsonLdCount;
+    }
+
+    const pagination = findPaginationCount(html);
+    if (pagination !== null) {
+      debugLog(
+        env,
+        pagination.estimated
+          ? `Estimated watchlist count for ${username} from pagination: ~${pagination.count}`
+          : `Found watchlist count for ${username} from pagination: ${pagination.count}`
+      );
+      return pagination.count;
+    }
+
+    if (isEmptyWatchlist(html)) {
+      debugLog(env, `Found empty watchlist for ${username}`);
+      return 0;
+    }
+
+    const posterCount = countFilmPosters(html);
+    if (posterCount !== null) {
+      debugLog(env, `Counted ${posterCount} film posters for ${username}`);
+      return posterCount;
     }
 
     debugLog(
@@ -254,6 +315,28 @@ async function scrapeWatchlistCount(
     console.error(`Error scraping watchlist count for ${username}:`, error);
     throw error;
   }
+}
+
+// Serve from cache when fresh, otherwise scrape and cache the result
+async function resolveWatchlistCount(
+  env: CacheEnv,
+  username: string,
+  forceRefresh: boolean
+): Promise<number> {
+  if (!forceRefresh) {
+    const cached = await getCachedWatchlistCount(env.MOVIES_DB, username);
+    if (cached && cached.lastUpdated > Date.now() - CACHE_DURATION_MS) {
+      debugLog(
+        env,
+        `Using cached watchlist count for ${username}: ${cached.count}`
+      );
+      return cached.count;
+    }
+  }
+
+  const count = await scrapeWatchlistCount(username, env);
+  await setCachedWatchlistCount(env.MOVIES_DB, username, count, env);
+  return count;
 }
 
 export async function onRequestPost(context: {
@@ -298,35 +381,10 @@ export async function onRequestPost(context: {
       }
 
       try {
-        // Check cache first unless force refresh requested
-        if (!forceRefresh) {
-          const cached = await getCachedWatchlistCount(
-            context.env.MOVIES_DB,
-            cleanUsername
-          );
-          const now = Date.now();
-          const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
-
-          if (cached && cached.lastUpdated > now - CACHE_DURATION) {
-            debugLog(
-              context.env,
-              `Using cached watchlist count for ${cleanUsername}: ${cached.count}`
-            );
-            results[cleanUsername] = cached.count;
-            continue;
-          }
-        }
-
-        // Scrape fresh count
-        const count = await scrapeWatchlistCount(cleanUsername, context.env);
-        results[cleanUsername] = count;
-
-        // Cache the result
-        await setCachedWatchlistCount(
-          context.env.MOVIES_DB,
+        results[cleanUsername] = await resolveWatchlistCount(
+          context.env,
           cleanUsername,
-          count,
-          context.env
+          forceRefresh
         );
       } catch (error) {
         const errorMessage =
@@ -376,8 +434,8 @@ async function getCachedWatchlistCount(
     const result = await database
       .prepare(
         `
-      SELECT username, watchlist_count, last_updated 
-      FROM watchlist_counts_cache 
+      SELECT username, watchlist_count, last_updated
+      FROM watchlist_counts_cache
       WHERE username = ?
     `
       )
@@ -415,8 +473,8 @@ async function setCachedWatchlistCount(
     await database
       .prepare(
         `
-      INSERT OR REPLACE INTO watchlist_counts_cache 
-      (username, watchlist_count, last_updated) 
+      INSERT OR REPLACE INTO watchlist_counts_cache
+      (username, watchlist_count, last_updated)
       VALUES (?, ?, ?)
     `
       )
