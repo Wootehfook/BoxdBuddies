@@ -138,8 +138,12 @@ function findJsonLdCount(html: string): number | null {
   }
   try {
     const jsonData = JSON.parse(jsonLdMatch[1]);
-    if (jsonData.numberOfItems || jsonData.totalCount) {
-      return jsonData.numberOfItems || jsonData.totalCount;
+    // JSON-LD may encode the count as a string ("216") or a number; coerce
+    // and reject non-finite values so a bad type never leaks into the API.
+    const raw = jsonData.numberOfItems ?? jsonData.totalCount;
+    const count = Number(raw);
+    if (Number.isFinite(count) && count >= 0) {
+      return count;
     }
   } catch {
     // JSON parsing failed, continue with other methods
@@ -147,27 +151,33 @@ function findJsonLdCount(html: string): number | null {
   return null;
 }
 
+// Letterboxd shows 72 films per watchlist page
+const ITEMS_PER_PAGE = 72;
+
 // Pagination info often reveals the total count
 function findPaginationCount(
   html: string
 ): { count: number; estimated: boolean } | null {
-  // "Page 1 of 3" / "Showing 1-72 of 123 results" - direct totals
-  const directPatterns = [
-    /page\s+\d+\s+of\s+(\d+)/i,
-    /showing\s+[\d,-]+\s+of\s+(\d[\d,]*)/i,
-  ];
-  for (const pattern of directPatterns) {
-    const match = pattern.exec(html);
-    if (match) {
-      return { count: parseCountText(match[1]), estimated: false };
-    }
+  // "Showing 1-72 of 123 results" gives a true film total
+  const totalMatch = /showing\s+[\d,-]+\s+of\s+(\d[\d,]*)/i.exec(html);
+  if (totalMatch) {
+    return { count: parseCountText(totalMatch[1]), estimated: false };
   }
-  // Estimate from last page link (assume 72 items per page, Letterboxd standard)
+  // "Page 1 of 3" gives the number of *pages*, not films — estimate the film
+  // count from the page count (assume a full last page).
+  const pageOfMatch = /page\s+\d+\s+of\s+(\d+)/i.exec(html);
+  if (pageOfMatch) {
+    return {
+      count: Number.parseInt(pageOfMatch[1], 10) * ITEMS_PER_PAGE,
+      estimated: true,
+    };
+  }
+  // Estimate from last page link (same per-page assumption)
   const lastPageMatch =
     /<a[^>]+href="[^"]*page\/(\d+)"[^>]*>.*?(?:last|»|next)/i.exec(html);
   if (lastPageMatch) {
     return {
-      count: Number.parseInt(lastPageMatch[1], 10) * 72,
+      count: Number.parseInt(lastPageMatch[1], 10) * ITEMS_PER_PAGE,
       estimated: true,
     };
   }

@@ -4,10 +4,18 @@
 import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
 
-// Avoid "[object Object]" when logging non-Error values
+// Avoid "[object Object]" when logging non-Error values. Best-effort:
+// JSON.stringify can throw on circular references or BigInt, so fall back
+// to String() in that case rather than letting the logger crash.
 function stringifyError(error: unknown): string {
   if (error instanceof Error) return error.message;
-  if (typeof error === "object") return JSON.stringify(error ?? "");
+  if (typeof error === "object" && error !== null) {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
   return String(error ?? "");
 }
 
@@ -295,8 +303,9 @@ async function enhanceWithTMDBData(
   const generateFallbackId = (t: string, y: number) => {
     let h = 0;
     const s = `${t.toLowerCase()}-${y}`;
-    for (let i = 0; i < s.length; i++)
-      h = (h << 5) - h + (s.codePointAt(i) ?? 0);
+    // Iterate by code point (for...of) so surrogate pairs contribute a single
+    // value rather than being double-counted as two UTF-16 code units.
+    for (const ch of s) h = (h << 5) - h + (ch.codePointAt(0) ?? 0);
     return Math.abs(h % 100000) + 900000;
   };
 
