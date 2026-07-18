@@ -28,12 +28,12 @@ function parseYear(date?: string | null): number {
   return m ? Number.parseInt(m[1], 10) : 0;
 }
 
-// Run a lookup query and return the first row, or null when empty
+// Run a lookup query and return the first row, or null when empty.
+// Uses .first() (each query is LIMIT 1) to avoid allocating a results array.
 async function queryFirstRow(env: Env, sql: string, binds: unknown[]) {
-  const res = await env.MOVIES_DB.prepare(sql)
+  return env.MOVIES_DB.prepare(sql)
     .bind(...binds)
-    .all();
-  return res.results && res.results.length > 0 ? res.results[0] : null;
+    .first();
 }
 
 function scoreCandidate(

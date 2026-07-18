@@ -172,9 +172,11 @@ function findPaginationCount(
       estimated: true,
     };
   }
-  // Estimate from last page link (same per-page assumption)
+  // Estimate from an explicit last-page link (same per-page assumption).
+  // Restricted to "last"/"»" — a "next" link points one page ahead, not to
+  // the final page, so including it would under-estimate the total.
   const lastPageMatch =
-    /<a[^>]+href="[^"]*page\/(\d+)"[^>]*>.*?(?:last|»|next)/i.exec(html);
+    /<a[^>]+href="[^"]*page\/(\d+)"[^>]*>.*?(?:last|»)/i.exec(html);
   if (lastPageMatch) {
     return {
       count: Number.parseInt(lastPageMatch[1], 10) * ITEMS_PER_PAGE,
