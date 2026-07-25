@@ -90,6 +90,18 @@ interface TmdbRow {
   genres?: unknown;
 }
 
+// Convert a numeric code point to its character, tolerating out-of-range or
+// non-numeric input. String.fromCodePoint throws a RangeError for values
+// outside 0..0x10FFFF (or NaN) — this input is scraped/untrusted HTML, so an
+// oversized entity like "&#x110000;" must not crash the request. Fall back
+// to the original matched text when the value is invalid.
+function codePointToChar(codePoint: number, original: string): string {
+  if (Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff) {
+    return String.fromCodePoint(codePoint);
+  }
+  return original;
+}
+
 function decodeHTMLEntities(text: string): string {
   const entityMap: Record<string, string> = {
     "&amp;": "&",
@@ -108,11 +120,11 @@ function decodeHTMLEntities(text: string): string {
     /&[a-zA-Z][a-zA-Z0-9]*;/g,
     (entity) => entityMap[entity] || entity
   );
-  decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) =>
-    String.fromCodePoint(Number.parseInt(hex, 16))
+  decoded = decoded.replace(/&#x([0-9A-Fa-f]+);/g, (m, hex) =>
+    codePointToChar(Number.parseInt(hex, 16), m)
   );
-  decoded = decoded.replace(/&#(\d+);/g, (_, dec) =>
-    String.fromCodePoint(Number.parseInt(dec, 10))
+  decoded = decoded.replace(/&#(\d+);/g, (m, dec) =>
+    codePointToChar(Number.parseInt(dec, 10), m)
   );
   return decoded;
 }
