@@ -303,14 +303,21 @@ body {
   color: #ffb86b;
 }
 
-/* Modal backdrop */
-.modal-backdrop {
+/* Modal backdrop button — click-outside-to-close hit target and darkening
+   overlay rendered behind the <dialog>. It's a sibling of .modal (not a
+   wrapper), so centering is left to the dialog's native showModal()
+   behavior; this element only needs to cover the viewport and darken it.
+   Rendered as a <button> for accessibility, so reset the default button
+   chrome (border/padding/margin/font) that would otherwise show through. */
+.modal-backdrop-button {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   z-index: 1000;
 }
 
@@ -723,7 +730,6 @@ body {
   margin-bottom: 2rem;
   position: relative;
   gap: 1rem;
-  padding-bottom: 1rem;
 }
 
 .page-header h2 {
