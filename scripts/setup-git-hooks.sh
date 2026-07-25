@@ -29,8 +29,8 @@ HOOKS_DIR="$REPO_ROOT/.husky"
 echo "Setting up Git hooks for Boxdbud.io..."
 
 # Ensure .husky directory exists
-if [ ! -d "$HOOKS_DIR" ]; then
-  echo "Error: .husky directory not found. Run 'npm install' first."
+if [[ ! -d "$HOOKS_DIR" ]]; then
+  echo "Error: .husky directory not found. Run 'npm install' first." >&2
   exit 1
 fi
 
@@ -38,10 +38,13 @@ fi
 PRE_PUSH_HOOK="$HOOKS_DIR/pre-push"
 
 # Backup existing hook if it exists and is different
-if [ -f "$PRE_PUSH_HOOK" ]; then
+if [[ -f "$PRE_PUSH_HOOK" ]]; then
   echo "⚠️  Pre-push hook already exists. Creating backup..."
-  cp "$PRE_PUSH_HOOK" "$PRE_PUSH_HOOK.backup.$(date +%Y%m%d_%H%M%S)"
-  echo "✅ Backup created: $PRE_PUSH_HOOK.backup.$(date +%Y%m%d_%H%M%S)"
+  # Compute the backup path once so the echoed name matches the file created
+  # (a second `date` call could produce a different timestamp).
+  backup_path="$PRE_PUSH_HOOK.backup.$(date +%Y%m%d_%H%M%S)"
+  cp "$PRE_PUSH_HOOK" "$backup_path"
+  echo "✅ Backup created: $backup_path"
 fi
 
 cat > "$PRE_PUSH_HOOK" << 'EOF'

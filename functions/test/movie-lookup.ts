@@ -25,7 +25,49 @@ function normalizeTitle(t: string) {
 function parseYear(date?: string | null): number {
   if (!date) return 0;
   const m = /^(\d{4})/.exec(date);
-  return m ? parseInt(m[1]) : 0;
+  return m ? Number.parseInt(m[1], 10) : 0;
+}
+
+// Run a lookup query and return the first row, or null when empty.
+// Uses .first() (each query is LIMIT 1) to avoid allocating a results array.
+async function queryFirstRow(env: Env, sql: string, binds: unknown[]) {
+  return env.MOVIES_DB.prepare(sql)
+    .bind(...binds)
+    .first();
+}
+
+function scoreCandidate(
+  c: TmdbLookupRow,
+  want: string,
+  wantYear: number
+): number {
+  const ct = normalizeTitle(String(c.title || c.original_title || ""));
+  const cy = Number(c.year || parseYear(c.release_date) || 0);
+  let score = 0;
+  if (ct === want) score += 5;
+  if (!score && ct.includes(want)) score += 2;
+  if (wantYear && cy && Math.abs(cy - wantYear) <= 1) score += 2;
+  score += Number(c.popularity || 0) / 100;
+  return score;
+}
+
+function pickBestCandidate(
+  candidates: TmdbLookupRow[],
+  title: string,
+  year: number
+): TmdbLookupRow | null {
+  const want = normalizeTitle(title);
+  const wantYear = year || 0;
+  let best: TmdbLookupRow | null = null;
+  let bestScore = -Infinity;
+  for (const c of candidates) {
+    const score = scoreCandidate(c, want, wantYear);
+    if (score > bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return best;
 }
 
 async function findTmdbRowForMovie(title: string, year: number, env: Env) {
@@ -33,42 +75,42 @@ async function findTmdbRowForMovie(title: string, year: number, env: Env) {
   const t = title;
 
   // 1) Exact (CI) with year tolerance
-  let res = await env.MOVIES_DB.prepare(
+  const exactWithYear = await queryFirstRow(
+    env,
     `SELECT * FROM tmdb_movies
      WHERE (LOWER(title) = LOWER(?) OR LOWER(original_title) = LOWER(?))
        AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
      ORDER BY popularity DESC
-     LIMIT 1`
-  )
-    .bind(t, t, y, y)
-    .all();
-  if (res.results && res.results.length > 0) return res.results[0];
+     LIMIT 1`,
+    [t, t, y, y]
+  );
+  if (exactWithYear) return exactWithYear;
 
   // 2) LIKE with year tolerance
-  res = await env.MOVIES_DB.prepare(
+  const likeWithYear = await queryFirstRow(
+    env,
     `SELECT * FROM tmdb_movies
      WHERE (title LIKE ? OR original_title LIKE ?)
        AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
      ORDER BY popularity DESC
-     LIMIT 1`
-  )
-    .bind(`%${t}%`, `%${t}%`, y, y)
-    .all();
-  if (res.results && res.results.length > 0) return res.results[0];
+     LIMIT 1`,
+    [`%${t}%`, `%${t}%`, y, y]
+  );
+  if (likeWithYear) return likeWithYear;
 
   // 3) Exact without year
-  res = await env.MOVIES_DB.prepare(
+  const exactNoYear = await queryFirstRow(
+    env,
     `SELECT * FROM tmdb_movies
      WHERE LOWER(title) = LOWER(?) OR LOWER(original_title) = LOWER(?)
      ORDER BY popularity DESC
-     LIMIT 1`
-  )
-    .bind(t, t)
-    .all();
-  if (res.results && res.results.length > 0) return res.results[0];
+     LIMIT 1`,
+    [t, t]
+  );
+  if (exactNoYear) return exactNoYear;
 
   // 4) LIKE without year + simple scoring
-  res = await env.MOVIES_DB.prepare(
+  const res = await env.MOVIES_DB.prepare(
     `SELECT * FROM tmdb_movies
      WHERE title LIKE ? OR original_title LIKE ?
      ORDER BY popularity DESC
@@ -76,29 +118,7 @@ async function findTmdbRowForMovie(title: string, year: number, env: Env) {
   )
     .bind(`%${t}%`, `%${t}%`)
     .all();
-  const candidates = (res.results || []) as TmdbLookupRow[];
-  if (candidates.length > 0) {
-    const want = normalizeTitle(t);
-    const wantYear = y || 0;
-    let best: TmdbLookupRow | null = null;
-    let bestScore = -Infinity;
-    for (const c of candidates) {
-      const ct = normalizeTitle(String(c.title || c.original_title || ""));
-      const cy = Number(c.year || parseYear(c.release_date) || 0);
-      let score = 0;
-      if (ct === want) score += 5;
-      if (!score && ct.includes(want)) score += 2;
-      if (wantYear && cy && Math.abs(cy - wantYear) <= 1) score += 2;
-      score += Number(c.popularity || 0) / 100;
-      if (score > bestScore) {
-        bestScore = score;
-        best = c;
-      }
-    }
-    if (best) return best;
-  }
-
-  return null;
+  return pickBestCandidate((res.results || []) as TmdbLookupRow[], t, y);
 }
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
