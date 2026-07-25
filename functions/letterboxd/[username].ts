@@ -153,10 +153,10 @@ async function scrapeUserWatchlist(
     for (const match of movieMatches) {
       const slug = match[1];
       const title = match[2]
-        .replace(/&quot;/g, '"')
-        .replace(/&#x27;/g, "'")
-        .replace(/&amp;/g, "&");
-      const year = parseInt(match[3]);
+        .replaceAll("&quot;", '"')
+        .replaceAll("&#x27;", "'")
+        .replaceAll("&amp;", "&");
+      const year = Number.parseInt(match[3], 10);
 
       movies.push({
         title,

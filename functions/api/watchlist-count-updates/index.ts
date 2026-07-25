@@ -98,21 +98,11 @@ function checkRateLimit(
   return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - current.count };
 }
 
-// Validate payload structure and values
-function validatePayload(payload: unknown): {
-  valid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  if (typeof payload !== "object" || payload === null) {
-    errors.push("Payload must be a JSON object");
-    return { valid: false, errors };
-  }
-
-  const candidate = payload as Partial<UpdatePayload>;
-
-  // Required fields
+// Required fields: username and count
+function collectRequiredFieldErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
   if (typeof candidate.username !== "string" || !candidate.username.trim()) {
     errors.push("username is required and must be a non-empty string");
   }
@@ -124,8 +114,13 @@ function validatePayload(payload: unknown): {
   } else if (!Number.isInteger(candidate.count)) {
     errors.push("count must be an integer");
   }
+}
 
-  // Optional fields validation
+// Optional fields: etag, lastFetchedAt, source
+function collectOptionalFieldErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
   if (candidate.etag !== undefined && typeof candidate.etag !== "string") {
     errors.push("etag must be a string if provided");
   }
@@ -148,17 +143,41 @@ function validatePayload(payload: unknown): {
   if (candidate.source !== undefined && candidate.source !== "client") {
     errors.push('source must be "client" if provided');
   }
+}
 
-  // Username sanitization
-  if (typeof candidate.username === "string") {
-    const username = candidate.username.trim();
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      errors.push("username contains invalid characters");
-    }
-    if (username.length > 50) {
-      errors.push("username is too long (max 50 characters)");
-    }
+// Username sanitization
+function collectUsernameFormatErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
+  if (typeof candidate.username !== "string") {
+    return;
   }
+  const username = candidate.username.trim();
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    errors.push("username contains invalid characters");
+  }
+  if (username.length > 50) {
+    errors.push("username is too long (max 50 characters)");
+  }
+}
+
+// Validate payload structure and values
+function validatePayload(payload: unknown): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (typeof payload !== "object" || payload === null) {
+    errors.push("Payload must be a JSON object");
+    return { valid: false, errors };
+  }
+
+  const candidate = payload as Partial<UpdatePayload>;
+  collectRequiredFieldErrors(candidate, errors);
+  collectOptionalFieldErrors(candidate, errors);
+  collectUsernameFormatErrors(candidate, errors);
 
   return { valid: errors.length === 0, errors };
 }
