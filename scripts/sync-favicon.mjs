@@ -1,4 +1,4 @@
-// AI Generated: GitHub Copilot (Claude Opus 4.8) - 2026-07-18
+// AI Generated: Claude Opus 4.8 - 2026-07-18
 // Copies a 128x128 PNG variant of BBud.png as the app favicon.
 // Requires: @tauri-apps/cli installed (icons already generated) and sharp (optional).
 
