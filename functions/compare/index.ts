@@ -1,4 +1,4 @@
-// AI Generated: GitHub Copilot (Claude Opus 4.8) - 2026-07-18
+// AI Generated: Claude Opus 4.8 - 2026-07-18
 // Letterboxd Watchlist Comparison API
 
 import { debugLog, parseGenresToNames } from "../_lib/common";
