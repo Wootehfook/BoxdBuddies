@@ -48,7 +48,7 @@ interface ComparisonResult {
 }
 
 export class CloudflareBackend {
-  private static BASE_URL = import.meta.env.PROD
+  private static readonly BASE_URL = import.meta.env.PROD
     ? "https://boxdbud.io/api"
     : "http://localhost:8788/api";
 

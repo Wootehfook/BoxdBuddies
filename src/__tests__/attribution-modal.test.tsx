@@ -36,7 +36,7 @@ describe("Attribution modal", () => {
       const headings = screen.queryAllByRole("heading", {
         name: /data sources & attribution/i,
       });
-      expect(headings.length).toBe(0);
+      expect(headings).toHaveLength(0);
     });
   });
 });

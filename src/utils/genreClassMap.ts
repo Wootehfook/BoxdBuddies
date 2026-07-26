@@ -98,10 +98,12 @@ export function getGenreClassSlug(genre: string): string {
   const key = genre.toLowerCase().trim();
   if (MAP[key]) return MAP[key];
   // Fallback slugify: letters/numbers only, collapse repeated separators
+  // After collapsing runs above, at most one leading/trailing dash remains,
+  // so a single-dash trim is equivalent and linear (sonar typescript:S8786)
   const slug = key
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^-|-$/g, "");
   return slug || "default";
 }
 

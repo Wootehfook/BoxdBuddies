@@ -28,7 +28,6 @@ import { FEATURE_WATCHLIST_FETCHER } from "../config/featureFlags";
 
 // Add global declarations for web environment
 declare const fetch: typeof globalThis.fetch;
-declare const navigator: typeof globalThis.navigator;
 
 // Minimal type for objects that expose add/remove event listener methods
 interface WindowEventTarget {
@@ -227,7 +226,7 @@ class WatchlistFetcher {
 
     try {
       // Check if we're offline
-      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      if (globalThis.navigator?.onLine === false) {
         logger.debug("Offline detected, queuing usernames for later");
         this.offlineQueue.push(...usernames);
         return;
@@ -313,7 +312,7 @@ class WatchlistFetcher {
         }
       } else if (typeof newCount === "number") {
         // Check if count actually changed
-        const countChanged = !currentEntry || currentEntry.count !== newCount;
+        const countChanged = currentEntry?.count !== newCount;
 
         if (countChanged) {
           // Count changed - update everything
