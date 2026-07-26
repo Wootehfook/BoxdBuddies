@@ -29,7 +29,7 @@ export function SetupPage({
   isLoadingFriends,
   friendsLoadingProgress,
   error,
-}: SetupPageProps) {
+}: Readonly<SetupPageProps>) {
   return (
     <section className="page setup-page">
       <div className="page-content">
@@ -70,6 +70,7 @@ export function SetupPage({
           )}
 
           <button
+            type="button"
             onClick={onSetup}
             disabled={isLoading || !username.trim()}
             className="btn btn-primary"
