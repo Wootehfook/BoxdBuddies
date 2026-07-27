@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /* eslint-env node */
-// AI Generated: GitHub Copilot - 2025-08-08
+// AI Generated: Claude Opus 4.8 - 2026-07-18
 // Ensures SECURITY.md Supported Versions matches the current major version in package.json
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function fail(msg, code = 1) {
   console.error(msg);
@@ -39,9 +39,16 @@ if (!match) {
 const major = match[1];
 
 // Be tolerant of table spacing by normalizing pipe spacing: "| 1.0.x |" -> "|1.0.x|"
+// split/trim instead of /\s*\|\s*/g, which backtracks super-linearly (sonar S8786)
 const normalized = sec
   .split('\n')
-  .map((line) => line.replace(/\s*\|\s*/g, '|').trim())
+  .map((line) =>
+    line
+      .split('|')
+      .map((cell) => cell.trim())
+      .join('|')
+      .trim()
+  )
   .join('\n');
 
 if (!normalized.includes(`|${major}.0.x|`)) {

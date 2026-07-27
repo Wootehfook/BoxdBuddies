@@ -536,6 +536,7 @@ function App() {
       <footer className="attribution">
         <div className="attribution-center">
           <button
+            type="button"
             className="attribution-link"
             onClick={() => setShowAttribution(true)}
             aria-haspopup="dialog"
@@ -547,6 +548,7 @@ function App() {
         {showAttribution && (
           <>
             <button
+              type="button"
               className="modal-backdrop-button"
               aria-label="Close data sources and attribution dialog"
               onClick={() => setShowAttribution(false)}
@@ -628,6 +630,7 @@ function App() {
               </div>
               <div className="modal-actions">
                 <button
+                  type="button"
                   onClick={() => setShowAttribution(false)}
                   className="btn btn-primary"
                 >
