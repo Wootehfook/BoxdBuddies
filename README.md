@@ -146,7 +146,7 @@ This repository follows a **Gitflow-inspired branching strategy**:
 
 - **TypeScript/React**: Adheres to the project's ESLint and Prettier configurations.
 - **Cloudflare Functions**: Follow modern TypeScript and Cloudflare Workers best practices.
-- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2025-08-15`).
+- **AI Attribution**: Any AI-generated code must include a comment with the timestamp and model identity (e.g., `// AI Generated: GPT-5.2-Codex - 2025-08-15`).
 
 ### Versioning and Releases
 

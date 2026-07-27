@@ -2,7 +2,7 @@
  * BoxdBuddy - TMDB Cron Sync Worker
  * Copyright (C) 2025 Wootehfook
  * License: AGPL-3.0-or-later
- * AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11
+ * AI Generated: GPT-5.2-Codex - 2026-02-11
  *
  * Cloudflare Worker that performs daily TMDB database synchronization:
  * - Delta sync: Re-syncs movies that changed on TMDB since last run

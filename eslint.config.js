@@ -102,7 +102,7 @@ export default [
       "@typescript-eslint/no-explicit-any": "off"
     },
   },
-  // AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+  // AI Generated: GPT-5.2-Codex - 2026-02-15
   // Cloudflare Worker configuration (standalone worker project)
   {
     files: ["workers/**/*.{js,ts}"],

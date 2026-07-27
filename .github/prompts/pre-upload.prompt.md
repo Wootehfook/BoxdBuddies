@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (Claude Sonnet 4.5) - 2026-02-20 -->
+<!-- AI Generated: Claude Sonnet 4.5 - 2026-02-20 -->
 
 ---
 
@@ -63,8 +63,8 @@ After fixing, re-run the full check suite from Step 2 until all commands exit cl
 
 Inspect every file you created or modified. Any file touched by the agent **must** include the correct attribution header on the first line:
 
-- **TypeScript / JavaScript**: `// AI Generated: GitHub Copilot (<actual-model-name>) - YYYY-MM-DD`
-- **Markdown / HTML**: `<!-- AI Generated: GitHub Copilot (<actual-model-name>) - YYYY-MM-DD -->`
+- **TypeScript / JavaScript**: `// AI Generated: <model-name> - YYYY-MM-DD`
+- **Markdown / HTML**: `<!-- AI Generated: <model-name> - YYYY-MM-DD -->`
 
 Substitute `<actual-model-name>` with the real model that generated the change (for example, "Claude Haiku 4.5" or "Claude Sonnet 4.6"). Use today's date. Add or update headers where missing.
 

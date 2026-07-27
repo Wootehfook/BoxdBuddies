@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-08 -->
+<!-- AI Generated: GPT-5.2-Codex - 2026-02-08 -->
 
 <!-- Copilot / AI contributor instructions for Boxdbud.io -->
 
