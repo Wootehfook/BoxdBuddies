@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (Claude, Anthropic) - 2026-02-15 -->
+<!-- AI Generated: Claude, Anthropic - 2026-02-15 -->
 
 # Custom Development Mode
 
@@ -30,8 +30,8 @@ Example: feat(ui): add dark mode toggle
 - **Line width:** 100 characters maximum
 - **TypeScript:** Strict mode, avoid `any` types
 - **AI attribution:** All new files must include header comment with model and date
-  - Code: `// AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD`
-  - Markdown: `<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - YYYY-MM-DD -->`
+  - Code: `// AI Generated: <model-name> - YYYY-MM-DD`
+  - Markdown: `<!-- AI Generated: <model-name> - YYYY-MM-DD -->`
 - **Formatting:** Run `npm run format` before commits
 - **Linting:** Run `npm run lint` to catch issues early
 

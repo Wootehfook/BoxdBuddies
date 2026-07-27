@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI Generated: GitHub Copilot (Claude Haiku 4.5) - 2026-02-21
+# AI Generated: Claude Haiku 4.5 - 2026-02-21
 # Post-create script for BoxdBuddies DevContainer
 # Automates development environment setup
 # Note: This script is best-effort; errors won't fail the DevContainer setup

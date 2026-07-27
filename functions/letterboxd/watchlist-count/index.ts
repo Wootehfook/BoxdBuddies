@@ -1,8 +1,8 @@
-// AI Generated: GitHub Copilot (Claude Sonnet 5) - 2026-07-18
+// AI Generated: Claude Sonnet 5 - 2026-07-18
 /*
  * Boxdbud.io - Letterboxd Watchlist Count API Endpoint
  * Copyright (C) 2025 Wootehfook
- * AI Generated: GitHub Copilot (Claude Sonnet 5) - 2026-07-18
+ * AI Generated: Claude Sonnet 5 - 2026-07-18
  */
 
 import { debugLog } from "../../_lib/common";

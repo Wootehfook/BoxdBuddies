@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+# AI Generated: GPT-5.2-Codex - 2026-02-15
 #
 # Boxdbud.io - Git Hooks Setup Script
 # Copyright (C) 2024-2026 Woo T. Fook
@@ -49,7 +49,7 @@ fi
 
 cat > "$PRE_PUSH_HOOK" << 'EOF'
 #!/bin/sh
-# AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15
+# AI Generated: GPT-5.2-Codex - 2026-02-15
 # Pre-push hook to prevent accidental direct pushes to main or develop
 
 # Get the current branch name

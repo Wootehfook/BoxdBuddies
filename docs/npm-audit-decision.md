@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-20 -->
+<!-- AI Generated: GPT-5.2-Codex - 2026-02-20 -->
 
 # npm Audit Vulnerabilities - Analysis & Decision
 
