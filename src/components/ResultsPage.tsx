@@ -138,6 +138,7 @@ function GenreBadges({
             aria-pressed={isSelected ? "true" : "false"}
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onToggle(slug, label);
             }}
           >
@@ -322,12 +323,33 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                 const safeSlug = movie.letterboxdSlug || "";
                 const safeTitle = movie.title || "Untitled";
                 const safeTitleDecoded = decodeHtmlEntities(safeTitle);
+                const filmUrl = `https://letterboxd.com/film/${safeSlug}/`;
+                const openFilmPage = () => {
+                  window.open(filmUrl, "_blank", "noopener,noreferrer");
+                };
                 return (
-                  <a
+                  // Not a native <a> because the card contains interactive
+                  // genre-filter buttons; nesting <button> inside <a> is
+                  // invalid HTML. role="link" + key handling keeps the
+                  // whole-card click/keyboard navigation behavior instead.
+                  <div
                     key={movie.id}
-                    href={`https://letterboxd.com/film/${safeSlug}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`${safeTitleDecoded}, view on Letterboxd`}
+                    onClick={openFilmPage}
+                    onKeyDown={(e) => {
+                      // Only react when the card itself is focused, not a
+                      // nested control (e.g. a genre badge) that bubbled
+                      // its own keydown up.
+                      if (
+                        e.target === e.currentTarget &&
+                        (e.key === "Enter" || e.key === " ")
+                      ) {
+                        e.preventDefault();
+                        openFilmPage();
+                      }
+                    }}
                     className="movie-card fade-in"
                   >
                     <div className="movie-poster-section has-poster">
@@ -445,7 +467,7 @@ export function ResultsPage({ movies, onBack }: Readonly<ResultsPageProps>) {
                         </div>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 );
               } catch (err) {
                 // If a single movie render fails, log and continue rendering others
