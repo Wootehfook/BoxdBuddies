@@ -63,8 +63,8 @@ interface WatchlistCountEntry {
 }
 
 export class WebCacheService {
-  private static CACHE_KEY = "boxdbuddy_cache";
-  private static CACHE_VERSION = "1.0.0";
+  private static readonly CACHE_KEY = "boxdbuddy_cache";
+  private static readonly CACHE_VERSION = "1.0.0";
 
   static getCache(): UserCache {
     try {
@@ -99,7 +99,7 @@ export class WebCacheService {
     const cache = this.getCache();
     const entry = cache.friends;
 
-    if (!entry || entry.version !== this.CACHE_VERSION) {
+    if (entry?.version !== this.CACHE_VERSION) {
       return null;
     }
 
@@ -122,7 +122,7 @@ export class WebCacheService {
     const cache = this.getCache();
     const entry = cache.watchlists?.[username];
 
-    if (!entry || entry.version !== this.CACHE_VERSION) {
+    if (entry?.version !== this.CACHE_VERSION) {
       return null;
     }
 
@@ -133,7 +133,7 @@ export class WebCacheService {
 
   static setWatchlist(username: string, movies: MovieData[]): void {
     const cache = this.getCache();
-    if (!cache.watchlists) cache.watchlists = {};
+    cache.watchlists ??= {};
 
     cache.watchlists[username] = {
       data: movies,
@@ -155,11 +155,11 @@ export class WebCacheService {
   }
 
   static getComparison(usernames: string[]): ComparisonResult | null {
-    const key = usernames.sort().join(":");
+    const key = [...usernames].sort((a, b) => a.localeCompare(b)).join(":");
     const cache = this.getCache();
     const entry = cache.comparisons?.[key];
 
-    if (!entry || entry.version !== this.CACHE_VERSION) {
+    if (entry?.version !== this.CACHE_VERSION) {
       return null;
     }
 
@@ -169,9 +169,9 @@ export class WebCacheService {
   }
 
   static setComparison(usernames: string[], result: ComparisonResult): void {
-    const key = usernames.sort().join(":");
+    const key = [...usernames].sort((a, b) => a.localeCompare(b)).join(":");
     const cache = this.getCache();
-    if (!cache.comparisons) cache.comparisons = {};
+    cache.comparisons ??= {};
 
     cache.comparisons[key] = {
       data: result,
@@ -216,7 +216,7 @@ export class WebCacheService {
     entry: WatchlistCountEntry
   ): void {
     const cache = this.getCache();
-    if (!cache.watchlistCounts) cache.watchlistCounts = {};
+    cache.watchlistCounts ??= {};
 
     cache.watchlistCounts[username] = {
       ...entry,
@@ -229,7 +229,7 @@ export class WebCacheService {
     const cache = this.getCache();
     const entry = cache.watchlistCounts?.[username];
 
-    if (!entry || entry.version !== this.CACHE_VERSION) {
+    if (entry?.version !== this.CACHE_VERSION) {
       incrementMetric("cache.miss");
       return null;
     }

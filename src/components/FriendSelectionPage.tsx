@@ -23,6 +23,26 @@ import { FAMOUS_MOVIE_QUOTES } from "../utils";
 import { FriendAvatar } from "./FriendAvatar";
 import type { FriendSelectionPageProps } from "../types";
 
+// Watchlist count line, extracted to avoid nested ternaries in JSX
+function WatchlistCountLine({
+  count,
+  isLoading,
+}: Readonly<{ count: number | undefined; isLoading: boolean }>) {
+  if (count !== undefined) {
+    const films = `${count} Film${count === 1 ? "" : "s"}`;
+    const label = count === 0 ? "Watchlist: NA" : `Watchlist: ${films}`;
+    return <p className="watchlist-count">{label}</p>;
+  }
+  if (isLoading) {
+    return (
+      <p className="watchlist-count">
+        <span className="loading-dots">Loading watchlist...</span>
+      </p>
+    );
+  }
+  return null;
+}
+
 export function FriendSelectionPage({
   friends,
   selectedFriends,
@@ -34,7 +54,7 @@ export function FriendSelectionPage({
   enhancementProgress,
   currentQuoteIndex,
   error,
-}: FriendSelectionPageProps) {
+}: Readonly<FriendSelectionPageProps>) {
   const progressPercent = Math.round(
     (enhancementProgress.completed / enhancementProgress.total) * 100
   );
@@ -42,7 +62,11 @@ export function FriendSelectionPage({
   return (
     <section className="page friends-page">
       <div className="page-header">
-        <button onClick={onBackToSetup} className="btn btn-secondary btn-icon">
+        <button
+          type="button"
+          onClick={onBackToSetup}
+          className="btn btn-secondary btn-icon"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -69,35 +93,37 @@ export function FriendSelectionPage({
         ) : (
           <>
             <div className="friends-grid">
-              {friends.map((friend, index) => (
-                <div
-                  key={friend.username}
-                  className={`friend-card fade-in ${selectedFriends.some((f) => f.username === friend.username) ? "selected" : ""}`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={() => onToggleFriend(friend)}
-                >
-                  <div className="friend-avatar">
-                    <FriendAvatar friend={friend} />
-                  </div>
-                  <div className="friend-info">
-                    <h3>{friend.displayName || friend.username}</h3>
-                    <p>@{friend.username}</p>
-                    {friend.watchlistCount !== undefined ? (
-                      <p className="watchlist-count">
-                        {friend.watchlistCount === 0
-                          ? "Watchlist: NA"
-                          : `Watchlist: ${friend.watchlistCount} Film${friend.watchlistCount === 1 ? "" : "s"}`}
-                      </p>
-                    ) : isLoadingWatchlistCounts ? (
-                      <p className="watchlist-count">
-                        <span className="loading-dots">
-                          Loading watchlist...
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
+              {friends.map((friend, index) => {
+                const isSelected = selectedFriends.some(
+                  (f) => f.username === friend.username
+                );
+                return (
+                  <button
+                    key={friend.username}
+                    type="button"
+                    aria-pressed={isSelected}
+                    className={`friend-card fade-in ${isSelected ? "selected" : ""}`}
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                      font: "inherit",
+                      color: "inherit",
+                    }}
+                    onClick={() => onToggleFriend(friend)}
+                  >
+                    <div className="friend-avatar">
+                      <FriendAvatar friend={friend} />
+                    </div>
+                    <div className="friend-info">
+                      <h3>{friend.displayName || friend.username}</h3>
+                      <p>@{friend.username}</p>
+                      <WatchlistCountLine
+                        count={friend.watchlistCount}
+                        isLoading={isLoadingWatchlistCounts}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="compare-actions">
@@ -143,6 +169,7 @@ export function FriendSelectionPage({
                     {selectedFriends.length !== 1 ? "s" : ""} selected
                   </p>
                   <button
+                    type="button"
                     onClick={onCompareWatchlists}
                     disabled={selectedFriends.length === 0}
                     className="btn btn-primary"

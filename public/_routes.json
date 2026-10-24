@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "Only these paths invoke Pages Functions (and functions/_middleware.ts). Everything else is served as a static asset, so page loads never consume Function invocations.",
+  "include": [
+    "/api/*",
+    "/letterboxd/*",
+    "/admin/*",
+    "/compare",
+    "/compare/*",
+    "/search",
+    "/search/*",
+    "/health",
+    "/health/*"
+  ],
+  "exclude": []
+}

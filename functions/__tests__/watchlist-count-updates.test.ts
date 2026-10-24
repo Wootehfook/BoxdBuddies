@@ -1,7 +1,7 @@
 /*
  * BoxdBuddy - Watchlist Count Updates Endpoint Tests
  * Copyright (C) 2025 Wootehfook
- * AI Generated: GitHub Copilot (Claude Sonnet 4.6) - 2026-02-21
+ * AI Generated: Claude Sonnet 4.6 - 2026-02-21
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -469,7 +469,9 @@ describe("Watchlist Count Updates Endpoint", () => {
 
       expect(response.status).toBe(500);
       const data = await response.json();
-      expect(data.error).toBe("Cache error");
+      // Internal error details must not be echoed to the client.
+      expect(data.error).toBe("Failed to store count");
+      expect(JSON.stringify(data)).not.toContain("Cache error");
     });
   });
 

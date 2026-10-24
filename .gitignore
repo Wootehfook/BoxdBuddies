@@ -143,3 +143,8 @@ tail.err
 temp_*.ps1
 feat/attribution-modal
 pr-comment.md
+
+# Wrangler local secrets (never commit)
+.dev.vars
+.dev.vars.*
+.wrangler/

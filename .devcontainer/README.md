@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (Claude Haiku 4.5) - 2026-02-21 -->
+<!-- AI Generated: Claude Haiku 4.5 - 2026-02-21 -->
 
 # BoxdBuddies DevContainer Setup
 

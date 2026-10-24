@@ -2,7 +2,7 @@
  * BoxdBuddy - TMDB Cron Sync Worker
  * Copyright (C) 2025 Wootehfook
  * License: AGPL-3.0-or-later
- * AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11
+ * AI Generated: GPT-5.2-Codex - 2026-02-11
  *
  * Cloudflare Worker that performs daily TMDB database synchronization:
  * - Delta sync: Re-syncs movies that changed on TMDB since last run
@@ -512,6 +512,40 @@ async function deltaSyncChanges(
  * Scheduled event handler - runs on cron trigger (daily at 04:00 UTC).
  * Executes both delta sync and incremental sync independently.
  */
+/**
+ * Constant-time check of the Authorization header against ADMIN_SECRET.
+ * Accepts "Bearer <token>" or a raw token (backwards compatible).
+ */
+async function isAuthorized(
+  request: Request,
+  secret?: string
+): Promise<boolean> {
+  if (!secret) return false;
+  const header = (request.headers.get("Authorization") || "").trim();
+  if (!header) return false;
+  // Plain prefix check (no regex) to avoid any backtracking cost.
+  const token =
+    header.slice(0, 7).toLowerCase() === "bearer "
+      ? header.slice(7).trim()
+      : header;
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(token)),
+    crypto.subtle.digest("SHA-256", enc.encode(secret)),
+  ]);
+  const va = new Uint8Array(a);
+  const vb = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
+  return diff === 0;
+}
+
+const unauthorized = () =>
+  new Response(JSON.stringify({ error: "Unauthorized" }), {
+    status: 401,
+    headers: { "Content-Type": "application/json" },
+  });
+
 export default {
   async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
     console.log(
@@ -543,6 +577,10 @@ export default {
 
     // GET /status - return sync statistics
     if (request.method === "GET" && url.pathname === "/status") {
+      // COUNT(*) reads the whole catalog; keep it off the public internet.
+      if (!(await isAuthorized(request, env.ADMIN_SECRET))) {
+        return unauthorized();
+      }
       try {
         const totalMovies = await env.MOVIES_DB.prepare(
           "SELECT COUNT(*) as count FROM tmdb_movies"
@@ -568,10 +606,7 @@ export default {
       } catch (error) {
         console.error("Status endpoint error:", error);
         return new Response(
-          JSON.stringify({
-            error:
-              error instanceof Error ? error.message : "Internal server error",
-          }),
+          JSON.stringify({ error: "Internal server error" }),
           {
             status: 500,
             headers: { "Content-Type": "application/json" },
@@ -593,18 +628,8 @@ export default {
         );
       }
 
-      const rawAuthHeader = request.headers.get("Authorization") || "";
-      const authHeader = rawAuthHeader.trim();
-      const bearerPrefix = "bearer ";
-      const token = authHeader.toLowerCase().startsWith(bearerPrefix)
-        ? authHeader.slice(bearerPrefix.length).trim()
-        : authHeader;
-
-      if (token !== env.ADMIN_SECRET) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        });
+      if (!(await isAuthorized(request, env.ADMIN_SECRET))) {
+        return unauthorized();
       }
 
       console.log("🚀 Manual sync triggered via HTTP");

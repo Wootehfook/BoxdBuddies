@@ -1,6 +1,6 @@
 # Deployment Guide for BoxdBuddy TMDB Cron Worker
 
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-11 -->
+<!-- AI Generated: GPT-5.2-Codex - 2026-02-11 -->
 
 This guide walks through deploying the TMDB sync worker to Cloudflare.
 
@@ -77,7 +77,8 @@ Deployed boxdbuddy-tmdb-cron triggers (production)
 ### Check Status Endpoint
 
 ```bash
-curl https://boxdbuddy-tmdb-cron.<account>.workers.dev/status
+curl https://boxdbuddy-tmdb-cron.<account>.workers.dev/status \
+  -H "Authorization: Bearer YOUR_ADMIN_SECRET"
 ```
 
 Expected response:

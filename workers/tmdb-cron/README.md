@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-22 -->
+<!-- AI Generated: GPT-5.2-Codex - 2026-02-22 -->
 
 # BoxdBuddy TMDB Cron Sync Worker
 
@@ -29,7 +29,9 @@ and **18:00 UTC** via Cloudflare cron triggers.
 
 ### GET /status
 
-Returns current sync statistics without authentication.
+Requires `Authorization: Bearer <ADMIN_SECRET>` (the query reads the whole catalog, so it is not public).
+
+Returns current sync statistics.
 
 **Response:**
 

@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (GPT-5.2-Codex) - 2026-02-15 -->
+<!-- AI Generated: GPT-5.2-Codex - 2026-02-15 -->
 
 # Post-Merge Instructions for Gitflow Branching Setup
 

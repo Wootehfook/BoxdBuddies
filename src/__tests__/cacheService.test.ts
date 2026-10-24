@@ -53,7 +53,7 @@ describe("WebCacheService - watchlistCounts", () => {
 
   it("returns an empty map when no counts exist", () => {
     const all = WebCacheService.getAllWatchlistCounts();
-    expect(Object.keys(all).length).toBe(0);
+    expect(Object.keys(all)).toHaveLength(0);
   });
 
   it("getAllWatchlistCounts returns inserted entries and skips corrupted ones", () => {

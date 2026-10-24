@@ -1,7 +1,8 @@
-// AI Generated: GitHub Copilot - 2025-08-16
+// AI Generated: Claude Opus 4.8 - 2026-07-18
 // Letterboxd Watchlist Comparison API
 
-import { debugLog } from "../_lib/common";
+import { debugLog, parseGenresToNames } from "../_lib/common";
+import { InputError, jsonError, parseUsernameList } from "../_lib/security";
 import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
 type Env = CacheEnv;
 
@@ -59,13 +60,14 @@ async function scrapeLetterboxdWatchlist(
       const slug = match[1];
       const titleWithYear = match[2];
 
-      // Extract title and year from "Title Year" format
-      const yearRegex = /^(.+?)\s+(\d{4})$/;
-      const yearMatch = yearRegex.exec(titleWithYear);
-      if (yearMatch) {
+      // Extract title and year from "Title Year" format without a
+      // backtracking-heavy regex (sonar typescript:S8786)
+      const yearText = titleWithYear.slice(-4);
+      const separator = titleWithYear.slice(-5, -4);
+      if (/^\d{4}$/.test(yearText) && /\s/.test(separator)) {
         movies.push({
-          title: yearMatch[1].trim(),
-          year: parseInt(yearMatch[2]),
+          title: titleWithYear.slice(0, -5).trim(),
+          year: Number.parseInt(yearText, 10),
           slug: slug,
         });
       } else {
@@ -210,6 +212,87 @@ function findCommonMovies(
 // AI Generated: GitHub Copilot - 2025-08-29T12:00:00Z
 // Performance Optimization: Parallel Processing - Enhanced TMDB data processing with batch queries and concurrency control
 
+// Deterministic fallback id derived from title+year so a movie without a TMDB
+// match keeps the same id across requests (stable React keys, unlike the old
+// Math.random ids). This is best-effort, not collision-proof: the 100k hash
+// space can collide and the 900000+ offset only reduces — does not eliminate —
+// overlap with real TMDB ids.
+function generateFallbackId(title: string, year: number): number {
+  let h = 0;
+  const s = `${title.toLowerCase()}-${year}`;
+  for (const ch of s) h = (h << 5) - h + (ch.codePointAt(0) ?? 0);
+  return Math.abs(h % 100000) + 900000;
+}
+
+// Fallback entry used when no TMDB match is available
+function buildBasicMovie(movie: CommonMovie): Movie {
+  return {
+    id: generateFallbackId(movie.title, movie.year),
+    title: movie.title,
+    year: movie.year,
+    letterboxdSlug: movie.slug,
+    friendCount: movie.friendCount, // Preserve friend information
+    friendList: movie.friendList, // Preserve friend information
+  };
+}
+
+// Look up a single movie in the D1 TMDB catalog and merge its metadata
+async function enhanceSingleMovie(
+  movie: CommonMovie,
+  env: Env
+): Promise<Movie> {
+  try {
+    // Use a tolerant year matcher: accept exact year, ±1 year, or any year when unknown (0)
+    // This avoids false negatives when Letterboxd and TMDB differ by release year (festival vs. wide release).
+    const y = Number.isFinite(movie.year) ? movie.year : 0;
+    const stmt = env.MOVIES_DB.prepare(
+      `SELECT * FROM tmdb_movies
+       WHERE (title LIKE ? OR original_title LIKE ?)
+         AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
+       ORDER BY popularity DESC
+       LIMIT 1`
+    ).bind(`%${movie.title}%`, `%${movie.title}%`, y, y);
+
+    const result = await stmt.all();
+
+    if (!result.results || result.results.length === 0) {
+      // Fallback if not found in database
+      debugLog(
+        env,
+        `No TMDB match in D1 for "${movie.title}" (${movie.year}); returning placeholder`
+      );
+      return buildBasicMovie(movie);
+    }
+
+    const tmdbMovie = result.results[0] as unknown as TmdbMovieRow;
+
+    // Parse genres from D1 row (stored as JSON text or array) via shared helper
+    const genreNames = parseGenresToNames(tmdbMovie.genres);
+    const genres: string[] | undefined = genreNames
+      ? [...genreNames]
+      : undefined;
+
+    return {
+      id: tmdbMovie.id,
+      title: tmdbMovie.title,
+      year: tmdbMovie.year || movie.year,
+      poster_path: tmdbMovie.poster_path,
+      overview: tmdbMovie.overview,
+      vote_average: tmdbMovie.vote_average,
+      director: tmdbMovie.director,
+      runtime: tmdbMovie.runtime,
+      genres,
+      letterboxdSlug: movie.slug, // Preserve original slug
+      friendCount: movie.friendCount, // Preserve friend information
+      friendList: movie.friendList, // Preserve friend information
+    };
+  } catch (error) {
+    console.error(`Error enhancing movie "${movie.title}":`, error);
+    // Return basic movie data as fallback
+    return buildBasicMovie(movie);
+  }
+}
+
 // Enhance movies with TMDB data from database using parallel processing
 async function enhanceWithTMDBData(
   movies: CommonMovie[],
@@ -225,88 +308,7 @@ async function enhanceWithTMDBData(
     const batch = movies.slice(i, i + BATCH_SIZE);
 
     // Create batch queries for parallel execution
-    const batchPromises = batch.map(async (movie) => {
-      try {
-        // Use a tolerant year matcher: accept exact year, ±1 year, or any year when unknown (0)
-        // This avoids false negatives when Letterboxd and TMDB differ by release year (festival vs. wide release).
-        const y = Number.isFinite(movie.year) ? movie.year : 0;
-        const stmt = env.MOVIES_DB.prepare(
-          `SELECT * FROM tmdb_movies
-           WHERE (title LIKE ? OR original_title LIKE ?)
-             AND (? = 0 OR year IS NULL OR abs(year - ?) <= 1)
-           ORDER BY popularity DESC
-           LIMIT 1`
-        ).bind(`%${movie.title}%`, `%${movie.title}%`, y, y);
-
-        const result = await stmt.all();
-
-        if (result.results && result.results.length > 0) {
-          const tmdbMovie = result.results[0] as unknown as TmdbMovieRow;
-
-          // Parse genres from D1 row (stored as JSON text or array)
-          let genres: string[] | undefined;
-          try {
-            const raw = tmdbMovie.genres;
-            const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-            if (Array.isArray(parsed)) {
-              if (parsed.length > 0 && typeof parsed[0] === "string") {
-                genres = parsed as string[];
-              } else if (
-                parsed.length > 0 &&
-                parsed[0] &&
-                typeof parsed[0].name === "string"
-              ) {
-                genres = (parsed as Array<{ id?: number; name: string }>)
-                  .map((g) => g.name)
-                  .filter(Boolean);
-              }
-            }
-          } catch {
-            // ignore parse errors; leave genres undefined
-          }
-
-          return {
-            id: tmdbMovie.id,
-            title: tmdbMovie.title,
-            year: tmdbMovie.year || movie.year,
-            poster_path: tmdbMovie.poster_path,
-            overview: tmdbMovie.overview,
-            vote_average: tmdbMovie.vote_average,
-            director: tmdbMovie.director,
-            runtime: tmdbMovie.runtime,
-            genres,
-            letterboxdSlug: movie.slug, // Preserve original slug
-            friendCount: movie.friendCount, // Preserve friend information
-            friendList: movie.friendList, // Preserve friend information
-          };
-        } else {
-          // Fallback if not found in database
-          debugLog(
-            env,
-            `No TMDB match in D1 for "${movie.title}" (${movie.year}); returning placeholder`
-          );
-          return {
-            id: Math.floor(Math.random() * 1000000),
-            title: movie.title,
-            year: movie.year,
-            letterboxdSlug: movie.slug,
-            friendCount: movie.friendCount, // Preserve friend information
-            friendList: movie.friendList, // Preserve friend information
-          };
-        }
-      } catch (error) {
-        console.error(`Error enhancing movie "${movie.title}":`, error);
-        // Return basic movie data as fallback
-        return {
-          id: Math.floor(Math.random() * 1000000),
-          title: movie.title,
-          year: movie.year,
-          letterboxdSlug: movie.slug,
-          friendCount: movie.friendCount, // Preserve friend information
-          friendList: movie.friendList, // Preserve friend information
-        };
-      }
-    });
+    const batchPromises = batch.map((movie) => enhanceSingleMovie(movie, env));
 
     // Wait for this batch to complete before processing the next
     const batchResults = await Promise.all(batchPromises);
@@ -329,45 +331,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as {
-      username?: string;
-      friends?: string[];
-      usernames?: string[]; // Legacy support
-    };
-
-    // Support both formats: new format { username, friends } and legacy { usernames }
-    let allUsernames: string[];
-    if (body.username && body.friends) {
-      // New format: user + friends
-      allUsernames = [body.username, ...body.friends];
-    } else if (body.usernames && Array.isArray(body.usernames)) {
-      // Legacy format
-      allUsernames = body.usernames;
-    } else {
-      return Response.json(
-        { error: "Either { username, friends } or { usernames } is required" },
-        { status: 400 }
-      );
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError("Request body must be valid JSON", 400);
     }
-
-    if (allUsernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 usernames are required for comparison" },
-        { status: 400 }
-      );
-    }
-
-    const usernames = allUsernames
-      .filter((u) => u.trim())
-      .map((u) => u.trim())
-      .slice(0, 10); // Limit to 10 users
-
-    if (usernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 valid usernames are required" },
-        { status: 400 }
-      );
-    }
+    // Accepts { username, friends } or legacy { usernames }; validates all.
+    const usernames = parseUsernameList(body);
 
     debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
@@ -466,20 +437,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       {
         headers: {
           "Cache-Control": "public, max-age=300",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );
   } catch (error) {
+    if (error instanceof InputError) {
+      return jsonError(error.message, error.status);
+    }
     console.error("Comparison error:", error);
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to compare watchlists",
+        error: "Failed to compare watchlists",
         details:
           "Make sure all usernames exist on Letterboxd and have public watchlists",
       },
@@ -488,13 +456,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   }
 }
 
-// Handle CORS preflight
+// CORS preflight is answered by functions/_middleware.ts
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

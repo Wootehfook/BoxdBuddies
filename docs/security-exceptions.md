@@ -1,4 +1,4 @@
-<!-- AI Generated: GitHub Copilot (Claude Haiku 4.5) - 2026-02-20 -->
+<!-- AI Generated: Claude Haiku 4.5 - 2026-02-20 -->
 
 # Security Exceptions
 

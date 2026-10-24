@@ -13,8 +13,8 @@
  *   node scripts/emergency-rollback.js [--dry-run] [--reason="explanation"]
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Configuration
 const CONFIG = {

@@ -25,7 +25,7 @@ in_unreleased && /^## \[/ { exit }
 in_unreleased { print }
 ' CHANGELOG.md > "$TEST_DIR/unreleased.md"
 
-if [ -s "$TEST_DIR/unreleased.md" ]; then
+if [[ -s "$TEST_DIR/unreleased.md" ]]; then
     echo "✅ Successfully extracted unreleased changes"
     LINES=$(wc -l < "$TEST_DIR/unreleased.md" | awk '{print $1}')
     echo "   Found $LINES lines of content"
@@ -56,7 +56,7 @@ DATE=$(date +%Y-%m-%d)
   awk '/^## \[[0-9]/ { printing=1 } printing { print }' CHANGELOG.md
 } > "$TEST_DIR/changelog_updated.md"
 
-if [ -s "$TEST_DIR/changelog_updated.md" ]; then
+if [[ -s "$TEST_DIR/changelog_updated.md" ]]; then
     echo "✅ Successfully created updated CHANGELOG"
     
     # Verify structure
@@ -67,7 +67,7 @@ if [ -s "$TEST_DIR/changelog_updated.md" ]; then
         
         # Check for duplicates
         DUPLICATE_COUNT=$(grep -c "## \[2.1.0\]" "$TEST_DIR/changelog_updated.md")
-        if [ "$DUPLICATE_COUNT" -eq 1 ]; then
+        if [[ "$DUPLICATE_COUNT" -eq 1 ]]; then
             echo "✅ No duplicate version entries found"
         else
             echo "❌ Found duplicate version entries"
@@ -105,7 +105,7 @@ for test_entry in "${test_pr_titles[@]}"; do
         CHANGE_TYPE="Fixed"
     fi
     
-    if [ "$CHANGE_TYPE" = "$expected_type" ]; then
+    if [[ "$CHANGE_TYPE" == "$expected_type" ]]; then
         echo "✅ '$pr_title' → $CHANGE_TYPE"
     else
         echo "❌ '$pr_title' → Expected: $expected_type, Got: $CHANGE_TYPE"
@@ -117,7 +117,7 @@ echo ""
 # Test 4: Validate package.json version reading
 echo "Test 4: Validate package.json version reading"
 CURRENT_VERSION=$(node -p "require('./package.json').version")
-if [ -n "$CURRENT_VERSION" ]; then
+if [[ -n "$CURRENT_VERSION" ]]; then
     echo "✅ Successfully read version: $CURRENT_VERSION"
 else
     echo "❌ Failed to read version from package.json"

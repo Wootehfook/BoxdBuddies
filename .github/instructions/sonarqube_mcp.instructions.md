@@ -2,7 +2,7 @@
 applyTo: "**/*"
 ---
 
-<!-- AI Generated: GitHub Copilot (Claude Sonnet 4.5) - 2026-02-20 -->
+<!-- AI Generated: Claude Sonnet 4.5 - 2026-02-20 -->
 
 These are some guidelines when using the SonarQube MCP server.
 

@@ -9,7 +9,7 @@ echo "🔄 CI Check Retry Automation Starting..."
 
 PR_NUMBER=$(gh pr view --json number --jq '.number' 2>/dev/null || echo "")
 
-if [ -z "$PR_NUMBER" ]; then
+if [[ -z "$PR_NUMBER" ]]; then
     echo "❌ No active PR found in current context"
     exit 1
 fi
@@ -28,7 +28,7 @@ retry_failed_workflows() {
     # Get recent workflow runs that failed
     FAILED_RUNS=$(gh run list --branch temp-merge-branch --status failure --limit 5 --json databaseId,name,conclusion | jq -r '.[] | select(.conclusion == "failure") | .databaseId')
     
-    if [ -n "$FAILED_RUNS" ]; then
+    if [[ -n "$FAILED_RUNS" ]]; then
         echo "🚨 Found failed workflow runs, attempting to rerun..."
         for run_id in $FAILED_RUNS; do
             echo "🔄 Retrying workflow run: $run_id"
@@ -47,12 +47,12 @@ wait_for_checks() {
     local wait_time=0
     local check_interval=30
     
-    while [ $wait_time -lt $max_wait ]; do
+    while [[ $wait_time -lt $max_wait ]]; do
         local failing_checks=$(get_failing_checks)
         local in_progress=$(gh pr checks "$PR_NUMBER" --json status | jq -r '.[] | select(.status == "in_progress") | .name' | wc -l)
         
-        if [ "$in_progress" -eq 0 ]; then
-            if [ -z "$failing_checks" ]; then
+        if [[ "$in_progress" -eq 0 ]]; then
+            if [[ -z "$failing_checks" ]]; then
                 echo "✅ All checks passed!"
                 return 0
             else

@@ -7,6 +7,7 @@
 // Import cache function
 import { setCount } from "../../letterboxd/cache/index.js";
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest } from "../../_lib/security";
 import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
 
 // Extend canonical CacheEnv with function-specific secrets
@@ -40,27 +41,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
-
-// Validate authentication
-function authenticateRequest(request: Request, env: Env): boolean {
-  const authHeader = request.headers.get("Authorization");
-
-  if (!env.ADMIN_SECRET) {
-    console.error("ADMIN_SECRET not configured");
-    return false;
-  }
-
-  if (!authHeader) {
-    return false;
-  }
-
-  // Support both "Bearer <token>" and direct token formats
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7)
-    : authHeader;
-
-  return token === env.ADMIN_SECRET;
-}
 
 // Rate limiting by IP + username combination
 function checkRateLimit(
@@ -98,21 +78,11 @@ function checkRateLimit(
   return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - current.count };
 }
 
-// Validate payload structure and values
-function validatePayload(payload: unknown): {
-  valid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  if (typeof payload !== "object" || payload === null) {
-    errors.push("Payload must be a JSON object");
-    return { valid: false, errors };
-  }
-
-  const candidate = payload as Partial<UpdatePayload>;
-
-  // Required fields
+// Required fields: username and count
+function collectRequiredFieldErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
   if (typeof candidate.username !== "string" || !candidate.username.trim()) {
     errors.push("username is required and must be a non-empty string");
   }
@@ -124,8 +94,13 @@ function validatePayload(payload: unknown): {
   } else if (!Number.isInteger(candidate.count)) {
     errors.push("count must be an integer");
   }
+}
 
-  // Optional fields validation
+// Optional fields: etag, lastFetchedAt, source
+function collectOptionalFieldErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
   if (candidate.etag !== undefined && typeof candidate.etag !== "string") {
     errors.push("etag must be a string if provided");
   }
@@ -148,17 +123,41 @@ function validatePayload(payload: unknown): {
   if (candidate.source !== undefined && candidate.source !== "client") {
     errors.push('source must be "client" if provided');
   }
+}
 
-  // Username sanitization
-  if (typeof candidate.username === "string") {
-    const username = candidate.username.trim();
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      errors.push("username contains invalid characters");
-    }
-    if (username.length > 50) {
-      errors.push("username is too long (max 50 characters)");
-    }
+// Username sanitization
+function collectUsernameFormatErrors(
+  candidate: Partial<UpdatePayload>,
+  errors: string[]
+): void {
+  if (typeof candidate.username !== "string") {
+    return;
   }
+  const username = candidate.username.trim();
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    errors.push("username contains invalid characters");
+  }
+  if (username.length > 50) {
+    errors.push("username is too long (max 50 characters)");
+  }
+}
+
+// Validate payload structure and values
+function validatePayload(payload: unknown): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (typeof payload !== "object" || payload === null) {
+    errors.push("Payload must be a JSON object");
+    return { valid: false, errors };
+  }
+
+  const candidate = payload as Partial<UpdatePayload>;
+  collectRequiredFieldErrors(candidate, errors);
+  collectOptionalFieldErrors(candidate, errors);
+  collectUsernameFormatErrors(candidate, errors);
 
   return { valid: errors.length === 0, errors };
 }
@@ -182,7 +181,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     }
 
     // Authentication
-    if (!authenticateRequest(request, env)) {
+    if (!env.ADMIN_SECRET) {
+      console.error("ADMIN_SECRET not configured");
+    }
+    if (!(await isAdminRequest(request, env.ADMIN_SECRET))) {
       debugLog(env, "Unauthorized watchlist count update attempt");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -287,7 +289,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     } catch (err) {
       console.error("setCount error:", err);
-      return new Response(JSON.stringify({ error: (err as Error).message }), {
+      return new Response(JSON.stringify({ error: "Failed to store count" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -295,12 +297,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   } catch (error) {
     console.error("Watchlist count update error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal server error";
-
     return new Response(
       JSON.stringify({
-        error: errorMessage,
+        error: "Internal server error",
         timestamp: new Date().toISOString(),
       }),
       {

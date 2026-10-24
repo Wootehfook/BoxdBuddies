@@ -98,7 +98,7 @@ export function parseGenresToNames(genres) {
         parsed[0] &&
         typeof parsed[0].name === "string"
       ) {
-        return parsed.map((g) => g && g.name).filter(Boolean);
+        return parsed.map((g) => g?.name).filter(Boolean);
       }
     }
   } catch {

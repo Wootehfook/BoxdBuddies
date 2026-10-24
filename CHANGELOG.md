@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-10-24
+
+### Security
+
+- Remove unauthenticated debug endpoints (`/admin/tmdb-test`, `/test/*`, `/letterboxd/test-movies`, `/popular`); `/admin/tmdb-test` exposed a TMDB API key prefix and several ran full-table D1 scans (#385)
+- Validate Letterboxd usernames on every API entry point before cache reads or scraping (#385)
+- Add root Functions middleware: CORS origin allowlist (replaces `*`), security headers on API responses, generic 500s for uncaught errors (#385)
+- Add Content-Security-Policy, `frame-ancestors 'none'`, Permissions-Policy and COOP for static assets via `public/_headers` (#385)
+- Require `ADMIN_SECRET` for cache-busting `forceRefresh` requests and for the cron worker `GET /status` endpoint (#385)
+- Use constant-time comparison for admin secrets in Pages Functions and the cron worker (#385)
+- Avatar proxy: re-validate post-redirect host, relay raster images only (no SVG), 2 MB cap, `nosniff` (#385)
+- Stop returning internal error messages to clients (#385)
+- SHA-pin actions in the worker deploy workflow; gate Dependabot auto-merge on PR author (#385)
+
+### Fixed
+
+- Unknown paths (e.g. `/wp-login.php`, `/.env`) now return a real 404 instead of the SPA shell, eliminating false-positive scanner findings (#385)
+- Deploy `_routes.json` from `public/` so Functions routing actually applies (#385)
+- Cron worker `npm ci` failure caused by a `@cloudflare/workers-types` peer conflict (#385)
+
+### Changed
+
+- Skip the full-catalog `COUNT(*)` and omit the `debug` payload on watchlist comparisons unless `DEBUG` is enabled (#385)
+- Bound `/search` query length and page, and edge-cache results (#385)
+- Cap `/letterboxd/watchlist-count` at 100 usernames per request; comparison endpoints now return 400 for invalid or more than 10 usernames instead of silently dropping them (#385)
+- Resolve all `npm audit` advisories (0 vulnerabilities) and update dependencies including `vite`, `wrangler`, `eslint`, `lint-staged`, the React group, `@types/node` and testing libraries
+
 ## [2.1.6] - 2026-07-17
 
 ### Changed
@@ -179,7 +206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned repository of generated artifacts
 - Removed accidental secrets from repository
 
-[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.6...HEAD
+[Unreleased]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.7...HEAD
+[2.1.7]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.6...v2.1.7
 [2.1.6]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.5...v2.1.6
 [2.1.5]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.4...v2.1.5
 [2.1.4]: https://github.com/Wootehfook/BoxdBuddies/compare/v2.1.3...v2.1.4
