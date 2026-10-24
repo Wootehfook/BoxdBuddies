@@ -469,7 +469,9 @@ describe("Watchlist Count Updates Endpoint", () => {
 
       expect(response.status).toBe(500);
       const data = await response.json();
-      expect(data.error).toBe("Cache error");
+      // Internal error details must not be echoed to the client.
+      expect(data.error).toBe("Failed to store count");
+      expect(JSON.stringify(data)).not.toContain("Cache error");
     });
   });
 

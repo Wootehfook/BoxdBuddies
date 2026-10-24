@@ -2,6 +2,7 @@
 // Letterboxd Watchlist Comparison API
 
 import { debugLog, parseGenresToNames } from "../_lib/common";
+import { InputError, jsonError, parseUsernameList } from "../_lib/security";
 import type { Env as CacheEnv } from "../letterboxd/cache/index.js";
 type Env = CacheEnv;
 
@@ -330,45 +331,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as {
-      username?: string;
-      friends?: string[];
-      usernames?: string[]; // Legacy support
-    };
-
-    // Support both formats: new format { username, friends } and legacy { usernames }
-    let allUsernames: string[];
-    if (body.username && body.friends) {
-      // New format: user + friends
-      allUsernames = [body.username, ...body.friends];
-    } else if (body.usernames && Array.isArray(body.usernames)) {
-      // Legacy format
-      allUsernames = body.usernames;
-    } else {
-      return Response.json(
-        { error: "Either { username, friends } or { usernames } is required" },
-        { status: 400 }
-      );
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError("Request body must be valid JSON", 400);
     }
-
-    if (allUsernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 usernames are required for comparison" },
-        { status: 400 }
-      );
-    }
-
-    const usernames = allUsernames
-      .filter((u) => u.trim())
-      .map((u) => u.trim())
-      .slice(0, 10); // Limit to 10 users
-
-    if (usernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 valid usernames are required" },
-        { status: 400 }
-      );
-    }
+    // Accepts { username, friends } or legacy { usernames }; validates all.
+    const usernames = parseUsernameList(body);
 
     debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
@@ -467,20 +437,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       {
         headers: {
           "Cache-Control": "public, max-age=300",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );
   } catch (error) {
+    if (error instanceof InputError) {
+      return jsonError(error.message, error.status);
+    }
     console.error("Comparison error:", error);
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to compare watchlists",
+        error: "Failed to compare watchlists",
         details:
           "Make sure all usernames exist on Letterboxd and have public watchlists",
       },
@@ -489,13 +456,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   }
 }
 
-// Handle CORS preflight
+// CORS preflight is answered by functions/_middleware.ts
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

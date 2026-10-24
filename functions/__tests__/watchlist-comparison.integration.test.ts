@@ -17,8 +17,8 @@ describe("watchlist-comparison function (integration)", () => {
     vi.resetAllMocks();
   });
 
-  it("enriches movies from mocked MOVIES_DB and returns tmdb_catalog_count", async () => {
-    // Mock Letterboxd watchlist HTML for two users with one common movie slug
+  // Shared fixture: two users with one common movie, mocked D1 that records SQL.
+  async function runComparison(extraEnv: Record<string, unknown> = {}) {
     const sampleHtml = `
       <ul>
         <li class="griditem" data-item-slug="test-movie" data-item-name="Test Movie 2023"></li>
@@ -31,7 +31,6 @@ describe("watchlist-comparison function (integration)", () => {
       text: async () => sampleHtml,
     } as any);
 
-    // Mock MOVIES_DB with minimal behavior for prepare().all() and .first()
     const fakeRow = {
       id: 42,
       title: "Test Movie",
@@ -43,7 +42,9 @@ describe("watchlist-comparison function (integration)", () => {
       popularity: 10,
     };
 
-    const mockPrepare = (_sql: string) => {
+    const sqlSeen: string[] = [];
+    const mockPrepare = (sql: string) => {
+      sqlSeen.push(sql);
       return {
         bind: () => ({
           all: async () => ({ results: [fakeRow] }),
@@ -58,21 +59,27 @@ describe("watchlist-comparison function (integration)", () => {
     const env: any = {
       MOVIES_DB: { prepare: mockPrepare },
       TMDB_API_KEY: "test",
+      ...extraEnv,
     };
 
-    const req = makeRequest({ username: "alice", friends: ["bob"] });
-
     const res = await (watchlistModule as any).onRequestPost({
-      request: req,
+      request: makeRequest({ username: "alice", friends: ["bob"] }),
       env,
     });
-    const data = await res.json();
+    return { res, data: await res.json(), sqlSeen };
+  }
 
-    // Expect movies array and debug db count
+  const isCatalogCount = (sql: string) =>
+    /SELECT\s+COUNT\(\*\)\s+as\s+c\s+FROM\s+tmdb_movies/i.test(sql);
+
+  it("with DEBUG enabled: enriches movies and returns tmdb_catalog_count", async () => {
+    const { data, sqlSeen } = await runComparison({ DEBUG: "true" });
+
     expect(Array.isArray(data.movies)).toBe(true);
     expect(data.debug).toBeDefined();
     expect(data.debug.db).toBeDefined();
     expect(typeof data.debug.db.tmdb_catalog_count).toBe("number");
+    expect(sqlSeen.some(isCatalogCount)).toBe(true);
     // If movies were returned, ensure they have expected shape or source marker
     if (data.movies.length > 0) {
       expect(
@@ -85,5 +92,51 @@ describe("watchlist-comparison function (integration)", () => {
         data.debug.db.enrichment_hits + data.debug.db.enrichment_misses
       ).toBe(data.movies.length);
     }
+  });
+
+  it("in production (no DEBUG): omits debug payload and skips the full-table COUNT", async () => {
+    const { res, data, sqlSeen } = await runComparison();
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(data.movies)).toBe(true);
+    expect(data.movies.length).toBeGreaterThan(0);
+    expect(data.debug).toBeUndefined();
+    // The ~1M-row COUNT(*) must not run on the production request path.
+    expect(sqlSeen.some(isCatalogCount)).toBe(false);
+  });
+
+  it("rejects invalid usernames with 400 before scraping", async () => {
+    globalThis.fetch = vi.fn();
+    const res = await (watchlistModule as any).onRequestPost({
+      request: makeRequest({ username: "alice", friends: ["../../film/x"] }),
+      env: { MOVIES_DB: { prepare: vi.fn() }, TMDB_API_KEY: "test" },
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("Invalid username format");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-string usernames with 400 instead of crashing", async () => {
+    globalThis.fetch = vi.fn();
+    const res = await (watchlistModule as any).onRequestPost({
+      request: makeRequest({ usernames: [1, 2] }),
+      env: { MOVIES_DB: { prepare: vi.fn() }, TMDB_API_KEY: "test" },
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).not.toMatch(/trim is not a function/);
+  });
+
+  it("returns a generic 500 message when scraping fails (no internal details)", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("secret internal detail"));
+    const res = await (watchlistModule as any).onRequestPost({
+      request: makeRequest({ username: "alice", friends: ["bob"] }),
+      env: { MOVIES_DB: { prepare: vi.fn() }, TMDB_API_KEY: "test" },
+    });
+    expect(res.status).toBe(500);
+    const text = await res.text();
+    expect(text).not.toContain("secret internal detail");
   });
 });

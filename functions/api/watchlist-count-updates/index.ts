@@ -7,6 +7,7 @@
 // Import cache function
 import { setCount } from "../../letterboxd/cache/index.js";
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest } from "../../_lib/security";
 import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
 
 // Extend canonical CacheEnv with function-specific secrets
@@ -40,27 +41,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
-
-// Validate authentication
-function authenticateRequest(request: Request, env: Env): boolean {
-  const authHeader = request.headers.get("Authorization");
-
-  if (!env.ADMIN_SECRET) {
-    console.error("ADMIN_SECRET not configured");
-    return false;
-  }
-
-  if (!authHeader) {
-    return false;
-  }
-
-  // Support both "Bearer <token>" and direct token formats
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7)
-    : authHeader;
-
-  return token === env.ADMIN_SECRET;
-}
 
 // Rate limiting by IP + username combination
 function checkRateLimit(
@@ -201,7 +181,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     }
 
     // Authentication
-    if (!authenticateRequest(request, env)) {
+    if (!env.ADMIN_SECRET) {
+      console.error("ADMIN_SECRET not configured");
+    }
+    if (!(await isAdminRequest(request, env.ADMIN_SECRET))) {
       debugLog(env, "Unauthorized watchlist count update attempt");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -306,7 +289,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     } catch (err) {
       console.error("setCount error:", err);
-      return new Response(JSON.stringify({ error: (err as Error).message }), {
+      return new Response(JSON.stringify({ error: "Failed to store count" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -314,12 +297,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   } catch (error) {
     console.error("Watchlist count update error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal server error";
-
     return new Response(
       JSON.stringify({
-        error: errorMessage,
+        error: "Internal server error",
         timestamp: new Date().toISOString(),
       }),
       {

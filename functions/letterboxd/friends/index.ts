@@ -7,6 +7,7 @@
 // Import cache functions and shared Env type to keep types consistent
 import { getCount } from "../cache/index.js";
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest, isValidUsername } from "../../_lib/security";
 import type { Env as CacheEnv, D1DatabaseLike } from "../cache/index.js";
 
 interface Friend {
@@ -211,11 +212,21 @@ export async function onRequestPost(context: {
   };
 
   try {
-    const {
-      username,
-      forceRefresh = false,
-      watchlistCache,
-    } = await context.request.json();
+    const body = (await context.request.json().catch(() => null)) as {
+      username?: unknown;
+      forceRefresh?: unknown;
+      watchlistCache?: unknown;
+    } | null;
+    const username = body?.username;
+    // Client-supplied counts are only echoed back to this caller (never
+    // persisted), so accept them only when they are a plain object.
+    const rawWatchlistCache = body?.watchlistCache;
+    const watchlistCache =
+      rawWatchlistCache &&
+      typeof rawWatchlistCache === "object" &&
+      !Array.isArray(rawWatchlistCache)
+        ? (rawWatchlistCache as Record<string, ClientWatchlistEntry>)
+        : undefined;
 
     if (!username || typeof username !== "string") {
       return new Response(JSON.stringify({ error: "Username is required" }), {
@@ -225,6 +236,22 @@ export async function onRequestPost(context: {
     }
 
     const cleanUsername = username.trim().toLowerCase();
+
+    // Validate BEFORE any cache lookup or scrape.
+    if (!isValidUsername(cleanUsername)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid username format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Cache busting triggers a fresh scrape; restrict it to admins.
+    const forceRefresh =
+      body?.forceRefresh === true &&
+      (await isAdminRequest(context.request, context.env.ADMIN_SECRET));
 
     let cachedForFallback: {
       friends: Friend[];
@@ -268,17 +295,6 @@ export async function onRequestPost(context: {
       if (cached) {
         cachedForFallback = cached;
       }
-    }
-
-    // Validate username format
-    if (!/^[a-z0-9_-]+$/i.test(cleanUsername)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid username format" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
     }
 
     debugLog(context.env, `Fetching fresh friends for user: ${cleanUsername}`);
@@ -353,12 +369,9 @@ export async function onRequestPost(context: {
   } catch (error) {
     console.error("Friends API error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
     return new Response(
       JSON.stringify({
-        error: errorMessage,
+        error: "Failed to fetch friends",
       }),
       {
         status: 500,

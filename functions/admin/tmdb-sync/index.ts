@@ -8,6 +8,7 @@ import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
 type Env = CacheEnv & { ADMIN_SECRET?: string; TMDB_GENRE_SENTINEL?: string };
 
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest } from "../../_lib/security";
 
 interface TMDBMovie {
   id: number;
@@ -881,17 +882,6 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
   });
 }
 
-function isAuthorized(authHeader: string | null, env: Env): boolean {
-  const rawHeader = (authHeader || "").trim();
-  if (!rawHeader) return false;
-
-  const token = rawHeader.toLowerCase().startsWith("bearer ")
-    ? rawHeader.slice(7).trim()
-    : rawHeader;
-
-  return token === env.ADMIN_SECRET;
-}
-
 async function parseSyncRequest(request: Request): Promise<SyncRequest> {
   return (await request.json().catch(() => ({}))) as SyncRequest;
 }
@@ -1078,7 +1068,7 @@ export async function onRequestPost(context: {
     `🔑 Auth header received: ${authHeader ? "Bearer token present" : "No auth header"}`
   );
 
-  if (!isAuthorized(authHeader, env)) {
+  if (!(await isAdminRequest(request, env.ADMIN_SECRET))) {
     console.error("❌ Invalid or missing authorization token");
     return jsonResponse(401, {
       success: false,

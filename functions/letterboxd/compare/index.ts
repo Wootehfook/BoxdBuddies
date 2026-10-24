@@ -3,6 +3,7 @@
 
 import { debugLog, parseGenresToNames } from "../../_lib/common";
 import type { Env as CacheEnv } from "../cache/index.js";
+import { InputError, jsonError, parseUsernameList } from "../../_lib/security";
 
 // Avoid "[object Object]" when logging non-Error values. Best-effort:
 // JSON.stringify can throw on circular references or BigInt, so fall back
@@ -564,25 +565,13 @@ async function enhanceWithTMDBData(
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
   try {
-    const body = (await request.json()) as {
-      usernames?: string[];
-      username?: string;
-      friends?: string[];
-    };
-    let usernames: string[] = [];
-    if (body.usernames && Array.isArray(body.usernames))
-      usernames = body.usernames;
-    else if (body.username && body.friends && Array.isArray(body.friends))
-      usernames = [body.username, ...body.friends];
-    usernames = usernames
-      .filter((u) => u && typeof u === "string")
-      .map((u) => u.trim())
-      .slice(0, 10);
-    if (usernames.length < 2)
-      return new Response(
-        JSON.stringify({ error: "At least 2 usernames are required" }),
-        { status: 400 }
-      );
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError("Request body must be valid JSON", 400);
+    }
+    const usernames = parseUsernameList(body);
 
     const watchlists = await Promise.all(
       usernames.map(async (u, idx) => {
@@ -633,22 +622,18 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (e) {
+    if (e instanceof InputError) {
+      return jsonError(e.message, e.status);
+    }
     console.error("Comparison error:", e);
     return new Response(
-      JSON.stringify({
-        error: e instanceof Error ? e.message : "Failed to compare watchlists",
-      }),
+      JSON.stringify({ error: "Failed to compare watchlists" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
+// CORS preflight is answered by functions/_middleware.ts
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

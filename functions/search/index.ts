@@ -49,6 +49,13 @@ interface TmdbSearchResponse {
 // Temporarily unused interface - commenting out to fix lint warnings
 // interface MovieSearchResult { ... }
 
+const MAX_SEARCH_PAGE = 50;
+
+function getEdgeCache(): Cache | null {
+  const c = (globalThis as unknown as { caches?: { default?: Cache } }).caches;
+  return c?.default ?? null;
+}
+
 export async function onRequestGet(context: { request: Request; env: Env }) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -56,6 +63,41 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   const page = Number(url.searchParams.get("page") || "1");
 
   if (!q) return Response.json({ error: "missing query" }, { status: 400 });
+  // Bound inputs: each query is a full-table LIKE scan, and a negative/NaN
+  // page would produce an invalid OFFSET.
+  if (q.length < 2 || q.length > 100) {
+    return Response.json(
+      { error: "query must be 2-100 characters" },
+      { status: 400 }
+    );
+  }
+  if (!Number.isInteger(page) || page < 1 || page > MAX_SEARCH_PAGE) {
+    return Response.json(
+      { error: `page must be an integer between 1 and ${MAX_SEARCH_PAGE}` },
+      { status: 400 }
+    );
+  }
+
+  // Serve repeated identical queries from the edge cache instead of D1.
+  const cache = getEdgeCache();
+  const cacheKey = new Request(url.toString(), { method: "GET" });
+  if (cache) {
+    const hit = await cache.match(cacheKey);
+    if (hit) return hit;
+  }
+  const respond = async (body: unknown): Promise<Response> => {
+    const res = Response.json(body, {
+      headers: { "Cache-Control": "public, max-age=300" },
+    });
+    if (cache) {
+      try {
+        await cache.put(cacheKey, res.clone());
+      } catch {
+        /* cache is best-effort */
+      }
+    }
+    return res;
+  };
 
   // Try local database first
   try {
@@ -75,21 +117,24 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       .all();
 
     if (localResults.results && localResults.results.length > 0) {
-      const movies = (localResults.results as unknown as SearchRow[]).map((movie) => ({
-        id: movie.id,
-        title: movie.title,
-        year: movie.year,
-        poster_path: movie.poster_path,
-        overview: movie.overview,
-        vote_average: movie.vote_average,
-        director: movie.director,
-        runtime: movie.runtime,
-      }));
-
-      return Response.json(
-        { movies, totalPages: Math.ceil(totalRecords / 20), totalRecords },
-        { headers: { "Cache-Control": "public, max-age=300" } }
+      const movies = (localResults.results as unknown as SearchRow[]).map(
+        (movie) => ({
+          id: movie.id,
+          title: movie.title,
+          year: movie.year,
+          poster_path: movie.poster_path,
+          overview: movie.overview,
+          vote_average: movie.vote_average,
+          director: movie.director,
+          runtime: movie.runtime,
+        })
       );
+
+      return respond({
+        movies,
+        totalPages: Math.ceil(totalRecords / 20),
+        totalRecords,
+      });
     }
   } catch (error) {
     console.error("Local database search failed:", error);
@@ -118,8 +163,5 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     runtime: movie.runtime,
   }));
 
-  return Response.json(
-    { movies, totalPages: data.total_pages ?? 1 },
-    { headers: { "Cache-Control": "public, max-age=300" } }
-  );
+  return respond({ movies, totalPages: data.total_pages ?? 1 });
 }

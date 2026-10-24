@@ -6,6 +6,10 @@
  */
 
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest, isValidUsername } from "../../_lib/security";
+
+/** Upper bound on names processed per request (each may trigger a scrape). */
+const MAX_USERNAMES_PER_REQUEST = 100;
 import type { D1DatabaseLike, Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
@@ -364,7 +368,15 @@ export async function onRequestPost(context: {
   };
 
   try {
-    const { usernames, forceRefresh = false } = await context.request.json();
+    const body = (await context.request.json().catch(() => null)) as {
+      usernames?: unknown;
+      forceRefresh?: unknown;
+    } | null;
+    const usernames = body?.usernames;
+    // Cache busting triggers fresh scrapes; restrict it to admins.
+    const forceRefresh =
+      body?.forceRefresh === true &&
+      (await isAdminRequest(context.request, context.env.ADMIN_SECRET));
 
     if (!usernames || !Array.isArray(usernames)) {
       return new Response(
@@ -379,17 +391,22 @@ export async function onRequestPost(context: {
     const results: Record<string, number> = {};
     const errors: Record<string, string> = {};
 
-    for (const username of usernames) {
+    for (const [index, username] of usernames.entries()) {
       if (!username || typeof username !== "string") {
-        errors[username] = "Invalid username";
+        errors[String(username)] = "Invalid username";
         continue;
       }
 
       const cleanUsername = username.trim().toLowerCase();
 
-      // Validate username format
-      if (!/^[a-z0-9_-]+$/i.test(cleanUsername)) {
-        errors[cleanUsername] = "Invalid username format";
+      if (!isValidUsername(cleanUsername)) {
+        // Don't reflect arbitrary attacker input back as a JSON key.
+        errors[`invalid_${index}`] = "Invalid username format";
+        continue;
+      }
+
+      if (index >= MAX_USERNAMES_PER_REQUEST) {
+        errors[cleanUsername] = "Too many usernames in one request";
         continue;
       }
 
@@ -400,12 +417,10 @@ export async function onRequestPost(context: {
           forceRefresh
         );
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        errors[cleanUsername] = errorMessage;
+        errors[cleanUsername] = "Failed to fetch watchlist count";
         console.error(
           `Failed to get watchlist count for ${cleanUsername}:`,
-          errorMessage
+          error instanceof Error ? error.message : error
         );
       }
     }
@@ -423,12 +438,9 @@ export async function onRequestPost(context: {
   } catch (error) {
     console.error("Watchlist count API error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
     return new Response(
       JSON.stringify({
-        error: errorMessage,
+        error: "Internal server error",
       }),
       {
         status: 500,
