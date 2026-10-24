@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths:
       - "workers/tmdb-cron/**"
+      # Redeploy when the deploy configuration itself changes.
+      - ".github/workflows/deploy-worker.yml"
+  # Manual redeploy (e.g. to recover from a failed deploy run).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,7 +24,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "20"
+          # Node 22+ required: wrangler >= 4.87 dropped Node 20, and on Node 20
+          # wrangler-action's `npm i wrangler@4` falls back to 4.86.0, whose
+          # workers-types peer range conflicts with the project's lockfile.
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: workers/tmdb-cron/package-lock.json
 
