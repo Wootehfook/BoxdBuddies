@@ -523,8 +523,11 @@ async function isAuthorized(
   if (!secret) return false;
   const header = (request.headers.get("Authorization") || "").trim();
   if (!header) return false;
-  const match = /^Bearer\s+(.+)$/i.exec(header);
-  const token = match ? match[1].trim() : header;
+  // Plain prefix check (no regex) to avoid any backtracking cost.
+  const token =
+    header.slice(0, 7).toLowerCase() === "bearer "
+      ? header.slice(7).trim()
+      : header;
   const enc = new TextEncoder();
   const [a, b] = await Promise.all([
     crypto.subtle.digest("SHA-256", enc.encode(token)),

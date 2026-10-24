@@ -356,6 +356,50 @@ async function resolveWatchlistCount(
   return count;
 }
 
+/**
+ * Resolve one requested username into `results` or `errors`.
+ * Invalid input is reported under a synthetic key so attacker-controlled
+ * strings are never reflected back as JSON keys.
+ */
+async function processUsername(
+  username: unknown,
+  index: number,
+  env: CacheEnv,
+  forceRefresh: boolean,
+  results: Record<string, number>,
+  errors: Record<string, string>
+): Promise<void> {
+  if (!username || typeof username !== "string") {
+    errors[`invalid_${index}`] = "Invalid username";
+    return;
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  if (!isValidUsername(cleanUsername)) {
+    errors[`invalid_${index}`] = "Invalid username format";
+    return;
+  }
+
+  if (index >= MAX_USERNAMES_PER_REQUEST) {
+    errors[cleanUsername] = "Too many usernames in one request";
+    return;
+  }
+
+  try {
+    results[cleanUsername] = await resolveWatchlistCount(
+      env,
+      cleanUsername,
+      forceRefresh
+    );
+  } catch (error) {
+    errors[cleanUsername] = "Failed to fetch watchlist count";
+    console.error(
+      `Failed to get watchlist count for ${cleanUsername}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
 export async function onRequestPost(context: {
   request: Request;
   env: CacheEnv;
@@ -392,37 +436,14 @@ export async function onRequestPost(context: {
     const errors: Record<string, string> = {};
 
     for (const [index, username] of usernames.entries()) {
-      if (!username || typeof username !== "string") {
-        errors[String(username)] = "Invalid username";
-        continue;
-      }
-
-      const cleanUsername = username.trim().toLowerCase();
-
-      if (!isValidUsername(cleanUsername)) {
-        // Don't reflect arbitrary attacker input back as a JSON key.
-        errors[`invalid_${index}`] = "Invalid username format";
-        continue;
-      }
-
-      if (index >= MAX_USERNAMES_PER_REQUEST) {
-        errors[cleanUsername] = "Too many usernames in one request";
-        continue;
-      }
-
-      try {
-        results[cleanUsername] = await resolveWatchlistCount(
-          context.env,
-          cleanUsername,
-          forceRefresh
-        );
-      } catch (error) {
-        errors[cleanUsername] = "Failed to fetch watchlist count";
-        console.error(
-          `Failed to get watchlist count for ${cleanUsername}:`,
-          error instanceof Error ? error.message : error
-        );
-      }
+      await processUsername(
+        username,
+        index,
+        context.env,
+        forceRefresh,
+        results,
+        errors
+      );
     }
 
     return new Response(

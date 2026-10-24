@@ -46,10 +46,10 @@ function applySecurityHeaders(headers: Headers): void {
   }
 }
 
-export async function finalizeResponse(
+export function finalizeResponse(
   response: Response,
   origin: string | null
-): Promise<Response> {
+): Response {
   // Clone into a mutable response (fetch()-derived responses are immutable).
   const out = new Response(response.body, response);
   applyCors(out.headers, origin);

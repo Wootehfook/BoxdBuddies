@@ -123,8 +123,11 @@ export function extractBearerToken(header: string | null): string | null {
   if (!header) return null;
   const trimmed = header.trim();
   if (!trimmed) return null;
-  const match = /^Bearer\s+(.+)$/i.exec(trimmed);
-  return match ? match[1].trim() : trimmed;
+  // Plain prefix check (no regex) to avoid any backtracking cost.
+  if (trimmed.slice(0, 7).toLowerCase() === "bearer ") {
+    return trimmed.slice(7).trim() || null;
+  }
+  return trimmed;
 }
 
 export async function isAdminRequest(
@@ -140,7 +143,11 @@ export async function isAdminRequest(
 /* CORS                                                                */
 /* ------------------------------------------------------------------ */
 
-const PRODUCTION_ORIGINS = ["https://boxdbud.io", "https://www.boxdbud.io"];
+const PRODUCTION_ORIGINS = new Set([
+  "https://boxdbud.io",
+  "https://www.boxdbud.io",
+  "https://boxdbud.pages.dev",
+]);
 const DEV_ORIGIN_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/;
 /** Cloudflare Pages preview deployments for this project only. */
 const PREVIEW_ORIGIN_PATTERN = /^https:\/\/[a-z0-9-]+\.boxdbud\.pages\.dev$/;
@@ -148,10 +155,9 @@ const PREVIEW_ORIGIN_PATTERN = /^https:\/\/[a-z0-9-]+\.boxdbud\.pages\.dev$/;
 export function isAllowedOrigin(origin: string | null): origin is string {
   if (!origin) return false;
   return (
-    PRODUCTION_ORIGINS.includes(origin) ||
+    PRODUCTION_ORIGINS.has(origin) ||
     DEV_ORIGIN_PATTERN.test(origin) ||
-    PREVIEW_ORIGIN_PATTERN.test(origin) ||
-    origin === "https://boxdbud.pages.dev"
+    PREVIEW_ORIGIN_PATTERN.test(origin)
   );
 }
 
