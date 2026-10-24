@@ -10,6 +10,7 @@ interface MovieData {
 }
 
 import type { Env as CacheEnv } from "./cache/index.js";
+import { isValidUsername, jsonError } from "../_lib/security";
 
 export async function onRequestGet(context: {
   request: Request;
@@ -23,6 +24,9 @@ export async function onRequestGet(context: {
 
   if (!username) {
     return Response.json({ error: "Username required" }, { status: 400 });
+  }
+  if (!isValidUsername(username)) {
+    return jsonError("Invalid username format", 400);
   }
 
   switch (action) {

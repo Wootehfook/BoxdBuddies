@@ -5,6 +5,7 @@
  */
 
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest, isValidUsername } from "../../_lib/security";
 
 export interface D1PreparedStatementLike {
   bind(...values: unknown[]): D1PreparedStatementLike;
@@ -23,6 +24,7 @@ export interface Env {
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
   FEATURE_SERVER_WATCHLIST_CACHE?: string;
+  ADMIN_SECRET?: string;
 }
 
 interface CachedFriend {
@@ -74,6 +76,15 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     }
 
     const cleanUsername = username.trim().toLowerCase();
+    if (!isValidUsername(cleanUsername)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid username format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     // Check cache first
     const cached = await getCachedFriends(context.env.MOVIES_DB, cleanUsername);
@@ -134,7 +145,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     console.error("Cache GET error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Internal server error",
       }),
       {
         status: 500,
@@ -152,7 +163,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   };
 
   try {
-    const { username, forceRefresh = false } = await context.request.json();
+    const body = (await context.request.json().catch(() => null)) as {
+      username?: unknown;
+      forceRefresh?: unknown;
+    } | null;
+    const username = body?.username;
 
     if (!username) {
       return new Response(JSON.stringify({ error: "Username is required" }), {
@@ -160,8 +175,23 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+    if (!isValidUsername(username)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid username format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     const cleanUsername = username.trim().toLowerCase();
+
+    // Cache busting forces a fresh Letterboxd scrape, so only admins may do it.
+    // Public callers asking for forceRefresh silently get the cached path.
+    const forceRefresh =
+      body?.forceRefresh === true &&
+      (await isAdminRequest(context.request, context.env.ADMIN_SECRET));
 
     // Check cache first unless force refresh
     if (!forceRefresh) {
@@ -216,7 +246,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     console.error("Cache POST error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Internal server error",
       }),
       {
         status: 500,

@@ -77,7 +77,8 @@ Deployed boxdbuddy-tmdb-cron triggers (production)
 ### Check Status Endpoint
 
 ```bash
-curl https://boxdbuddy-tmdb-cron.<account>.workers.dev/status
+curl https://boxdbuddy-tmdb-cron.<account>.workers.dev/status \
+  -H "Authorization: Bearer YOUR_ADMIN_SECRET"
 ```
 
 Expected response:

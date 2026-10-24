@@ -1,0 +1,28 @@
+:root {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #14181c;
+  color: #9ab;
+  font-family:
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  text-align: center;
+  padding: 16px;
+}
+h1 {
+  color: #fff;
+  font-size: 2rem;
+  margin: 0 0 0.5rem;
+}
+a {
+  color: #00e054;
+  font-weight: 600;
+}

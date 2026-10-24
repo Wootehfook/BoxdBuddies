@@ -34,18 +34,24 @@ function isValidLetterboxdUrl(url: string): boolean {
   }
 }
 
+// Raster image types only (SVG excluded: it can carry script).
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+]);
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+
 export async function onRequest(context: {
   request: Request;
   env: {
     MOVIES_DB: unknown;
   };
 }) {
-  // Set CORS headers
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
+  // CORS headers are applied by functions/_middleware.ts (origin allowlist).
+  const corsHeaders: Record<string, string> = {};
 
   // Handle OPTIONS (preflight) requests
   if (context.request.method === "OPTIONS") {
@@ -85,6 +91,9 @@ export async function onRequest(context: {
   try {
     // Fetch the image from Letterboxd with proper headers
     const imageResponse = await fetch(imageUrl, {
+      // Redirects are followed, but the final URL is re-validated below so a
+      // redirect can never make us relay content from outside the allowlist.
+      redirect: "follow",
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -97,15 +106,36 @@ export async function onRequest(context: {
       throw new Error(`Failed to fetch image: ${imageResponse.status}`);
     }
 
+    if (imageResponse.url && !isValidLetterboxdUrl(imageResponse.url)) {
+      throw new Error(`Redirected outside allowlist: ${imageResponse.url}`);
+    }
+
+    // Only relay genuine images, never HTML/JS/SVG from upstream.
+    const contentType = (imageResponse.headers.get("content-type") || "")
+      .split(";")[0]
+      .trim()
+      .toLowerCase();
+    if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
+      throw new Error(`Unexpected content-type: ${contentType || "none"}`);
+    }
+
+    const declaredLength = Number(
+      imageResponse.headers.get("content-length") || "0"
+    );
+    if (declaredLength > MAX_IMAGE_BYTES) {
+      throw new Error(`Image too large: ${declaredLength} bytes`);
+    }
     const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType =
-      imageResponse.headers.get("content-type") || "image/jpeg";
+    if (imageBuffer.byteLength > MAX_IMAGE_BYTES) {
+      throw new Error(`Image too large: ${imageBuffer.byteLength} bytes`);
+    }
 
     // Return the image with proper CORS headers
     return new Response(imageBuffer, {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+        "X-Content-Type-Options": "nosniff",
         ...corsHeaders,
       },
     });

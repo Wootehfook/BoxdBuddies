@@ -6,7 +6,8 @@
 
 // D1Result omitted to avoid unused-local errors
 
-import { debugLog, parseGenresToNames } from "../../_lib/common";
+import { debugLog, isDebug, parseGenresToNames } from "../../_lib/common";
+import { InputError, jsonError, parseUsernameList } from "../../_lib/security";
 import type { Env as CacheEnv } from "../../letterboxd/cache/index.js";
 
 type Env = CacheEnv;
@@ -454,19 +455,6 @@ async function fetchWatchlistPage(
   return parseMoviesFromHtml(html);
 }
 
-const getUsernamesFromBody = (body: ComparisonRequestBody) => {
-  if (body.username && body.friends) {
-    return { userList: [body.username, ...body.friends] };
-  }
-  if (body.usernames && Array.isArray(body.usernames)) {
-    return { userList: body.usernames };
-  }
-  return {
-    userList: [],
-    error: "Either { username, friends } or { usernames } is required",
-  };
-};
-
 const initDebugInfo = (usernames: string[]) => ({
   requestReceived: {
     usernames: usernames,
@@ -532,7 +520,6 @@ const scrapeAllWatchlists = async (
         success: false,
         error: error instanceof Error ? error.message : String(error),
         errorType: error instanceof Error ? error.constructor.name : "Unknown",
-        stack: error instanceof Error ? error.stack : undefined,
       };
 
       throw error;
@@ -608,7 +595,6 @@ const enhanceCommonMovies = async (
   env: Env,
   debugInfo: DebugInfo
 ) => {
-  const { isDebug } = await import("../../_lib/common");
   const debugMatchingFlag = (env as EnvWithDebugMatching).DEBUG_MATCHING;
   const enableMatchingDebug = Boolean(
     isDebug(env) || debugMatchingFlag === true || debugMatchingFlag === "true"
@@ -883,28 +869,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
-    const body = (await request.json()) as ComparisonRequestBody;
-    const { userList, error } = getUsernamesFromBody(body);
-    if (error) {
-      return Response.json({ error }, { status: 400 });
+    let body: ComparisonRequestBody;
+    try {
+      body = (await request.json()) as ComparisonRequestBody;
+    } catch {
+      return jsonError("Request body must be valid JSON", 400);
     }
-    if (userList.length < 2) {
-      return Response.json(
-        { error: "At least 2 usernames are required for comparison" },
-        { status: 400 }
-      );
-    }
-
-    const usernames = userList
-      .filter((u) => u.trim())
-      .map((u) => u.trim())
-      .slice(0, 10);
-    if (usernames.length < 2) {
-      return Response.json(
-        { error: "At least 2 valid usernames are required" },
-        { status: 400 }
-      );
-    }
+    const usernames = parseUsernameList(body);
 
     debugLog(env, `Starting comparison for: ${usernames.join(", ")}`);
 
@@ -944,7 +915,11 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Enhance with TMDB data
     // Report TMDB catalog size (best-effort) to help debug empty DB issues
-    await reportTmdbCatalogCount(env, debugInfo);
+    // Full-table COUNT(*) reads ~1M D1 rows; only run it when debugging.
+    const debugEnabled = isDebug(env);
+    if (debugEnabled) {
+      await reportTmdbCatalogCount(env, debugInfo);
+    }
 
     const { enhancedMovies } = await enhanceCommonMovies(
       commonMovies,
@@ -977,28 +952,22 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           username: w.username,
           size: w.movies.length,
         })),
-        debug: debugInfo, // Always include debug info for troubleshooting
+        // Debug payload only when DEBUG is enabled for this environment.
+        ...(debugEnabled ? { debug: debugInfo } : {}),
       },
       {
-        headers: {
-          "Cache-Control": cacheHeader,
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "X-Content-Type-Options": "nosniff",
-          "X-Frame-Options": "DENY",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-        },
+        // CORS and security headers are applied by functions/_middleware.ts
+        headers: { "Cache-Control": cacheHeader },
       }
     );
   } catch (error) {
+    if (error instanceof InputError) {
+      return jsonError(error.message, error.status);
+    }
     console.error("Comparison error:", error);
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to compare watchlists",
+        error: "Failed to compare watchlists",
         details:
           "Make sure all usernames exist on Letterboxd and have public watchlists",
       },
@@ -1007,16 +976,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   }
 }
 
-// Handle CORS preflight
+// CORS preflight is answered by functions/_middleware.ts; this export is kept
+// so the route still advertises OPTIONS if the middleware is ever bypassed.
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

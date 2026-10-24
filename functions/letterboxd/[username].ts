@@ -14,6 +14,7 @@ interface LetterboxdMovie {
 }
 
 import { debugLog } from "../_lib/common";
+import { isValidUsername, jsonError } from "../_lib/security";
 import type { Env as CacheEnv } from "./cache/index.js";
 
 export async function onRequestGet(context: {
@@ -26,6 +27,10 @@ export async function onRequestGet(context: {
 
   if (!username) {
     return Response.json({ error: "Username required" }, { status: 400 });
+  }
+  // Validate before it reaches the cache key or the Letterboxd URL.
+  if (!isValidUsername(username)) {
+    return jsonError("Invalid username format", 400);
   }
 
   try {
@@ -101,7 +106,6 @@ export async function onRequestGet(context: {
     return Response.json(
       {
         error: "Failed to fetch watchlist",
-        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
@@ -184,13 +188,7 @@ async function scrapeUserWatchlist(
   return movies;
 }
 
-// Handle CORS preflight
+// CORS preflight is answered by functions/_middleware.ts
 export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

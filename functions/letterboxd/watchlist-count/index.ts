@@ -6,6 +6,10 @@
  */
 
 import { debugLog } from "../../_lib/common";
+import { isAdminRequest, isValidUsername } from "../../_lib/security";
+
+/** Upper bound on names processed per request (each may trigger a scrape). */
+const MAX_USERNAMES_PER_REQUEST = 100;
 import type { D1DatabaseLike, Env as CacheEnv } from "../cache/index.js";
 
 interface WatchlistCount {
@@ -352,6 +356,50 @@ async function resolveWatchlistCount(
   return count;
 }
 
+/**
+ * Resolve one requested username into `results` or `errors`.
+ * Invalid input is reported under a synthetic key so attacker-controlled
+ * strings are never reflected back as JSON keys.
+ */
+async function processUsername(
+  username: unknown,
+  index: number,
+  env: CacheEnv,
+  forceRefresh: boolean,
+  results: Record<string, number>,
+  errors: Record<string, string>
+): Promise<void> {
+  if (!username || typeof username !== "string") {
+    errors[`invalid_${index}`] = "Invalid username";
+    return;
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  if (!isValidUsername(cleanUsername)) {
+    errors[`invalid_${index}`] = "Invalid username format";
+    return;
+  }
+
+  if (index >= MAX_USERNAMES_PER_REQUEST) {
+    errors[cleanUsername] = "Too many usernames in one request";
+    return;
+  }
+
+  try {
+    results[cleanUsername] = await resolveWatchlistCount(
+      env,
+      cleanUsername,
+      forceRefresh
+    );
+  } catch (error) {
+    errors[cleanUsername] = "Failed to fetch watchlist count";
+    console.error(
+      `Failed to get watchlist count for ${cleanUsername}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
 export async function onRequestPost(context: {
   request: Request;
   env: CacheEnv;
@@ -364,7 +412,15 @@ export async function onRequestPost(context: {
   };
 
   try {
-    const { usernames, forceRefresh = false } = await context.request.json();
+    const body = (await context.request.json().catch(() => null)) as {
+      usernames?: unknown;
+      forceRefresh?: unknown;
+    } | null;
+    const usernames = body?.usernames;
+    // Cache busting triggers fresh scrapes; restrict it to admins.
+    const forceRefresh =
+      body?.forceRefresh === true &&
+      (await isAdminRequest(context.request, context.env.ADMIN_SECRET));
 
     if (!usernames || !Array.isArray(usernames)) {
       return new Response(
@@ -379,35 +435,15 @@ export async function onRequestPost(context: {
     const results: Record<string, number> = {};
     const errors: Record<string, string> = {};
 
-    for (const username of usernames) {
-      if (!username || typeof username !== "string") {
-        errors[username] = "Invalid username";
-        continue;
-      }
-
-      const cleanUsername = username.trim().toLowerCase();
-
-      // Validate username format
-      if (!/^[a-z0-9_-]+$/i.test(cleanUsername)) {
-        errors[cleanUsername] = "Invalid username format";
-        continue;
-      }
-
-      try {
-        results[cleanUsername] = await resolveWatchlistCount(
-          context.env,
-          cleanUsername,
-          forceRefresh
-        );
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        errors[cleanUsername] = errorMessage;
-        console.error(
-          `Failed to get watchlist count for ${cleanUsername}:`,
-          errorMessage
-        );
-      }
+    for (const [index, username] of usernames.entries()) {
+      await processUsername(
+        username,
+        index,
+        context.env,
+        forceRefresh,
+        results,
+        errors
+      );
     }
 
     return new Response(
@@ -423,12 +459,9 @@ export async function onRequestPost(context: {
   } catch (error) {
     console.error("Watchlist count API error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
     return new Response(
       JSON.stringify({
-        error: errorMessage,
+        error: "Internal server error",
       }),
       {
         status: 500,

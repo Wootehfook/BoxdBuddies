@@ -29,7 +29,9 @@ and **18:00 UTC** via Cloudflare cron triggers.
 
 ### GET /status
 
-Returns current sync statistics without authentication.
+Requires `Authorization: Bearer <ADMIN_SECRET>` (the query reads the whole catalog, so it is not public).
+
+Returns current sync statistics.
 
 **Response:**
 
