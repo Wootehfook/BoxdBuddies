@@ -6,6 +6,10 @@ on:
     branches: [main]
     paths:
       - "workers/tmdb-cron/**"
+      # Redeploy when the deploy configuration itself changes.
+      - ".github/workflows/deploy-worker.yml"
+  # Manual redeploy (e.g. to recover from a failed deploy run).
+  workflow_dispatch:
 
 permissions:
   contents: read
